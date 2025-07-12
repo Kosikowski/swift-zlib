@@ -3864,7 +3864,7 @@ public class FileChunkedCompressor {
         defer { try? output.close() }
 
         let compressor = Compressor()
-        try compressor.initialize(level: compressionLevel)
+        try compressor.initializeAdvanced(level: compressionLevel, windowBits: windowBits)
 
         var isFinished = false
         while !isFinished {
@@ -3892,7 +3892,7 @@ public class FileChunkedCompressor {
         defer { try? output.close() }
 
         let compressor = Compressor()
-        try compressor.initialize(level: compressionLevel)
+        try compressor.initializeAdvanced(level: compressionLevel, windowBits: windowBits)
 
         var processedBytes = 0
         let totalBytes = try input.seekToEnd() ?? 0
@@ -3959,7 +3959,7 @@ public class FileChunkedCompressor {
         defer { try? output.close() }
 
         let compressor = Compressor()
-        try compressor.initialize(level: compressionLevel)
+        try compressor.initializeAdvanced(level: compressionLevel, windowBits: windowBits)
 
         let totalBytes = Int(try input.seekToEnd())
         try input.seek(toOffset: 0)
@@ -4035,8 +4035,8 @@ public class FileChunkedCompressor {
         to destinationPath: String,
         progressInterval: TimeInterval = 0.1,
         progressQueue: DispatchQueue = .main
-    ) -> AsyncStream<ProgressInfo> {
-        AsyncStream { continuation in
+    ) -> AsyncThrowingStream<ProgressInfo, Error> {
+        AsyncThrowingStream { continuation in
             Task {
                 do {
                     let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
@@ -4046,7 +4046,7 @@ public class FileChunkedCompressor {
                     defer { try? output.close() }
 
                     let compressor = Compressor()
-                    try compressor.initialize(level: compressionLevel)
+                    try compressor.initializeAdvanced(level: compressionLevel, windowBits: windowBits)
 
                     let totalBytes = Int(try input.seekToEnd())
                     try input.seek(toOffset: 0)
@@ -4103,7 +4103,7 @@ public class FileChunkedCompressor {
                     reportProgress(phase: .finished)
                     continuation.finish()
                 } catch {
-                    continuation.finish()
+                    continuation.finish(throwing: error)
                 }
             }
         }
@@ -4300,8 +4300,8 @@ public class FileChunkedDecompressor {
         to destinationPath: String,
         progressInterval: TimeInterval = 0.1,
         progressQueue: DispatchQueue = .main
-    ) -> AsyncStream<ProgressInfo> {
-        AsyncStream { continuation in
+    ) -> AsyncThrowingStream<ProgressInfo, Error> {
+        AsyncThrowingStream { continuation in
             Task {
                 do {
                     let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
@@ -4368,7 +4368,7 @@ public class FileChunkedDecompressor {
                     reportProgress(phase: .finished)
                     continuation.finish()
                 } catch {
-                    continuation.finish()
+                    continuation.finish(throwing: error)
                 }
             }
         }
