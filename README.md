@@ -367,6 +367,52 @@ let decompressed2 = try decompressor.decompress(compressedChunk2)
 let finalDecompressed = try decompressor.finish()
 ```
 
+### Object Lifecycle and Reuse
+
+**Important:** After completing a compression or decompression operation (i.e., after calling `.finish()` or completing a full decompression), you must call `.reset()` before reusing the same instance for a new operation.
+
+```swift
+// ✅ Correct: Reset before reuse
+let compressor = Compressor()
+try compressor.initialize(level: .bestCompression)
+
+// First operation
+let compressed1 = try compressor.compress(data1, flush: .finish)
+
+// Reset before reuse
+try compressor.reset()
+
+// Second operation
+let compressed2 = try compressor.compress(data2, flush: .finish)
+
+// ❌ Incorrect: Reusing without reset (will hang or fail)
+let compressor = Compressor()
+try compressor.initialize(level: .bestCompression)
+
+let compressed1 = try compressor.compress(data1, flush: .finish)
+// Missing: try compressor.reset()
+let compressed2 = try compressor.compress(data2, flush: .finish) // This will hang!
+```
+
+**When to call `.reset()`:**
+- After completing a compression with `.finish()` flush
+- After completing a full decompression operation
+- Before starting a new compression/decompression cycle with the same instance
+
+**Alternative: Use new instances**
+If you don't want to manage reset calls, create new instances for each operation:
+
+```swift
+// Alternative approach: Use new instances
+let compressor1 = Compressor()
+try compressor1.initialize(level: .bestCompression)
+let compressed1 = try compressor1.compress(data1, flush: .finish)
+
+let compressor2 = Compressor()
+try compressor2.initialize(level: .bestCompression)
+let compressed2 = try compressor2.compress(data2, flush: .finish)
+```
+
 ### Advanced InflateBack API
 
 For advanced streaming with custom callbacks:
@@ -386,6 +432,41 @@ try inflateBack.processWithCallbacks(
         return true // Continue processing
     }
 )
+```
+
+### Compressor and Decompressor Lifecycle
+
+#### Initialization
+```swift
+let compressor = Compressor()
+try compressor.initialize(level: .bestCompression)
+// or
+try compressor.initializeAdvanced(level: .bestCompression, windowBits: .gzip)
+```
+
+#### Compression/Decompression
+```swift
+// Single operation
+let compressed = try compressor.compress(data, flush: .finish)
+
+// Multiple chunks
+let chunk1 = try compressor.compress(data1, flush: .noFlush)
+let chunk2 = try compressor.compress(data2, flush: .finish)
+```
+
+#### Reset for Reuse
+```swift
+// After completing an operation, reset for reuse
+try compressor.reset()
+
+// Now safe to use again
+let compressed2 = try compressor.compress(newData, flush: .finish)
+```
+
+#### Cleanup
+```swift
+// Automatic cleanup in deinit, or manual cleanup
+compressor = nil // Automatic cleanup
 ```
 
 ### Gzip File Operations
@@ -1064,6 +1145,8 @@ DispatchQueue.concurrentPerform(iterations: 10) { i in
 ### When to Use Dictionaries
 - Dictionaries are used for compression/decompression of data that has known patterns or frequently repeated sequences.
 - They can significantly improve compression ratios for data with predictable content.
+- **Effectiveness**: Dictionaries are most effective when the data contains patterns that match the dictionary content. If the dictionary doesn't contain useful patterns for the data being compressed, zlib may not use it effectively.
+- **Compression Ratio**: You can verify dictionary effectiveness by comparing compression ratios with and without the dictionary. Effective dictionaries typically reduce compressed size by 10-30% or more.
 
 ### Dictionary Requirements
 - **Compression:** Dictionary must be set **before** compression begins.
@@ -1075,6 +1158,13 @@ DispatchQueue.concurrentPerform(iterations: 10) { i in
 - Setting a dictionary on a decompressor without receiving `Z_NEED_DICT` will throw a `ZLibError`.
 - The correct flow is: decompress → receive `Z_NEED_DICT` → set dictionary → continue decompression.
 
+**Important:** When decompressing data that was compressed with a dictionary, but without providing the dictionary, zlib may return different error codes depending on the context:
+
+- **`Z_NEED_DICT (2)`**: Returned during streaming decompression when zlib encounters a point in the stream where it needs a dictionary
+- **`Z_DATA_ERROR (-3)`**: Returned when decompressing the entire stream at once without a dictionary
+
+Both error codes are valid responses for missing dictionary scenarios. Your code should handle both cases.
+
 ### Example Dictionary Usage
 ```swift
 // Compression with dictionary
@@ -1083,13 +1173,18 @@ try compressor.initialize(level: .defaultCompression)
 try compressor.setDictionary(dictionaryData)
 let compressed = try compressor.compress(data, flush: .finish)
 
-// Decompression with dictionary
+// Decompression with dictionary - handle both error codes
 let decompressor = Decompressor()
 try decompressor.initialize()
 do {
     let decompressed = try decompressor.decompress(compressed)
     // Success
 } catch ZLibError.decompressionFailed(let code) where code == 2 { // Z_NEED_DICT
+    try decompressor.setDictionary(dictionaryData)
+    let decompressed = try decompressor.decompress(compressed)
+    // Success
+} catch ZLibError.decompressionFailed(let code) where code == -3 { // Z_DATA_ERROR
+    // Also a valid response for missing dictionary
     try decompressor.setDictionary(dictionaryData)
     let decompressed = try decompressor.decompress(compressed)
     // Success
