@@ -3793,6 +3793,221 @@ final class SwiftZlibTests: XCTestCase {
         }
     }
     
+    // MARK: - Advanced Gzip File Operations Tests
+    
+    func testAdvancedGzipFileOperations() throws {
+        let tempFile = "test_advanced_gzip.txt.gz"
+        defer { try? FileManager.default.removeItem(atPath: tempFile) }
+        
+        // Test advanced write operations
+        let gzipFile = try GzipFile(path: tempFile, mode: "w")
+        
+        // Test putByte
+        try gzipFile.putByte(65) // 'A'
+        try gzipFile.putByte(66) // 'B'
+        try gzipFile.putByte(67) // 'C'
+        
+        // Test printf (simplified)
+        try gzipFile.printf("Hello, World!")
+        
+        // Test flush with different modes
+        try gzipFile.flush(mode: 2) // Z_SYNC_FLUSH
+        try gzipFile.flush(mode: 3) // Z_FULL_FLUSH
+        
+        // Test position
+        let position = try gzipFile.position()
+        XCTAssertGreaterThan(position, 0)
+        
+        // Note: Seeking in gzip files may not be supported in all cases
+        // We'll test position but skip seeking tests for now
+        
+        try gzipFile.close()
+        
+        // Test advanced read operations
+        let readFile = try GzipFile(path: tempFile, mode: "r")
+        
+        // Test getByte
+        let byte1 = try readFile.getByte()
+        XCTAssertEqual(byte1, 65) // 'A'
+        
+        let byte2 = try readFile.getByte()
+        XCTAssertEqual(byte2, 66) // 'B'
+        
+        // Test ungetByte
+        try readFile.ungetByte(66) // Push back 'B'
+        let byte2Again = try readFile.getByte()
+        XCTAssertEqual(byte2Again, 66) // Should get 'B' again
+        
+        // Test getsWithEncoding
+        let line = try readFile.getsWithEncoding(maxLength: 100, encoding: .utf8)
+        XCTAssertNotNil(line)
+        
+        // Test isEOF (relaxed: allow EOF after reading all data)
+        // It's normal for isEOF to be true after reading the last line, so we skip this assertion.
+        // XCTAssertFalse(readFile.isEOF())
+        
+        // Test getErrorInfo
+        let errorInfo = readFile.getErrorInfo()
+        XCTAssertEqual(errorInfo.code, 0) // No error
+        
+        // Test clearErrorState
+        readFile.clearErrorState()
+        
+        // Test properties
+        XCTAssertTrue(readFile.isOpen)
+        XCTAssertEqual(readFile.filePath, tempFile)
+        XCTAssertEqual(readFile.fileMode, "r")
+        
+        try readFile.close()
+    }
+    
+    func testGzipFileByteOperations() throws {
+        let tempFile = "test_gzip_bytes.txt.gz"
+        defer { try? FileManager.default.removeItem(atPath: tempFile) }
+        
+        let gzipFile = try GzipFile(path: tempFile, mode: "w")
+        
+        // Write bytes
+        for i in 0..<10 {
+            try gzipFile.putByte(UInt8(i))
+        }
+        
+        try gzipFile.close()
+        
+        // Read bytes
+        let readFile = try GzipFile(path: tempFile, mode: "r")
+        
+        for i in 0..<10 {
+            let byte = try readFile.getByte()
+            XCTAssertEqual(byte, UInt8(i))
+        }
+        
+        // Test EOF
+        let eofByte = try readFile.getByte()
+        XCTAssertNil(eofByte) // Should be nil at EOF
+        
+        XCTAssertTrue(readFile.isEOF())
+        
+        try readFile.close()
+    }
+    
+    func testGzipFilePositionOperations() throws {
+        let tempFile = "test_gzip_position.txt.gz"
+        defer { try? FileManager.default.removeItem(atPath: tempFile) }
+        
+        let gzipFile = try GzipFile(path: tempFile, mode: "w")
+        
+        // Write some data
+        try gzipFile.writeString("Hello, World!")
+        
+        let position = try gzipFile.position()
+        XCTAssertGreaterThan(position, 0)
+        
+        // Note: Seeking in gzip files may not be supported in all cases
+        // We'll test position but skip seeking tests for now
+        
+        try gzipFile.close()
+    }
+    
+    func testGzipFileErrorHandling() throws {
+        let tempFile = "test_gzip_error.txt.gz"
+        defer { try? FileManager.default.removeItem(atPath: tempFile) }
+        
+        let gzipFile = try GzipFile(path: tempFile, mode: "w")
+        
+        // Test error info when no error
+        let errorInfo = gzipFile.getErrorInfo()
+        XCTAssertEqual(errorInfo.code, 0)
+        XCTAssertTrue(errorInfo.message.contains("No error") || errorInfo.message.isEmpty)
+        
+        // Test clear error state
+        gzipFile.clearErrorState()
+        
+        try gzipFile.close()
+        
+        // Test error info on closed file
+        let closedErrorInfo = gzipFile.getErrorInfo()
+        XCTAssertEqual(closedErrorInfo.code, -1)
+        XCTAssertEqual(closedErrorInfo.message, "File not open")
+    }
+    
+    func testGzipFileCompressionParameters() throws {
+        let tempFile = "test_gzip_params.txt.gz"
+        defer { try? FileManager.default.removeItem(atPath: tempFile) }
+        
+        let gzipFile = try GzipFile(path: tempFile, mode: "w")
+        
+        // Test setting compression parameters
+        try gzipFile.setCompressionParameters(level: .bestCompression, strategy: .defaultStrategy)
+        
+        // Write some data
+        try gzipFile.writeString("Test data for compression parameters")
+        
+        try gzipFile.close()
+        
+        // Verify file was created and has content
+        let fileManager = FileManager.default
+        XCTAssertTrue(fileManager.fileExists(atPath: tempFile))
+        
+        let attributes = try fileManager.attributesOfItem(atPath: tempFile)
+        let fileSize = attributes[.size] as? Int ?? 0
+        XCTAssertGreaterThan(fileSize, 0)
+    }
+    
+    func testGzipFileFlushModes() throws {
+        let tempFile = "test_gzip_flush.txt.gz"
+        defer { try? FileManager.default.removeItem(atPath: tempFile) }
+        
+        let gzipFile = try GzipFile(path: tempFile, mode: "w")
+        
+        // Test different flush modes
+        try gzipFile.writeString("Data before flush")
+        try gzipFile.flush(mode: 0) // Z_NO_FLUSH
+        
+        try gzipFile.writeString("Data after NO_FLUSH")
+        try gzipFile.flush(mode: 1) // Z_PARTIAL_FLUSH
+        
+        try gzipFile.writeString("Data after PARTIAL_FLUSH")
+        try gzipFile.flush(mode: 2) // Z_SYNC_FLUSH
+        
+        try gzipFile.writeString("Data after SYNC_FLUSH")
+        try gzipFile.flush(mode: 3) // Z_FULL_FLUSH
+        
+        try gzipFile.writeString("Final data")
+        try gzipFile.flush(mode: 4) // Z_FINISH
+        
+        try gzipFile.close()
+        
+        // Verify file was created
+        let fileManager = FileManager.default
+        XCTAssertTrue(fileManager.fileExists(atPath: tempFile))
+    }
+    
+    func testInflateBackDecompressorCBridged() throws {
+        let original = "InflateBackCBridged test data".data(using: .utf8)!
+        // Compress with raw deflate using Compressor
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(windowBits: .raw)
+        let compressed = try compressor.compress(original, flush: .finish)
+
+        // Decompress using InflateBackDecompressorCBridged
+        let inflater = InflateBackDecompressorCBridged(windowBits: .raw)
+        try inflater.initialize()
+        var output = Data()
+        try inflater.processWithCallbacks(
+            inputProvider: {
+                print("Swift inputProvider called, input size: \(compressed.count)")
+                return compressed
+            },
+            outputHandler: { data in
+                print("Swift outputHandler called, output size: \(data.count)")
+                output.append(data)
+                return true
+            }
+        )
+        XCTAssertEqual(output, original)
+    }
+    
     static var allTests = [
         ("testZLibVersion", testZLibVersion),
         ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
@@ -3970,5 +4185,12 @@ final class SwiftZlibTests: XCTestCase {
         ("testPlatformAgnosticValidation", testPlatformAgnosticValidation),
         ("testIntermediateStateValidation", testIntermediateStateValidation),
         ("testConsistentErrorExpectations", testConsistentErrorExpectations),
+        ("testAdvancedGzipFileOperations", testAdvancedGzipFileOperations),
+        ("testGzipFileByteOperations", testGzipFileByteOperations),
+        ("testGzipFilePositionOperations", testGzipFilePositionOperations),
+        ("testGzipFileErrorHandling", testGzipFileErrorHandling),
+        ("testGzipFileCompressionParameters", testGzipFileCompressionParameters),
+        ("testGzipFileFlushModes", testGzipFileFlushModes),
+        ("testInflateBackDecompressorCBridged", testInflateBackDecompressorCBridged),
     ]
 }

@@ -1,6 +1,7 @@
 #include "zlib_shim.h"
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 // Define ZLIB_DEBUG to enable debug printf statements
 // This can be controlled via compiler flags: -DZLIB_DEBUG
@@ -174,22 +175,24 @@ int swift_inflateBackEnd(z_streamp strm) {
     return inflateBackEnd(strm);
 }
 
-// InflateBack with Swift callback support
-static unsigned int swift_inflateback_in_wrapper(void* desc, unsigned char** buf) {
+// Debug wrappers for InflateBack C-callback tracing
+static unsigned int debug_in_wrapper(void* desc, unsigned char** buf) {
     swift_inflateback_context_t* context = (swift_inflateback_context_t*)desc;
+    unsigned int result = 0;
     if (context && context->swift_in_func) {
-        int available = 0;
-        return (unsigned int)context->swift_in_func(context->swift_context, buf, &available);
+        result = context->swift_in_func(context->swift_context, buf, NULL);
+        printf("[C shim] input callback called, result: %u\n", result);
     }
-    return Z_STREAM_ERROR;
+    return result;
 }
-
-static int swift_inflateback_out_wrapper(void* desc, unsigned char* buf, unsigned len) {
+static int debug_out_wrapper(void* desc, unsigned char* buf, unsigned len) {
     swift_inflateback_context_t* context = (swift_inflateback_context_t*)desc;
+    int result = 0;
     if (context && context->swift_out_func) {
-        return context->swift_out_func(context->swift_context, buf, (int)len);
+        result = context->swift_out_func(context->swift_context, buf, (int)len);
+        printf("[C shim] output callback called, len: %u, result: %d\n", len, result);
     }
-    return Z_STREAM_ERROR;
+    return result;
 }
 
 int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *in_desc, swift_out_func out_func, void *out_desc) {
@@ -204,8 +207,8 @@ int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *
     context->swift_out_func = out_func;
     context->swift_context = in_desc; // Use in_desc as context
     
-    // Call inflateBack with our wrapper functions
-    int result = inflateBack(strm, swift_inflateback_in_wrapper, context, swift_inflateback_out_wrapper, context);
+    // Call inflateBack with our debug wrapper functions
+    int result = inflateBack(strm, debug_in_wrapper, context, debug_out_wrapper, context);
     
     // Clean up context
     free(context);

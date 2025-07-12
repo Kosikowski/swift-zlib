@@ -498,6 +498,27 @@ func processWithCustomCallbacks() throws {
 }
 ```
 
+### Advanced InflateBack (C-Callback Bridged) Usage
+
+You can use the true C-callback-based InflateBack decompressor for raw deflate streams:
+
+```swift
+let original = "Hello, InflateBackCBridged!".data(using: .utf8)!
+
+// Compress using raw deflate (windowBits: -15)
+let compressed = try ZLib.compress(original, windowBits: .raw)
+
+// Decompress using InflateBackDecompressorCBridged
+let inflater = InflateBackDecompressorCBridged(windowBits: .raw)
+try inflater.initialize()
+let decompressed = try inflater.processData(compressed)
+
+print(String(data: decompressed, encoding: .utf8)!) // "Hello, InflateBackCBridged!"
+```
+
+- Note: `InflateBack` only works with raw deflate streams (`windowBits: .raw` or `-15`).
+- The input must be compressed with the same windowBits.
+
 ### Network Compression
 
 ```swift
@@ -714,3 +735,64 @@ When decompressing truncated or corrupted data, zlib may either:
 - Return as much decompressed data as possible without error.
 
 This behavior depends on the zlib version and platform. The SwiftZlib test suite and API are robust to both outcomes, and your code should be prepared to handle either case. 
+
+## Gzip Seeking and EOF Behavior
+
+**Why is seeking in gzip files not always supported, and why is EOF reached after reading all data?**
+
+- **Gzip is a compressed, stream-based format.** Unlike uncompressed files, each byte in the file does not map directly to a byte in the output. Gzip compresses data in blocks, so the mapping between compressed and uncompressed positions is not direct or predictable.
+- **Seeking requires decompressing.** To seek to a specific position in the uncompressed data, the decompressor must process (decompress) all preceding compressed data. There’s no index or table in the gzip format that allows jumping directly to a specific uncompressed offset.
+- **Gzip libraries (including zlib) only support limited seeking.** The `gzseek` function in zlib can only reliably seek to the beginning (`rewind`) or to a position that has already been decompressed and buffered. Seeking forward requires decompressing data up to the target position, which can be slow and memory-intensive.
+- **Random access is not efficient or guaranteed.** Some implementations may buffer data to allow limited backward seeking, but this is not required by the format or the library. As a result, seeking to arbitrary positions is not always supported or may fail.
+
+**EOF (End of File) is set after all data is read.**
+- When you read until the end of a gzip file, the decompressor reaches the end of the compressed stream and sets the EOF flag. This is expected and correct behavior.
+- Once the entire compressed stream has been processed, any further read attempts will immediately return EOF.
+- In gzip files, after reading all data, you must `rewind` (start over) to read again.
+
+| Operation         | Uncompressed File | Gzip File (zlib)         |
+|-------------------|------------------|--------------------------|
+| Seek to offset    | Fast, direct     | Slow, may not be supported |
+| Random access     | Yes              | No (must decompress up to point) |
+| EOF after read    | Only at end      | At end of decompressed stream    |
+| Rewind            | Supported        | Supported (gzrewind)     |
+
+**If you need efficient random access, consider using a format designed for it (like ZIP with an index, or uncompressed files).** 
+
+### Compression Format Differences
+
+**ZLib.compress() vs Compressor for different formats:**
+
+The simple `ZLib.compress()` method always uses zlib format (windowBits = 15), while the `Compressor` class allows you to specify different formats.
+
+```swift
+// Simple API - always uses zlib format
+let compressed = try ZLib.compress(originalData)
+
+// Advanced API - can specify format
+let compressor = Compressor()
+try compressor.initializeAdvanced(windowBits: .raw)  // Raw deflate
+let compressed = try compressor.compress(originalData)
+```
+
+**When to use each approach:**
+
+| Use Case | Method | Format | Example |
+|----------|--------|--------|---------|
+| General compression | `ZLib.compress()` | zlib format | Standard compression |
+| Raw deflate (for InflateBack) | `Compressor` with `.raw` | Raw deflate | Advanced streaming |
+| Gzip format | `Compressor` with `.gzip` | Gzip format | File compression |
+| Auto-detect | `Compressor` with `.auto` | Auto-detect | Unknown format |
+
+**Example: Raw deflate for InflateBack compatibility**
+```swift
+// Must use raw deflate for InflateBack
+let compressor = Compressor()
+try compressor.initializeAdvanced(windowBits: .raw)
+let compressed = try compressor.compress(originalData)
+
+// Now compatible with InflateBack
+let inflater = InflateBackDecompressorCBridged(windowBits: .raw)
+try inflater.initialize()
+let decompressed = try inflater.processData(compressed)
+``` 
