@@ -1008,14 +1008,24 @@ final class SwiftZlibTests: XCTestCase {
     func testMinimalSmallStringStreamingCompression() throws {
         let original = "Hello!"
         let data = original.data(using: .utf8)!
+        print("Original data bytes: \(data as NSData)")
+        
         let compressor = Compressor()
         try compressor.initialize(level: .defaultCompression)
         let compressed = try compressor.compress(data, flush: .finish)
         print("streaming compressed: \(compressed as NSData)")
+        
+        // Force reset after compression
+        try compressor.reset()
+        
         let decompressor = Decompressor()
         try decompressor.initialize()
         let decompressed = try decompressor.decompress(compressed, flush: .finish)
         print("streaming decompressed bytes: \(decompressed as NSData)")
+        
+        // Force reset after decompression
+        try decompressor.reset()
+        
         let decompressedString = String(data: decompressed, encoding: .utf8)
         print("streaming decompressedString: \(String(describing: decompressedString))")
         XCTAssertNotNil(decompressedString)

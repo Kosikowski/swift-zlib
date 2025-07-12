@@ -1,5 +1,6 @@
 #include "zlib_shim.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
@@ -29,7 +30,26 @@ int swift_deflateInit(z_streamp strm, int level) {
 }
 
 int swift_deflate(z_streamp strm, int flush) {
-    return deflate(strm, flush);
+    // Debug: Print stream state before deflate
+    printf("[C] deflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
+           flush, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
+    
+    // Debug: Print first few bytes of input if available
+    if (strm->avail_in > 0 && strm->next_in) {
+        printf("[C] deflate input (first 8 bytes): ");
+        for (int i = 0; i < 8 && i < strm->avail_in; i++) {
+            printf("%02x ", strm->next_in[i]);
+        }
+        printf("\n");
+    }
+    
+    int result = deflate(strm, flush);
+    
+    // Debug: Print stream state after deflate
+    printf("[C] deflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
+           result, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
+    
+    return result;
 }
 
 int swift_deflateEnd(z_streamp strm) {
@@ -74,7 +94,26 @@ int swift_inflateInit(z_streamp strm) {
 }
 
 int swift_inflate(z_streamp strm, int flush) {
-    return inflate(strm, flush);
+    // Debug: Print stream state before inflate
+    printf("[C] inflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
+           flush, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
+    
+    // Debug: Print first few bytes of input if available
+    if (strm->avail_in > 0 && strm->next_in) {
+        printf("[C] inflate input (first 8 bytes): ");
+        for (int i = 0; i < 8 && i < strm->avail_in; i++) {
+            printf("%02x ", strm->next_in[i]);
+        }
+        printf("\n");
+    }
+    
+    int result = inflate(strm, flush);
+    
+    // Debug: Print stream state after inflate
+    printf("[C] inflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
+           result, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
+    
+    return result;
 }
 
 int swift_inflateEnd(z_streamp strm) {

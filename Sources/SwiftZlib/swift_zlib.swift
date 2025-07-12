@@ -1458,11 +1458,12 @@ public class Compressor {
         let outputBufferSize = 4096
         var outputBuffer = [Bytef](repeating: 0, count: outputBufferSize)
         
+        // Copy input data to ensure it remains valid throughout compression
+        var inputBuffer = [Bytef](input)
+        
         // Set input data
-        input.withUnsafeBytes { inputPtr in
-            stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress!)
-            stream.avail_in = uInt(input.count)
-        }
+        stream.next_in = inputBuffer.withUnsafeMutableBufferPointer { $0.baseAddress }
+        stream.avail_in = uInt(input.count)
         
         // Process all input data
         var result: Int32 = Z_OK
@@ -1487,7 +1488,7 @@ public class Compressor {
                     zlibDebug("Produced \(bytesProcessed) bytes of compressed data")
                 }
             }
-        } while stream.avail_out == 0 && stream.avail_in > 0 // Continue while output buffer is full or input remains
+        } while (flush == .finish ? result != Z_STREAM_END : (stream.avail_in > 0 || stream.avail_out == 0)) // Continue until finish or while input/output remains
         
         logStreamState(stream, operation: "Compression end")
         zlibInfo("Compression completed: \(input.count) -> \(output.count) bytes")
