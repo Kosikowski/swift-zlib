@@ -16,7 +16,7 @@ let package = Package(
                 .headerSearchPath("include")
             ],
             linkerSettings: [
-                .linkedLibrary("z")
+                .unsafeFlags(["-L/usr/lib", "-lz.1.2.12"])
             ]
         ),
 
