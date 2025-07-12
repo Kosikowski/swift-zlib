@@ -762,7 +762,7 @@ public struct ZLib {
                 var bufferMultiplier = 8
                 var retryResult = result
                 
-                while retryResult == Z_BUF_ERROR && bufferMultiplier <= 32 {
+                while retryResult == Z_BUF_ERROR && bufferMultiplier <= 512 {
                     destLen = uLong(data.count * bufferMultiplier)
                     logMemoryUsage("Decompression retry buffer (multiplier: \(bufferMultiplier))", bytes: Int(destLen))
                     decompressedData = Data(count: Int(destLen))
@@ -1888,6 +1888,8 @@ public class StreamingDecompressor {
         let bufferSize = 4096
         var outputBuffer = [Bytef](repeating: 0, count: bufferSize)
         
+        var hasProcessedInput = false
+        
         while result != Z_STREAM_END {
             // Get input data
             guard let inputData = inputProvider() else {
@@ -1895,11 +1897,14 @@ public class StreamingDecompressor {
                 break
             }
             
+            hasProcessedInput = true
+            
+            // Copy input data to ensure pointer remains valid
+            let inputBytes = [Bytef](inputData)
+            
             // Set input
-            inputData.withUnsafeBytes { inputPtr in
-                stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress!)
-                stream.avail_in = uInt(inputData.count)
-            }
+            stream.next_in = UnsafeMutablePointer(mutating: inputBytes)
+            stream.avail_in = uInt(inputBytes.count)
             
             // Process input
             repeat {
@@ -1928,11 +1933,11 @@ public class StreamingDecompressor {
                     throw ZLibError.streamError(result)
                 }
                 
-            } while stream.avail_out == 0 && result != Z_STREAM_END
+            } while stream.avail_out == 0 && stream.avail_in > 0 && result != Z_STREAM_END
         }
         
-        // Finish processing
-        if result == Z_OK {
+        // Finish processing if we have processed input
+        if hasProcessedInput && result == Z_OK {
             repeat {
                 let outputBufferCount = outputBuffer.count
                 result = outputBuffer.withUnsafeMutableBufferPointer { buffer in
@@ -2081,11 +2086,12 @@ public class InflateBackDecompressor {
             
             hasProcessedInput = true
             
+            // Copy input data to ensure pointer remains valid
+            let inputBytes = [Bytef](inputData)
+            
             // Set input
-            inputData.withUnsafeBytes { inputPtr in
-                stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress!)
-                stream.avail_in = uInt(inputData.count)
-            }
+            stream.next_in = UnsafeMutablePointer(mutating: inputBytes)
+            stream.avail_in = uInt(inputBytes.count)
             
             // Process input
             repeat {
