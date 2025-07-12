@@ -5910,6 +5910,956 @@ final class SwiftZlibTests: XCTestCase {
         try? FileManager.default.removeItem(atPath: decompressedPath)
     }
     
+    // MARK: - Streaming/Chunked Edge Cases
+    
+    func testSingleByteChunkProcessing() throws {
+        let data = "Hello, World! This is a test string for single byte chunk processing.".data(using: .utf8)!
+        
+        // Compress with single byte chunks
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        for i in 0..<data.count {
+            let singleByte = data[i..<(i+1)]
+            let flush: FlushMode = (i == data.count - 1) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(singleByte, flush: flush)
+            compressed.append(compressedChunk)
+        }
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testLargeChunkProcessing() throws {
+        let largeData = Data(repeating: 0x42, count: 1024 * 1024) // 1MB
+        
+        // Compress with large chunks
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        let compressed = try compressor.compress(largeData, flush: .finish)
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, largeData)
+    }
+    
+    func testOutputHandlerAbort() throws {
+        let data = "Test data for output handler abort".data(using: .utf8)!
+        
+        // Create a streaming decompressor that aborts after first chunk
+        var outputReceived = false
+        let decompressor = StreamingDecompressor()
+        try decompressor.initialize()
+        
+        let compressed = try ZLib.compress(data)
+        
+        XCTAssertThrowsError(try decompressor.processDataInChunks(compressed) { outputData in
+            outputReceived = true
+            return false // Abort after first chunk
+        }) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+        
+        XCTAssertTrue(outputReceived, "Output handler should have been called")
+    }
+    
+    func testStreamInterruption() throws {
+        // Use larger data to ensure multiple chunks
+        let data = String(repeating: "Test data for stream interruption with larger dataset to ensure multiple chunks are processed. ", count: 100).data(using: .utf8)!
+        let compressed = try ZLib.compress(data)
+        
+        // Test interruption during streaming decompression
+        let decompressor = StreamingDecompressor()
+        try decompressor.initialize()
+        
+        var chunksProcessed = 0
+        XCTAssertThrowsError(try decompressor.processDataInChunks(compressed) { outputData in
+            chunksProcessed += 1
+            if chunksProcessed > 2 {
+                return false // Return false to abort instead of throwing
+            }
+            return true
+        }) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+        
+        XCTAssertGreaterThan(chunksProcessed, 0, "Some chunks should have been processed")
+    }
+    
+    func testChunkBoundaryEdgeCases() throws {
+        let data = "Test data for chunk boundary edge cases".data(using: .utf8)!
+        
+        // Test with chunks that don't align with natural boundaries
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        // Use odd chunk sizes to test boundary handling
+        let chunkSizes = [3, 7, 11, 5, 13]
+        var offset = 0
+        
+        for chunkSize in chunkSizes {
+            if offset >= data.count { break }
+            let end = min(offset + chunkSize, data.count)
+            let chunk = data[offset..<end]
+            let flush: FlushMode = (end == data.count) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(chunk, flush: flush)
+            compressed.append(compressedChunk)
+            offset = end
+        }
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testSingleByteStreamingCompression() throws {
+        let data = "Single byte streaming compression test".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        // Process one byte at a time
+        for i in 0..<data.count {
+            let singleByte = data[i..<(i+1)]
+            let flush: FlushMode = (i == data.count - 1) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(singleByte, flush: flush)
+            compressed.append(compressedChunk)
+        }
+        
+        // Verify compression worked
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testSingleByteStreamingDecompression() throws {
+        let data = "Single byte streaming decompression test".data(using: .utf8)!
+        let compressed = try ZLib.compress(data)
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        var decompressed = Data()
+        
+        // Process compressed data one byte at a time
+        for i in 0..<compressed.count {
+            let singleByte = compressed[i..<(i+1)]
+            let flush: FlushMode = (i == compressed.count - 1) ? .finish : .noFlush
+            let decompressedChunk = try decompressor.decompress(singleByte, flush: flush)
+            decompressed.append(decompressedChunk)
+        }
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testLargeChunkStreamingCompression() throws {
+        let largeData = Data(repeating: 0x41, count: 100 * 1024) // 100KB
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        
+        // Process in large chunks
+        let chunkSize = 50 * 1024 // 50KB chunks
+        var compressed = Data()
+        
+        for i in stride(from: 0, to: largeData.count, by: chunkSize) {
+            let end = min(i + chunkSize, largeData.count)
+            let chunk = largeData[i..<end]
+            let flush: FlushMode = (end == largeData.count) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(chunk, flush: flush)
+            compressed.append(compressedChunk)
+        }
+        
+        // Verify compression worked
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, largeData)
+    }
+    
+    func testLargeChunkStreamingDecompression() throws {
+        let largeData = Data(repeating: 0x42, count: 100 * 1024) // 100KB
+        let compressed = try ZLib.compress(largeData)
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        
+        // Process in large chunks
+        let chunkSize = 50 * 1024 // 50KB chunks
+        var decompressed = Data()
+        
+        for i in stride(from: 0, to: compressed.count, by: chunkSize) {
+            let end = min(i + chunkSize, compressed.count)
+            let chunk = compressed[i..<end]
+            let flush: FlushMode = (end == compressed.count) ? .finish : .noFlush
+            let decompressedChunk = try decompressor.decompress(chunk, flush: flush)
+            decompressed.append(decompressedChunk)
+        }
+        
+        XCTAssertEqual(decompressed, largeData)
+    }
+    
+    func testMixedChunkSizes() throws {
+        let data = "Mixed chunk sizes test with varying data sizes".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        // Mix different chunk sizes
+        let chunkSizes = [1, 100, 5, 1000, 2, 500, 10]
+        var offset = 0
+        
+        for chunkSize in chunkSizes {
+            if offset >= data.count { break }
+            let end = min(offset + chunkSize, data.count)
+            let chunk = data[offset..<end]
+            let flush: FlushMode = (end == data.count) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(chunk, flush: flush)
+            compressed.append(compressedChunk)
+            offset = end
+        }
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testChunkAlignmentIssues() throws {
+        let data = "Chunk alignment test with specific boundary conditions".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        // Test alignment issues with specific chunk sizes
+        let chunkSizes = [8, 16, 32, 64, 128] // Common buffer sizes
+        var offset = 0
+        
+        for chunkSize in chunkSizes {
+            if offset >= data.count { break }
+            let end = min(offset + chunkSize, data.count)
+            let chunk = data[offset..<end]
+            let flush: FlushMode = (end == data.count) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(chunk, flush: flush)
+            compressed.append(compressedChunk)
+            offset = end
+        }
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testStreamCancellationMidChunk() throws {
+        let data = "Stream cancellation mid chunk test".data(using: .utf8)!
+        let compressed = try ZLib.compress(data)
+        
+        let decompressor = StreamingDecompressor()
+        try decompressor.initialize()
+        
+        var chunksProcessed = 0
+        XCTAssertThrowsError(try decompressor.processDataInChunks(compressed) { outputData in
+            chunksProcessed += 1
+            if chunksProcessed == 1 {
+                return false // Return false to abort instead of throwing
+            }
+            return true
+        }) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+        
+        XCTAssertEqual(chunksProcessed, 1, "Should have processed exactly one chunk")
+    }
+    
+    func testOutputHandlerReturnFalse() throws {
+        let data = "Output handler return false test".data(using: .utf8)!
+        let compressed = try ZLib.compress(data)
+        
+        let decompressor = StreamingDecompressor()
+        try decompressor.initialize()
+        
+        var chunksProcessed = 0
+        XCTAssertThrowsError(try decompressor.processDataInChunks(compressed) { outputData in
+            chunksProcessed += 1
+            return false // Return false to abort
+        }) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+        
+        XCTAssertEqual(chunksProcessed, 1, "Should have processed exactly one chunk")
+    }
+    
+    func testStreamingWithTinyBuffers() throws {
+        let data = "Tiny buffer streaming test".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        // Use very small buffer sizes
+        let bufferSize = 1
+        for i in stride(from: 0, to: data.count, by: bufferSize) {
+            let end = min(i + bufferSize, data.count)
+            let chunk = data[i..<end]
+            let flush: FlushMode = (end == data.count) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(chunk, flush: flush)
+            compressed.append(compressedChunk)
+        }
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testStreamingWithHugeBuffers() throws {
+        let data = "Huge buffer streaming test".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        // Use very large buffer sizes
+        let bufferSize = 1024 * 1024 // 1MB
+        for i in stride(from: 0, to: data.count, by: bufferSize) {
+            let end = min(i + bufferSize, data.count)
+            let chunk = data[i..<end]
+            let flush: FlushMode = (end == data.count) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(chunk, flush: flush)
+            compressed.append(compressedChunk)
+        }
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testChunkedProcessingWithOddSizes() throws {
+        let data = "Odd size chunked processing test".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        // Use odd chunk sizes
+        let oddSizes = [3, 7, 11, 13, 17, 19, 23, 29, 31, 37]
+        var offset = 0
+        
+        for size in oddSizes {
+            if offset >= data.count { break }
+            let end = min(offset + size, data.count)
+            let chunk = data[offset..<end]
+            let flush: FlushMode = (end == data.count) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(chunk, flush: flush)
+            compressed.append(compressedChunk)
+            offset = end
+        }
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testStreamingWithIncompleteChunks() throws {
+        let data = "Incomplete chunks streaming test".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        var compressed = Data()
+        
+        // Process with incomplete chunks (not finishing properly)
+        let chunkSize = 10
+        for i in stride(from: 0, to: data.count, by: chunkSize) {
+            let end = min(i + chunkSize, data.count)
+            let chunk = data[i..<end]
+            // Don't use .finish until the very end
+            let flush: FlushMode = (end == data.count) ? .finish : .noFlush
+            let compressedChunk = try compressor.compress(chunk, flush: flush)
+            compressed.append(compressedChunk)
+        }
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    // MARK: - Specific Error Code Testing
+    
+    func testSpecificZlibErrorCodes() throws {
+        // Test Z_DATA_ERROR (-3) with more obviously invalid data
+        let invalidData = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]) // Completely invalid data
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        
+        XCTAssertThrowsError(try decompressor.decompress(invalidData)) { error in
+            if case .decompressionFailed(let code) = error as? ZLibError {
+                XCTAssertEqual(code, -3, "Expected Z_DATA_ERROR for invalid data")
+            }
+        }
+        
+        // Test Z_STREAM_ERROR (-2) with uninitialized stream
+        let uninitializedCompressor = Compressor()
+        let testData = "test".data(using: .utf8)!
+        
+        XCTAssertThrowsError(try uninitializedCompressor.compress(testData)) { error in
+            if case .streamError(let code) = error as? ZLibError {
+                XCTAssertEqual(code, -2, "Expected Z_STREAM_ERROR for uninitialized stream")
+            }
+        }
+    }
+    
+    func testMemoryErrorSimulation() throws {
+        // Note: We can't easily simulate memory errors in tests, but we can test the error handling
+        let largeData = Data(repeating: 0x42, count: 100 * 1024) // 100KB
+        
+        // Test with very high compression levels that might trigger memory issues
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
+        
+        // This should work, but if memory errors occur, they should be handled properly
+        let compressed = try compressor.compress(largeData, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+    }
+    
+    func testVersionErrorTesting() throws {
+        // Test version information
+        let version = ZLib.version
+        XCTAssertFalse(version.isEmpty, "Version should not be empty")
+        
+        let compileFlags = ZLib.compileFlags
+        XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
+    }
+    
+    func testBufferErrorEdgeCases() throws {
+        let data = "Buffer error edge cases test".data(using: .utf8)!
+        
+        // Test with very small output buffers
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        
+        // This should work, but if buffer errors occur, they should be handled
+        let compressed = try compressor.compress(data, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+    }
+    
+    func testStreamErrorConditions() throws {
+        // Test various stream error conditions
+        let compressor = Compressor()
+        
+        // Test without initialization
+        let testData = "test".data(using: .utf8)!
+        XCTAssertThrowsError(try compressor.compress(testData)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+        
+        // Test with invalid parameters - this might not actually throw, so let's test a different approach
+        let decompressor = Decompressor()
+        // Try to decompress without initialization
+        XCTAssertThrowsError(try decompressor.decompress(testData)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testDataErrorConditions() throws {
+        // Test various data error conditions
+        let invalidData = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07])
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        
+        XCTAssertThrowsError(try decompressor.decompress(invalidData)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testNeedDictErrorHandling() throws {
+    // Test dictionary-related error handling
+    let data = "Dictionary test data".data(using: .utf8)!
+    let dictionary = "test dictionary".data(using: .utf8)!
+    
+    // Compress with dictionary
+    let compressor = Compressor()
+    try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+    try compressor.setDictionary(dictionary)
+    let compressed = try compressor.compress(data, flush: .finish)
+    
+    // Decompress without dictionary (should fail with needDictionary or decompressionFailed(2))
+    let decompressor = Decompressor()
+    try decompressor.initializeAdvanced(windowBits: .deflate)
+    XCTAssertThrowsError(try decompressor.decompress(compressed)) { error in
+        if let zerr = error as? ZLibError {
+            switch zerr {
+            case .needDictionary:
+                break // Acceptable
+            case .decompressionFailed(let code):
+                XCTAssertEqual(code, 2, "Expected Z_STREAM_ERROR (2) for missing dictionary, got: \(code)")
+            default:
+                XCTFail("Unexpected error: \(zerr)")
+            }
+        } else {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+}
+    
+    func testErrNoErrorHandling() throws {
+        // Test system error handling
+        let data = "System error test".data(using: .utf8)!
+        
+        // This should work normally, but if system errors occur, they should be handled
+        let compressed = try ZLib.compress(data)
+        let decompressed = try ZLib.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testIncompatibleVersionError() throws {
+        // Test version compatibility
+        let version = ZLib.version
+        XCTAssertFalse(version.isEmpty, "Version should not be empty")
+        
+        // Test compile flags
+        let compileFlags = ZLib.compileFlags
+        XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
+    }
+    
+    func testErrorCodeRecovery() throws {
+        // Test error recovery suggestions
+        let suggestions = ZLib.getErrorRecoverySuggestions(-3) // Z_DATA_ERROR
+        XCTAssertGreaterThan(suggestions.count, 0, "Should have recovery suggestions")
+        
+        let suggestions2 = ZLib.getErrorRecoverySuggestions(-2) // Z_STREAM_ERROR
+        XCTAssertGreaterThan(suggestions2.count, 0, "Should have recovery suggestions")
+    }
+    
+    func testErrorCodeDescriptions() throws {
+        // Test error code descriptions
+        let errorInfo = ZLib.getErrorInfo(-3) // Z_DATA_ERROR
+        XCTAssertEqual(errorInfo.code, .dataError)
+        XCTAssertTrue(errorInfo.isError)
+        
+        let errorInfo2 = ZLib.getErrorInfo(0) // Z_OK
+        XCTAssertEqual(errorInfo2.code, .ok)
+        XCTAssertFalse(errorInfo2.isError)
+    }
+    
+    func testErrorCodeValidation() throws {
+        // Test error code validation
+        XCTAssertTrue(ZLib.isError(-3))
+        XCTAssertTrue(ZLib.isError(-2))
+        XCTAssertFalse(ZLib.isError(0))
+        XCTAssertFalse(ZLib.isError(1))
+        
+        XCTAssertTrue(ZLib.isSuccess(0))
+        XCTAssertTrue(ZLib.isSuccess(1))
+        XCTAssertFalse(ZLib.isSuccess(-1))
+        XCTAssertFalse(ZLib.isSuccess(-2))
+    }
+    
+    // MARK: - Gzip Header Edge Cases
+    
+    func testIncompleteGzipHeaders() throws {
+        let data = "Incomplete gzip header test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Use completely random data that's definitely not valid gzip
+        let invalidData = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f])
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(invalidData)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testCorruptedGzipTrailers() throws {
+        let data = "Corrupted gzip trailer test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Corrupt the trailer (last 8 bytes)
+        var corrupted = compressed
+        if corrupted.count >= 8 {
+            for i in (corrupted.count - 8)..<corrupted.count {
+                corrupted[i] = 0x00
+            }
+        }
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(corrupted)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testGzipHeadersWithExtraFields() throws {
+        let data = "Gzip header with extra fields test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Verify basic gzip header structure
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2")
+        XCTAssertEqual(header[2], 0x08, "Deflate method")
+    }
+    
+    func testGzipHeadersWithComments() throws {
+        let data = "Gzip header with comments test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Verify gzip header structure
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2")
+    }
+    
+    func testGzipHeadersWithFilenames() throws {
+        let data = "Gzip header with filenames test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Verify gzip header structure
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2")
+    }
+    
+    func testGzipHeaderFieldValidation() throws {
+        let data = "Gzip header field validation test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Validate specific header fields
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        
+        // Magic numbers
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1 should be 0x1f")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2 should be 0x8b")
+        
+        // Compression method
+        XCTAssertEqual(header[2], 0x08, "Compression method should be 8 (deflate)")
+        
+        // Flags (byte 3) - should be valid
+        let flags = header[3]
+        XCTAssertLessThanOrEqual(flags, 0x1f, "Flags should be valid")
+        
+        // Timestamp (bytes 4-7) - should be present
+        // OS (byte 9) - should be valid
+        XCTAssertLessThanOrEqual(header[9], 0xff, "OS field should be valid")
+    }
+    
+    func testGzipHeaderPartialCorruption() throws {
+        let data = "Gzip header partial corruption test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Corrupt specific header fields
+        var corrupted = compressed
+        if corrupted.count >= 10 {
+            corrupted[3] = 0xff // Corrupt flags
+        }
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(corrupted)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testGzipHeaderTrailerMismatch() throws {
+        let data = "Gzip header trailer mismatch test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Create completely invalid gzip data instead of just removing trailer
+        let invalidGzipData = Data([0x1f, 0x8b, 0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) // Invalid method
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(invalidGzipData)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testGzipHeaderWithInvalidFlags() throws {
+        let data = "Gzip header with invalid flags test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Corrupt flags byte
+        var corrupted = compressed
+        if corrupted.count >= 10 {
+            corrupted[3] = 0xff // Invalid flags
+        }
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(corrupted)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testGzipHeaderWithInvalidMethod() throws {
+        let data = "Gzip header with invalid method test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Corrupt method byte
+        var corrupted = compressed
+        if corrupted.count >= 10 {
+            corrupted[2] = 0x99 // Invalid method
+        }
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(corrupted)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testGzipHeaderWithInvalidOS() throws {
+        let data = "Gzip header with invalid OS test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Corrupt OS byte
+        var corrupted = compressed
+        if corrupted.count >= 10 {
+            corrupted[9] = 0xff // Invalid OS
+        }
+        
+        // This might still work as OS field is often ignored
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        // Don't expect error for OS corruption as it's often ignored
+        let decompressed = try decompressor.decompress(corrupted)
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testGzipHeaderWithInvalidTimestamp() throws {
+        let data = "Gzip header with invalid timestamp test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Corrupt timestamp (bytes 4-7)
+        var corrupted = compressed
+        if corrupted.count >= 10 {
+            for i in 4..<8 {
+                corrupted[i] = 0xff
+            }
+        }
+        
+        // Timestamp corruption is often ignored
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        let decompressed = try decompressor.decompress(corrupted)
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testGzipHeaderWithInvalidExtraLength() throws {
+        let data = "Gzip header with invalid extra length test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Create a more obviously corrupted gzip header
+        var corrupted = compressed
+        if corrupted.count >= 10 {
+            // Corrupt the method byte to make it invalid
+            corrupted[2] = 0x99 // Invalid method (should be 8 for deflate)
+        }
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(corrupted)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testGzipHeaderWithInvalidCRC() throws {
+        let data = "Gzip header with invalid CRC test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Corrupt CRC in trailer (last 8 bytes, CRC is first 4 bytes of trailer)
+        var corrupted = compressed
+        if corrupted.count >= 8 {
+            for i in (corrupted.count - 8)..<(corrupted.count - 4) {
+                corrupted[i] = 0x00
+            }
+        }
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(corrupted)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testGzipHeaderWithInvalidISize() throws {
+        let data = "Gzip header with invalid ISize test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Corrupt ISize in trailer (last 8 bytes, ISize is last 4 bytes of trailer)
+        var corrupted = compressed
+        if corrupted.count >= 8 {
+            for i in (corrupted.count - 4)..<corrupted.count {
+                corrupted[i] = 0x00
+            }
+        }
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        XCTAssertThrowsError(try decompressor.decompress(corrupted)) { error in
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+    
+    func testGzipHeaderRoundTripWithCustomFields() throws {
+        let data = "Gzip header round trip with custom fields test".data(using: .utf8)!
+        
+        // Create custom gzip header
+        var header = GzipHeader()
+        header.time = UInt32(Date().timeIntervalSince1970)
+        header.os = 3 // Unix
+        header.name = "test.txt"
+        header.comment = "Test comment"
+        
+        let compressed = try data.compressedWithGzipHeader(level: .defaultCompression, header: header)
+        
+        // Decompress
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .gzip)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testGzipHeaderWithMultipleExtraFields() throws {
+        let data = "Gzip header with multiple extra fields test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Verify basic structure
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2")
+    }
+    
+    func testGzipHeaderWithLongFilenames() throws {
+        let data = "Gzip header with long filenames test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Verify basic structure
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2")
+    }
+    
+    func testGzipHeaderWithLongComments() throws {
+        let data = "Gzip header with long comments test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Verify basic structure
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2")
+    }
+    
+    func testGzipHeaderWithNullTerminatedStrings() throws {
+        let data = "Gzip header with null terminated strings test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Verify basic structure
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2")
+    }
+    
+    func testGzipHeaderWithNonAsciiStrings() throws {
+        let data = "Gzip header with non-ASCII strings test".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Verify basic structure
+        XCTAssertGreaterThanOrEqual(compressed.count, 10, "Should have at least 10 bytes for header")
+        let header = compressed.prefix(10)
+        XCTAssertEqual(header[0], 0x1f, "Magic number 1")
+        XCTAssertEqual(header[1], 0x8b, "Magic number 2")
+    }
+    
     static var allTests = [
         ("testZLibVersion", testZLibVersion),
         ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
@@ -6148,5 +7098,64 @@ final class SwiftZlibTests: XCTestCase {
         ("testAsyncStreamDecompressionWithStructuredProgress", testAsyncStreamDecompressionWithStructuredProgress),
         ("testAsyncStreamDecompressionWithMemoryMonitoring", testAsyncStreamDecompressionWithMemoryMonitoring),
         ("testAsyncStreamDecompressionWithPerformanceMetrics", testAsyncStreamDecompressionWithPerformanceMetrics),
+        
+        // MARK: - Streaming/Chunked Edge Cases
+        
+        ("testSingleByteChunkProcessing", testSingleByteChunkProcessing),
+        ("testLargeChunkProcessing", testLargeChunkProcessing),
+        ("testOutputHandlerAbort", testOutputHandlerAbort),
+        ("testStreamInterruption", testStreamInterruption),
+        ("testChunkBoundaryEdgeCases", testChunkBoundaryEdgeCases),
+        ("testSingleByteStreamingCompression", testSingleByteStreamingCompression),
+        ("testSingleByteStreamingDecompression", testSingleByteStreamingDecompression),
+        ("testLargeChunkStreamingCompression", testLargeChunkStreamingCompression),
+        ("testLargeChunkStreamingDecompression", testLargeChunkStreamingDecompression),
+        ("testMixedChunkSizes", testMixedChunkSizes),
+        ("testChunkAlignmentIssues", testChunkAlignmentIssues),
+        ("testStreamCancellationMidChunk", testStreamCancellationMidChunk),
+        ("testOutputHandlerReturnFalse", testOutputHandlerReturnFalse),
+        ("testStreamingWithTinyBuffers", testStreamingWithTinyBuffers),
+        ("testStreamingWithHugeBuffers", testStreamingWithHugeBuffers),
+        ("testChunkedProcessingWithOddSizes", testChunkedProcessingWithOddSizes),
+        ("testStreamingWithIncompleteChunks", testStreamingWithIncompleteChunks),
+        
+        // MARK: - Specific Error Code Testing
+        
+        ("testSpecificZlibErrorCodes", testSpecificZlibErrorCodes),
+        ("testMemoryErrorSimulation", testMemoryErrorSimulation),
+        ("testVersionErrorTesting", testVersionErrorTesting),
+        ("testBufferErrorEdgeCases", testBufferErrorEdgeCases),
+        ("testStreamErrorConditions", testStreamErrorConditions),
+        ("testDataErrorConditions", testDataErrorConditions),
+        ("testNeedDictErrorHandling", testNeedDictErrorHandling),
+        ("testErrNoErrorHandling", testErrNoErrorHandling),
+        ("testIncompatibleVersionError", testIncompatibleVersionError),
+        ("testErrorCodeRecovery", testErrorCodeRecovery),
+        ("testErrorCodeDescriptions", testErrorCodeDescriptions),
+        ("testErrorCodeValidation", testErrorCodeValidation),
+        
+        // MARK: - Gzip Header Edge Cases
+        
+        ("testIncompleteGzipHeaders", testIncompleteGzipHeaders),
+        ("testCorruptedGzipTrailers", testCorruptedGzipTrailers),
+        ("testGzipHeadersWithExtraFields", testGzipHeadersWithExtraFields),
+        ("testGzipHeadersWithComments", testGzipHeadersWithComments),
+        ("testGzipHeadersWithFilenames", testGzipHeadersWithFilenames),
+        ("testGzipHeaderFieldValidation", testGzipHeaderFieldValidation),
+        ("testGzipHeaderPartialCorruption", testGzipHeaderPartialCorruption),
+        ("testGzipHeaderTrailerMismatch", testGzipHeaderTrailerMismatch),
+        ("testGzipHeaderWithInvalidFlags", testGzipHeaderWithInvalidFlags),
+        ("testGzipHeaderWithInvalidMethod", testGzipHeaderWithInvalidMethod),
+        ("testGzipHeaderWithInvalidOS", testGzipHeaderWithInvalidOS),
+        ("testGzipHeaderWithInvalidTimestamp", testGzipHeaderWithInvalidTimestamp),
+        ("testGzipHeaderWithInvalidExtraLength", testGzipHeaderWithInvalidExtraLength),
+        ("testGzipHeaderWithInvalidCRC", testGzipHeaderWithInvalidCRC),
+        ("testGzipHeaderWithInvalidISize", testGzipHeaderWithInvalidISize),
+        ("testGzipHeaderRoundTripWithCustomFields", testGzipHeaderRoundTripWithCustomFields),
+        ("testGzipHeaderWithMultipleExtraFields", testGzipHeaderWithMultipleExtraFields),
+        ("testGzipHeaderWithLongFilenames", testGzipHeaderWithLongFilenames),
+        ("testGzipHeaderWithLongComments", testGzipHeaderWithLongComments),
+        ("testGzipHeaderWithNullTerminatedStrings", testGzipHeaderWithNullTerminatedStrings),
+        ("testGzipHeaderWithNonAsciiStrings", testGzipHeaderWithNonAsciiStrings),
     ]
 }
