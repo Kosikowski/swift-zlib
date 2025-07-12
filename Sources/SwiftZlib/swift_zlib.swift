@@ -1770,9 +1770,10 @@ public class Decompressor {
     /// - Parameters:
     ///   - input: Input compressed data chunk
     ///   - flush: Flush mode
+    ///   - dictionary: Optional dictionary for decompression
     /// - Returns: Decompressed data chunk
     /// - Throws: ZLibError if decompression fails
-    public func decompress(_ input: Data, flush: FlushMode = .noFlush) throws -> Data {
+    public func decompress(_ input: Data, flush: FlushMode = .noFlush, dictionary: Data? = nil) throws -> Data {
         guard isInitialized else {
             zlibError("Decompressor not initialized")
             throw ZLibError.streamError(Z_STREAM_ERROR)
@@ -1783,6 +1784,7 @@ public class Decompressor {
         
         var output = Data()
         var outputBuffer = Data(count: 1024) // 1KB chunks
+        var dictWasSet = false
         
         // Set input data
         try input.withUnsafeBytes { inputPtr in
@@ -1795,28 +1797,37 @@ public class Decompressor {
             repeat {
                 iteration += 1
                 zlibDebug("Decompression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
-                
                 let outputBufferCount = outputBuffer.count
                 result = try outputBuffer.withUnsafeMutableBytes { outputPtr -> Int32 in
                     stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
                     stream.avail_out = uInt(outputBufferCount)
-                    
                     let inflateResult = swift_inflate(&stream, flush.zlibFlush)
-                    if inflateResult == Z_STREAM_ERROR {
-                        zlibError("Decompression failed with Z_STREAM_ERROR")
-                        throw ZLibError.streamError(inflateResult)
+                    if inflateResult == Z_NEED_DICT {
+                        if let dict = dictionary, !dictWasSet {
+                            try setDictionary(dict)
+                            dictWasSet = true
+                            // Do not return here; let the loop continue and call inflate again
+                            return Z_OK
+                        } else {
+                            throw ZLibError.decompressionFailed(Z_NEED_DICT)
+                        }
                     }
-                    
+                    if inflateResult != Z_OK && inflateResult != Z_STREAM_END && inflateResult != Z_BUF_ERROR {
+                        zlibError("Decompression failed with error code: \(inflateResult)")
+                        throw ZLibError.decompressionFailed(inflateResult)
+                    }
                     let bytesProcessed = outputBufferCount - Int(stream.avail_out)
                     if bytesProcessed > 0 {
                         let temp = Data(bytes: outputPtr.baseAddress!, count: bytesProcessed)
                         output.append(temp)
                         zlibDebug("Produced \(bytesProcessed) bytes of decompressed data")
                     }
-                    
                     return inflateResult
                 }
-            } while stream.avail_out == 0 && stream.avail_in > 0 && result != Z_STREAM_END // Continue while output buffer is full or input remains or until stream ends
+                if dictWasSet {
+                    dictWasSet = false // Only allow one extra pass after setting dictionary
+                }
+            } while result != Z_STREAM_END && (stream.avail_in > 0 || stream.avail_out == 0 || dictWasSet)
         }
         
         logStreamState(stream, operation: "Decompression end")
