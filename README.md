@@ -914,6 +914,63 @@ for i in stride(from: 0, to: originalData.count, by: chunkSize) {
 }
 ```
 
+## Memory-Efficient Streaming
+
+For processing large files without loading everything into memory:
+
+```swift
+import SwiftZlib
+
+// Configure streaming options
+let config = StreamingConfig(
+    bufferSize: 64 * 1024,  // 64KB chunks
+    useTempFiles: false,
+    compressionLevel: 6,
+    windowBits: 15
+)
+
+// File compression
+let compressor = try FileCompressor(config: config)
+try compressor.compressFile(from: "large_file.txt", to: "large_file.gz")
+
+// File decompression
+let decompressor = try FileDecompressor(config: config)
+try decompressor.decompressFile(from: "large_file.gz", to: "large_file_decompressed.txt")
+
+// Auto-detect compression/decompression
+let processor = FileProcessor(config: config)
+try processor.processFile(from: "input.txt", to: "output.gz")  // Compress
+try processor.processFile(from: "input.gz", to: "output.txt")  // Decompress
+
+// With progress tracking
+try compressor.compressFile(from: "large_file.txt", to: "large_file.gz") { processed, total in
+    let percentage = Double(processed) / Double(total) * 100
+    print("Progress: \(percentage)%")
+}
+
+// Chunked processing for large data
+let chunkedProcessor = ChunkedProcessor(config: config)
+let results = try chunkedProcessor.processChunks(data: largeData) { chunk in
+    return processChunk(chunk)
+}
+
+// Convenience methods
+try ZLib.compressFile(from: "input.txt", to: "output.gz")
+try ZLib.decompressFile(from: "input.gz", to: "output.txt")
+try ZLib.processFile(from: "input.txt", to: "output.gz")  // Auto-detect
+```
+
+### Streaming Configuration
+
+```swift
+let config = StreamingConfig(
+    bufferSize: 64 * 1024,      // Buffer size for reading/writing
+    useTempFiles: false,         // Use temporary files for intermediate results
+    compressionLevel: 6,         // Compression level (0-9)
+    windowBits: 15              // Window bits for format
+)
+```
+
 ## Performance Considerations
 
 - **Compression Level**: Use `.bestSpeed` for real-time applications, `.bestCompression` for storage

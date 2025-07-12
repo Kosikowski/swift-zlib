@@ -4216,6 +4216,239 @@ final class SwiftZlibTests: XCTestCase {
         XCTAssertNotEqual(resetCompressed.count, 0)
     }
     
+    // MARK: - Memory-Efficient Streaming Tests
+    
+    func testFileCompression() throws {
+        let testData = "Hello, World! This is a test file for compression.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_source.txt"
+        let destPath = "/tmp/test_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Compress file
+        let config = StreamingConfig(bufferSize: 1024, compressionLevel: 6)
+        let compressor = FileCompressor(config: config)
+        try compressor.compressFile(from: sourcePath, to: destPath)
+        
+        // Verify compressed file exists and is non-empty
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        // Decompress and check round-trip
+        let decompressed = try ZLib.decompress(compressedData)
+        XCTAssertEqual(decompressed, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+    }
+    
+    func testFileDecompression() throws {
+        let testData = "Hello, World! This is a test file for decompression.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_source.txt"
+        let compressedPath = "/tmp/test_compressed.gz"
+        let decompressedPath = "/tmp/test_decompressed.txt"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Compress file
+        let compressor = try FileCompressor()
+        try compressor.compressFile(from: sourcePath, to: compressedPath)
+        
+        // Decompress file
+        let decompressor = try FileDecompressor()
+        try decompressor.decompressFile(from: compressedPath, to: decompressedPath)
+        
+        // Verify decompressed data matches original
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: compressedPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileProcessor() throws {
+        let testData = "Hello, World! This is a test file for processing.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_source.txt"
+        let processedPath = "/tmp/test_processed.gz"
+        let decompressedPath = "/tmp/test_decompressed.txt"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Process file (should compress)
+        let processor = FileProcessor()
+        try processor.processFile(from: sourcePath, to: processedPath)
+        
+        // Verify compressed file exists
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: processedPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        
+        // Process compressed file (should decompress)
+        try processor.processFile(from: processedPath, to: decompressedPath)
+        
+        // Verify decompressed data matches original
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: processedPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileCompressionWithProgress() throws {
+        let testData = String(repeating: "Hello, World! ", count: 1000).data(using: .utf8)!
+        let sourcePath = "/tmp/test_source_large.txt"
+        let destPath = "/tmp/test_compressed_large.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        var progressCalls = 0
+        var lastProgress = 0
+        
+        // Compress file with progress
+        let compressor = try FileCompressor()
+        try compressor.compressFile(from: sourcePath, to: destPath) { processed, total in
+            progressCalls += 1
+            lastProgress = processed
+            XCTAssertGreaterThanOrEqual(processed, 0)
+            XCTAssertLessThanOrEqual(processed, total)
+        }
+        
+        // Verify progress was called
+        XCTAssertGreaterThan(progressCalls, 0)
+        XCTAssertGreaterThan(lastProgress, 0)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+    }
+    
+    func testChunkedProcessor() throws {
+        let testData = "Hello, World! This is test data for chunked processing.".data(using: .utf8)!
+        let config = StreamingConfig(bufferSize: 10)
+        let processor = ChunkedProcessor(config: config)
+        
+        // Process data in chunks
+        let results = try processor.processChunks(data: testData) { chunk in
+            return chunk.count
+        }
+        
+        // Verify chunks were processed
+        XCTAssertGreaterThan(results.count, 0)
+        XCTAssertEqual(results.reduce(0, +), testData.count)
+    }
+    
+    func testStreamingProcessor() throws {
+        let testData = "Hello, World! This is test data for streaming processing.".data(using: .utf8)!
+        let config = StreamingConfig(bufferSize: 10)
+        let processor = ChunkedProcessor(config: config)
+        
+        // Process data with streaming
+        let results = try processor.processStreaming(data: testData) { chunk, isLast in
+            return (chunk.count, isLast)
+        }
+        
+        // Verify streaming was processed
+        XCTAssertGreaterThan(results.count, 0)
+        XCTAssertTrue(results.last?.1 == true) // Last chunk should be marked as last
+    }
+    
+    func testConvenienceFileMethods() throws {
+        let testData = "Hello, World! This is a test for convenience methods.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_convenience.txt"
+        let compressedPath = "/tmp/test_convenience.gz"
+        let decompressedPath = "/tmp/test_convenience_decompressed.txt"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Test convenience compression
+        try ZLib.compressFile(from: sourcePath, to: compressedPath)
+        
+        // Test convenience decompression
+        try ZLib.decompressFile(from: compressedPath, to: decompressedPath)
+        
+        // Verify result
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: compressedPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileCompressionToMemory() throws {
+        let testData = "Hello, World! This is a test for memory compression.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_memory.txt"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Compress file to memory
+        let compressor = FileCompressor()
+        let compressedData = try compressor.compressFileToMemory(from: sourcePath)
+        
+        // Verify compressed data is non-empty and decompresses to original
+        XCTAssertFalse(compressedData.isEmpty)
+        let decompressed = try ZLib.decompress(compressedData)
+        XCTAssertEqual(decompressed, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+    }
+    
+    func testFileDecompressionToMemory() throws {
+        let testData = "Hello, World! This is a test for memory decompression.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_memory.txt"
+        let compressedPath = "/tmp/test_memory.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Compress file
+        let compressor = FileCompressor()
+        try compressor.compressFile(from: sourcePath, to: compressedPath)
+        
+        // Decompress file to memory
+        let decompressor = FileDecompressor()
+        let decompressedData = try decompressor.decompressFileToMemory(from: compressedPath)
+        
+        // Verify decompressed data
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: compressedPath)
+    }
+    
+    func testStreamingConfig() throws {
+        let config = StreamingConfig(
+            bufferSize: 8192,
+            useTempFiles: true,
+            compressionLevel: 9,
+            windowBits: 31
+        )
+        
+        XCTAssertEqual(config.bufferSize, 8192)
+        XCTAssertTrue(config.useTempFiles)
+        XCTAssertEqual(config.compressionLevel, 9)
+        XCTAssertEqual(config.windowBits, 31)
+        
+        // Test default config
+        let defaultConfig = StreamingConfig()
+        XCTAssertEqual(defaultConfig.bufferSize, 64 * 1024)
+        XCTAssertFalse(defaultConfig.useTempFiles)
+        XCTAssertEqual(defaultConfig.compressionLevel, 6)
+        XCTAssertEqual(defaultConfig.windowBits, 15)
+    }
+    
     static var allTests = [
         ("testZLibVersion", testZLibVersion),
         ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
@@ -4403,5 +4636,15 @@ final class SwiftZlibTests: XCTestCase {
         ("testConfigurationBasedAPI", testConfigurationBasedAPI),
         ("testUnifiedStreamingAPI", testUnifiedStreamingAPI),
         ("testAsyncAwaitSupport", testAsyncAwaitSupport),
+        ("testFileCompression", testFileCompression),
+        ("testFileDecompression", testFileDecompression),
+        ("testFileProcessor", testFileProcessor),
+        ("testFileCompressionWithProgress", testFileCompressionWithProgress),
+        ("testChunkedProcessor", testChunkedProcessor),
+        ("testStreamingProcessor", testStreamingProcessor),
+        ("testConvenienceFileMethods", testConvenienceFileMethods),
+        ("testFileCompressionToMemory", testFileCompressionToMemory),
+        ("testFileDecompressionToMemory", testFileDecompressionToMemory),
+        ("testStreamingConfig", testStreamingConfig),
     ]
 }

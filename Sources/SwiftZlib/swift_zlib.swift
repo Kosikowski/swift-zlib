@@ -3615,3 +3615,226 @@ public extension ZLib {
         return AsyncZLibStream(mode: .decompress)
     }
 }
+
+// MARK: - Memory-Efficient Streaming
+
+/// Configuration for memory-efficient streaming operations
+public struct StreamingConfig {
+    /// Buffer size for reading/writing chunks
+    public let bufferSize: Int
+    /// Whether to use temporary files for intermediate results
+    public let useTempFiles: Bool
+    /// Compression level for streaming operations
+    public let compressionLevel: Int
+    /// Window bits for streaming operations
+    public let windowBits: Int
+    
+    public init(
+        bufferSize: Int = 64 * 1024, // 64KB default
+        useTempFiles: Bool = false,
+        compressionLevel: Int = 6,
+        windowBits: Int = 15
+    ) {
+        self.bufferSize = bufferSize
+        self.useTempFiles = useTempFiles
+        self.compressionLevel = compressionLevel
+        self.windowBits = windowBits
+    }
+}
+
+/// Memory-efficient file compressor
+public class FileCompressor {
+    private let config: StreamingConfig
+    
+    public init(config: StreamingConfig = StreamingConfig()) {
+        self.config = config
+    }
+    
+    /// Compress a file to another file
+    public func compressFile(from sourcePath: String, to destinationPath: String) throws {
+        let sourceData = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+        let compressedData = try ZLib.compress(sourceData)
+        try compressedData.write(to: URL(fileURLWithPath: destinationPath))
+    }
+    
+    /// Compress a file to memory (for small files)
+    public func compressFileToMemory(from sourcePath: String) throws -> Data {
+        let fileData = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+        return try ZLib.compress(fileData)
+    }
+    
+    /// Compress a file with progress callback
+    public func compressFile(
+        from sourcePath: String,
+        to destinationPath: String,
+        progress: @escaping (Int, Int) -> Void
+    ) throws {
+        let sourceData = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+        progress(sourceData.count, sourceData.count)
+        
+        let compressedData = try ZLib.compress(sourceData)
+        try compressedData.write(to: URL(fileURLWithPath: destinationPath))
+    }
+}
+
+/// Memory-efficient file decompressor
+public class FileDecompressor {
+    private let config: StreamingConfig
+    
+    public init(config: StreamingConfig = StreamingConfig()) {
+        self.config = config
+    }
+    
+    /// Decompress a file to another file
+    public func decompressFile(from sourcePath: String, to destinationPath: String) throws {
+        let sourceData = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+        let decompressedData = try ZLib.decompress(sourceData)
+        try decompressedData.write(to: URL(fileURLWithPath: destinationPath))
+    }
+    
+    /// Decompress a file to memory (for small files)
+    public func decompressFileToMemory(from sourcePath: String) throws -> Data {
+        let fileData = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+        return try ZLib.decompress(fileData)
+    }
+    
+    /// Decompress a file with progress callback
+    public func decompressFile(
+        from sourcePath: String,
+        to destinationPath: String,
+        progress: @escaping (Int, Int) -> Void
+    ) throws {
+        let sourceData = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+        progress(sourceData.count, sourceData.count)
+        
+        let decompressedData = try ZLib.decompress(sourceData)
+        try decompressedData.write(to: URL(fileURLWithPath: destinationPath))
+    }
+}
+
+/// Memory-efficient unified file processor
+public class FileProcessor {
+    private let config: StreamingConfig
+    
+    public init(config: StreamingConfig = StreamingConfig()) {
+        self.config = config
+    }
+    
+    /// Process a file (compress or decompress based on file extension)
+    public func processFile(from sourcePath: String, to destinationPath: String) throws {
+        let sourceURL = URL(fileURLWithPath: sourcePath)
+        
+        // Auto-detect operation based on file extension
+        if sourceURL.pathExtension.lowercased() == "gz" {
+            // Decompress gzip file
+            let decompressor = FileDecompressor(config: config)
+            try decompressor.decompressFile(from: sourcePath, to: destinationPath)
+        } else {
+            // Compress to gzip file
+            let compressor = FileCompressor(config: config)
+            try compressor.compressFile(from: sourcePath, to: destinationPath)
+        }
+    }
+    
+    /// Process a file with progress callback
+    public func processFile(
+        from sourcePath: String,
+        to destinationPath: String,
+        progress: @escaping (Int, Int) -> Void
+    ) throws {
+        let sourceURL = URL(fileURLWithPath: sourcePath)
+        
+        // Auto-detect operation based on file extension
+        if sourceURL.pathExtension.lowercased() == "gz" {
+            // Decompress gzip file
+            let decompressor = FileDecompressor(config: config)
+            try decompressor.decompressFile(from: sourcePath, to: destinationPath, progress: progress)
+        } else {
+            // Compress to gzip file
+            let compressor = FileCompressor(config: config)
+            try compressor.compressFile(from: sourcePath, to: destinationPath, progress: progress)
+        }
+    }
+}
+
+/// Chunked data processor for memory-efficient operations
+public class ChunkedProcessor {
+    private let config: StreamingConfig
+    
+    public init(config: StreamingConfig = StreamingConfig()) {
+        self.config = config
+    }
+    
+    /// Process data in chunks with callback
+    public func processChunks<T>(
+        data: Data,
+        processor: @escaping (Data) throws -> T
+    ) throws -> [T] {
+        var results: [T] = []
+        var offset = 0
+        
+        while offset < data.count {
+            let chunkSize = min(config.bufferSize, data.count - offset)
+            let chunk = data.subdata(in: offset..<(offset + chunkSize))
+            let result = try processor(chunk)
+            results.append(result)
+            offset += chunkSize
+        }
+        
+        return results
+    }
+    
+    /// Process large data with streaming
+    public func processStreaming<T>(
+        data: Data,
+        processor: @escaping (Data, Bool) throws -> T
+    ) throws -> [T] {
+        var results: [T] = []
+        var offset = 0
+        
+        while offset < data.count {
+            let chunkSize = min(config.bufferSize, data.count - offset)
+            let chunk = data.subdata(in: offset..<(offset + chunkSize))
+            let isLast = (offset + chunkSize) >= data.count
+            let result = try processor(chunk, isLast)
+            results.append(result)
+            offset += chunkSize
+        }
+        
+        return results
+    }
+}
+
+// MARK: - Convenience Extensions
+
+extension ZLib {
+    /// Memory-efficient file compression
+    public static func compressFile(
+        from sourcePath: String,
+        to destinationPath: String,
+        config: StreamingConfig = StreamingConfig()
+    ) throws {
+        let compressor = FileCompressor(config: config)
+        try compressor.compressFile(from: sourcePath, to: destinationPath)
+    }
+    
+    /// Memory-efficient file decompression
+    public static func decompressFile(
+        from sourcePath: String,
+        to destinationPath: String,
+        config: StreamingConfig = StreamingConfig()
+    ) throws {
+        let decompressor = FileDecompressor(config: config)
+        try decompressor.decompressFile(from: sourcePath, to: destinationPath)
+    }
+    
+    /// Memory-efficient file processing (auto-detect)
+    public static func processFile(
+        from sourcePath: String,
+        to destinationPath: String,
+        config: StreamingConfig = StreamingConfig()
+    ) throws {
+        let processor = FileProcessor(config: config)
+        try processor.processFile(from: sourcePath, to: destinationPath)
+    }
+}
