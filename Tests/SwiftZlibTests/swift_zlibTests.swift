@@ -3071,7 +3071,7 @@ final class SwiftZlibTests: XCTestCase {
         let windowBits: [WindowBits] = [.raw, .gzip, .deflate] // Only valid for compression
         let queue = DispatchQueue(label: "test.concurrent.window.bits", attributes: .concurrent)
         let group = DispatchGroup()
-        var results: [Data] = []
+        var results: [(windowBits: WindowBits, compressed: Data)] = []
         let lock = NSLock()
 
         for bits in windowBits {
@@ -3085,7 +3085,7 @@ final class SwiftZlibTests: XCTestCase {
                     fullCompressed.append(final)
 
                     lock.lock()
-                    results.append(fullCompressed)
+                    results.append((bits, fullCompressed))
                     lock.unlock()
                 } catch {
                     XCTFail("Concurrent compression with windowBits \(bits) failed: \(error)")
@@ -3096,9 +3096,8 @@ final class SwiftZlibTests: XCTestCase {
         group.wait()
         XCTAssertEqual(results.count, windowBits.count)
 
-        // Verify all compressed data can be decompressed
-        for (i, compressed) in results.enumerated() {
-            let bits = windowBits[i]
+        // Verify all compressed data can be decompressed with the correct windowBits
+        for (bits, compressed) in results {
             let decompressor = Decompressor()
             try decompressor.initializeAdvanced(windowBits: bits)
             let decompressed = try decompressor.decompress(compressed)
