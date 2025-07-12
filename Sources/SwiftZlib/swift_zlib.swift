@@ -738,6 +738,14 @@ public struct ZLib {
     public static func decompress(_ data: Data) throws -> Data {
         zlibInfo("Starting decompression: \(data.count) bytes")
         
+        // For very large data (>1MB), use streaming to avoid memory issues
+        if data.count > 1_000_000 {
+            zlibDebug("Large data detected, using streaming decompression")
+            let decompressor = Decompressor()
+            try decompressor.initialize()
+            return try decompressor.decompress(data)
+        }
+        
         return try withTiming("Decompression") {
             // For decompression, we need to estimate the output size
             // Start with a reasonable guess and grow if needed
@@ -762,7 +770,10 @@ public struct ZLib {
                 var bufferMultiplier = 8
                 var retryResult = result
                 
-                while retryResult == Z_BUF_ERROR && bufferMultiplier <= 512 {
+                // For very large data, use more reasonable limits
+                let maxMultiplier = data.count > 1_000_000 ? 64 : 512
+                
+                while retryResult == Z_BUF_ERROR && bufferMultiplier <= maxMultiplier {
                     destLen = uLong(data.count * bufferMultiplier)
                     logMemoryUsage("Decompression retry buffer (multiplier: \(bufferMultiplier))", bytes: Int(destLen))
                     decompressedData = Data(count: Int(destLen))

@@ -3320,6 +3320,72 @@ final class SwiftZlibTests: XCTestCase {
         }
     }
     
+    // MARK: - Performance and Memory Usage Tests
+    func testPerformanceAndMemoryUsage() throws {
+        let largeData = Data(repeating: 0xAB, count: 10_000_000) // 10MB - realistic large file size
+        let startCompress = CFAbsoluteTimeGetCurrent()
+        let compressed = try ZLib.compress(largeData, level: .bestCompression)
+        let compressTime = CFAbsoluteTimeGetCurrent() - startCompress
+        print("Compression time for 10MB: \(compressTime)s, ratio: \(Double(compressed.count) / Double(largeData.count))")
+
+        let startDecompress = CFAbsoluteTimeGetCurrent()
+        // Use streaming decompression for large data to avoid buffer size issues
+        let decompressor = Decompressor()
+        try decompressor.initialize()
+        let decompressed = try decompressor.decompress(compressed)
+        let decompressTime = CFAbsoluteTimeGetCurrent() - startDecompress
+        print("Decompression time for 10MB: \(decompressTime)s")
+
+        XCTAssertEqual(decompressed, largeData)
+        // Realistic time limits for 10MB
+        XCTAssertLessThan(compressTime, 5.0, "Compression took too long")
+        XCTAssertLessThan(decompressTime, 3.0, "Decompression took too long")
+    }
+
+    // MARK: - API Misuse Tests
+    func testAPIMisuse_NilAndEmpty() throws {
+        // Empty data should not crash and should round-trip
+        let empty = Data()
+        let compressed = try ZLib.compress(empty)
+        let decompressed = try ZLib.decompress(compressed)
+        XCTAssertEqual(decompressed, empty)
+
+        // String extension with empty string
+        let emptyString = ""
+        let compressedString = try emptyString.compressed()
+        let decompressedString = try String.decompressed(from: compressedString)
+        XCTAssertEqual(decompressedString, emptyString)
+    }
+
+    func testAPIMisuse_InvalidParameters() throws {
+        let data = "test".data(using: .utf8)!
+        let compressor = Compressor()
+        // Not initialized
+        XCTAssertThrowsError(try compressor.compress(data))
+        // Invalid flush mode (simulate by passing an invalid enum raw value if possible)
+        // Not possible directly, but can try decompressing with wrong windowBits
+        let compressed = try ZLib.compress(data)
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .raw)
+        XCTAssertThrowsError(try decompressor.decompress(compressed))
+    }
+
+    func testAPIMisuse_DictionaryMisuse() throws {
+        let dict = "dict".data(using: .utf8)!
+        let compressor = Compressor()
+        // Set dictionary before init
+        XCTAssertThrowsError(try compressor.setDictionary(dict))
+        try compressor.initialize(level: .defaultCompression)
+        // Set dictionary after init (should succeed)
+        XCTAssertNoThrow(try compressor.setDictionary(dict))
+        // Decompressor: set dictionary before init
+        let decompressor = Decompressor()
+        XCTAssertThrowsError(try decompressor.setDictionary(dict))
+        try decompressor.initialize()
+        // Set dictionary before Z_NEED_DICT (should fail)
+        XCTAssertThrowsError(try decompressor.setDictionary(dict))
+    }
+    
     static var allTests = [
         ("testZLibVersion", testZLibVersion),
         ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
@@ -3480,5 +3546,9 @@ final class SwiftZlibTests: XCTestCase {
         ("testConcurrentMemoryPressure", testConcurrentMemoryPressure),
         ("testConcurrentStressTest", testConcurrentStressTest),
         ("testThreadSafetyOfAPI", testThreadSafetyOfAPI),
+        ("testPerformanceAndMemoryUsage", testPerformanceAndMemoryUsage),
+        ("testAPIMisuse_NilAndEmpty", testAPIMisuse_NilAndEmpty),
+        ("testAPIMisuse_InvalidParameters", testAPIMisuse_InvalidParameters),
+        ("testAPIMisuse_DictionaryMisuse", testAPIMisuse_DictionaryMisuse),
     ]
 }
