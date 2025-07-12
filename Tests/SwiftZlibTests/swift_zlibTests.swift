@@ -2393,15 +2393,15 @@ final class SwiftZlibTests: XCTestCase {
         let data = "Streaming with dictionary test data".data(using: .utf8)!
         let dictionary = "streaming dictionary".data(using: .utf8)!
 
-        // Compress with dictionary
-        let compressor = Compressor()
         do {
-            try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+            // Compress with dictionary
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .raw)
             try compressor.setDictionary(dictionary)
             let compressedWithDict = try compressor.compress(data, flush: .finish)
 
             let decompressor = Decompressor()
-            try decompressor.initializeAdvanced(windowBits: .deflate)
+            try decompressor.initializeAdvanced(windowBits: .raw)
 
             // This should fail because we're trying to decompress data that was compressed with a dictionary
             do {
@@ -2420,10 +2420,12 @@ final class SwiftZlibTests: XCTestCase {
                 XCTFail("Unexpected error type: \(error)")
             }
 
-            // Now try with correct dictionary
-            try decompressor.setDictionary(dictionary)
-            let decompressed = try decompressor.decompress(compressedWithDict)
-            XCTAssertEqual(decompressed, data)
+            // Now try with correct dictionary - create a fresh decompressor
+                let decompressor2 = Decompressor()
+                try decompressor2.initializeAdvanced(windowBits: .raw)
+                try decompressor2.setDictionary(dictionary)
+                let decompressed = try decompressor2.decompress(compressedWithDict)
+                XCTAssertEqual(decompressed, data)
         } catch {
             XCTFail("Unexpected error thrown in setup or test: \(error)")
         }

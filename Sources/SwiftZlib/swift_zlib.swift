@@ -1936,7 +1936,9 @@ public class Decompressor {
     /// - Parameter dictionary: Dictionary data
     /// - Throws: ZLibError if dictionary setting fails
     public func setDictionary(_ dictionary: Data) throws {
+        zlibDebug("[Decompressor.setDictionary] Called with dictionary of size: \(dictionary.count)")
         guard isInitialized else {
+            zlibError("[Decompressor.setDictionary] Not initialized!")
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
         
@@ -1947,7 +1949,9 @@ public class Decompressor {
                 uInt(dictionary.count)
             )
         }
+        zlibDebug("[Decompressor.setDictionary] swift_inflateSetDictionary returned: \(result)")
         guard result == Z_OK else {
+            zlibError("[Decompressor.setDictionary] Throwing error: \(result)")
             throw ZLibError.decompressionFailed(result)
         }
     }
@@ -2135,7 +2139,9 @@ public class Decompressor {
     /// - Returns: Decompressed data chunk
     /// - Throws: ZLibError if decompression fails
     public func decompress(_ input: Data, flush: FlushMode = .noFlush, dictionary: Data? = nil) throws -> Data {
+        zlibDebug("[Decompressor.decompress] Called with input size: \(input.count), flush: \(flush), dictionary: \(dictionary?.count ?? 0)")
         guard isInitialized else {
+            zlibError("[Decompressor.decompress] Not initialized!")
             zlibError("Decompressor not initialized")
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
@@ -2155,36 +2161,41 @@ public class Decompressor {
             // Process all input data
             var result: Int32 = Z_OK
             var iteration = 0
-            repeat {
-                iteration += 1
-                zlibDebug("Decompression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
-                let outputBufferCount = outputBuffer.count
-                result = try outputBuffer.withUnsafeMutableBytes { outputPtr -> Int32 in
-                    stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
-                    stream.avail_out = uInt(outputBufferCount)
-                    let inflateResult = swift_inflate(&stream, flush.zlibFlush)
-                    if inflateResult == Z_NEED_DICT {
-                        if let dict = dictionary, !dictWasSet {
-                            try setDictionary(dict)
-                            dictWasSet = true
-                            // Do not return here; let the loop continue and call inflate again
-                            return Z_OK
-                        } else {
-                            throw ZLibError.decompressionFailed(Z_NEED_DICT)
+                            repeat {
+                    iteration += 1
+                    zlibDebug("[Decompressor.decompress] Iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
+                    let outputBufferCount = outputBuffer.count
+                    result = try outputBuffer.withUnsafeMutableBytes { outputPtr -> Int32 in
+                        stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
+                        stream.avail_out = uInt(outputBufferCount)
+                        let inflateResult = swift_inflate(&stream, flush.zlibFlush)
+                        zlibDebug("[Decompressor.decompress] swift_inflate returned: \(inflateResult)")
+                        if inflateResult == Z_NEED_DICT {
+                            if let dict = dictionary, !dictWasSet {
+                                zlibInfo("[Decompressor.decompress] Z_NEED_DICT, setting dictionary...")
+                                try setDictionary(dict)
+                                dictWasSet = true
+                                // Do not return here; let the loop continue and call inflate again
+                                return Z_OK
+                            } else {
+                                zlibError("[Decompressor.decompress] Throwing Z_NEED_DICT error")
+                                throw ZLibError.decompressionFailed(Z_NEED_DICT)
+                            }
                         }
+                        if inflateResult != Z_OK && inflateResult != Z_STREAM_END && inflateResult != Z_BUF_ERROR {
+                            zlibError("[Decompressor.decompress] Decompression failed with error code: \(inflateResult)")
+                            zlibError("Decompression failed with error code: \(inflateResult)")
+                            throw ZLibError.decompressionFailed(inflateResult)
+                        }
+                        let bytesProcessed = outputBufferCount - Int(stream.avail_out)
+                        if bytesProcessed > 0 {
+                            let temp = Data(bytes: outputPtr.baseAddress!, count: bytesProcessed)
+                            output.append(temp)
+                            zlibDebug("[Decompressor.decompress] Produced \(bytesProcessed) bytes of decompressed data")
+                            zlibDebug("Produced \(bytesProcessed) bytes of decompressed data")
+                        }
+                        return inflateResult
                     }
-                    if inflateResult != Z_OK && inflateResult != Z_STREAM_END && inflateResult != Z_BUF_ERROR {
-                        zlibError("Decompression failed with error code: \(inflateResult)")
-                        throw ZLibError.decompressionFailed(inflateResult)
-                    }
-                    let bytesProcessed = outputBufferCount - Int(stream.avail_out)
-                    if bytesProcessed > 0 {
-                        let temp = Data(bytes: outputPtr.baseAddress!, count: bytesProcessed)
-                        output.append(temp)
-                        zlibDebug("Produced \(bytesProcessed) bytes of decompressed data")
-                    }
-                    return inflateResult
-                }
                 if dictWasSet {
                     dictWasSet = false // Only allow one extra pass after setting dictionary
                 }
@@ -2221,8 +2232,10 @@ public class StreamingDecompressor {
     private var isInitialized = false
     private var window: [Bytef]
     private let windowSize: Int
+    private let windowBits: WindowBits
     
     public init(windowBits: WindowBits = .deflate) {
+        self.windowBits = windowBits
         self.windowSize = 1 << windowBits.zlibWindowBits
         self.window = [Bytef](repeating: 0, count: windowSize)
     }
@@ -2236,7 +2249,7 @@ public class StreamingDecompressor {
     /// Initialize the streaming decompressor
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
-        let result = swift_inflateInit2(&stream, WindowBits.deflate.zlibWindowBits)
+        let result = swift_inflateInit2(&stream, windowBits.zlibWindowBits)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -2408,8 +2421,10 @@ public class InflateBackDecompressor {
     private var isInitialized = false
     private var window: [Bytef]
     private let windowSize: Int
+    private let windowBits: WindowBits
     
     public init(windowBits: WindowBits = .deflate) {
+        self.windowBits = windowBits
         self.windowSize = 1 << windowBits.zlibWindowBits
         self.window = [Bytef](repeating: 0, count: windowSize)
     }
@@ -2423,7 +2438,7 @@ public class InflateBackDecompressor {
     /// Initialize the InflateBack-style decompressor
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
-        let result = swift_inflateInit2(&stream, WindowBits.deflate.zlibWindowBits)
+        let result = swift_inflateInit2(&stream, windowBits.zlibWindowBits)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -2582,8 +2597,10 @@ public class EnhancedInflateBackDecompressor {
     private var isInitialized = false
     private var window: [Bytef]
     private let windowSize: Int
+    private let windowBits: WindowBits
     
     public init(windowBits: WindowBits = .deflate) {
+        self.windowBits = windowBits
         self.windowSize = 1 << windowBits.zlibWindowBits
         self.window = [Bytef](repeating: 0, count: windowSize)
     }
@@ -2597,7 +2614,7 @@ public class EnhancedInflateBackDecompressor {
     /// Initialize the enhanced InflateBack decompressor
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
-        let result = swift_inflateBackInit(&stream, WindowBits.deflate.zlibWindowBits, &window)
+        let result = swift_inflateBackInit(&stream, windowBits.zlibWindowBits, &window)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }

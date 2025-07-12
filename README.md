@@ -1783,3 +1783,7 @@ enum CompressionPhase: String {
 6. **Handle errors**: Always wrap in do-catch blocks for proper error handling
 7. **Consider compression levels**: Balance between speed and compression ratio
 8. **Use appropriate window bits**: Choose the right format for your use case
+
+## Documentation
+
+- **[Dictionary Compression Guide](doc/DICTIONARY_COMPRESSION.md)** — Comprehensive guide to dictionary compression requirements, zlib behavior, and best practices for using dictionaries with SwiftZlib.
