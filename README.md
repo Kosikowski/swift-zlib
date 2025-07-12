@@ -582,3 +582,127 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Built on top of the excellent zlib library
 - Inspired by modern Swift API design patterns
 - Thanks to the zlib development team for their work 
+
+## Thread Safety and Concurrency
+
+**Important:** Compressor and Decompressor instances are **not thread-safe**. Only per-instance concurrency is valid for zlib and this Swift wrapper.
+
+- Each thread must use its own, independent instance of `Compressor` or `Decompressor`.
+- **Do not share** a single instance across multiple threads at the same time. Doing so can result in data corruption, crashes, or undefined behavior.
+- It is safe to use many Compressor/Decompressor instances in parallel, as long as each is only used by one thread at a time.
+
+### What is Per-Instance Concurrency?
+
+- **Per-instance concurrency** means: each thread creates and uses its own instance of the compressor or decompressor.
+- **Not allowed:** Multiple threads using the same instance at the same time.
+
+#### Example (Valid)
+```swift
+DispatchQueue.concurrentPerform(iterations: 10) { i in
+    let compressor = Compressor()
+    try! compressor.initialize(level: .defaultCompression)
+    let compressed = try! compressor.compress(myData)
+    // Each thread uses its own Compressor instance
+}
+```
+
+#### Example (Invalid)
+```swift
+let compressor = Compressor()
+try! compressor.initialize(level: .defaultCompression)
+DispatchQueue.concurrentPerform(iterations: 10) { i in
+    let compressed = try! compressor.compress(myData)
+    // All threads use the same Compressor instance at the same time (not allowed)
+}
+```
+
+**Summary:**
+- Use a separate Compressor/Decompressor per thread.
+- Do not share instances between threads. 
+
+## WindowBits Usage
+
+- `.raw`, `.deflate`, and `.gzip` are valid for both compression and decompression.
+- `.auto` is **only valid for decompression (inflate)**, not for compression (deflate).
+- Using `.auto` for compression will result in a stream error (`Z_STREAM_ERROR`).
+- Use `.raw`, `.deflate`, or `.gzip` for compression. 
+
+## Dictionary Usage
+
+### When to Use Dictionaries
+- Dictionaries are used for compression/decompression of data that has known patterns or frequently repeated sequences.
+- They can significantly improve compression ratios for data with predictable content.
+
+### Dictionary Requirements
+- **Compression:** Dictionary must be set **before** compression begins.
+- **Decompression:** Dictionary must be set **only after** receiving a `Z_NEED_DICT` error during decompression.
+- **Timing:** You cannot set a dictionary on a decompressor unless the stream explicitly signals it needs one.
+
+### Dictionary Error Handling
+- Setting a dictionary before initialization will throw a `ZLibError`.
+- Setting a dictionary on a decompressor without receiving `Z_NEED_DICT` will throw a `ZLibError`.
+- The correct flow is: decompress → receive `Z_NEED_DICT` → set dictionary → continue decompression.
+
+### Example Dictionary Usage
+```swift
+// Compression with dictionary
+let compressor = Compressor()
+try compressor.initialize(level: .defaultCompression)
+try compressor.setDictionary(dictionaryData)
+let compressed = try compressor.compress(data, flush: .finish)
+
+// Decompression with dictionary
+let decompressor = Decompressor()
+try decompressor.initialize()
+do {
+    let decompressed = try decompressor.decompress(compressed)
+    // Success
+} catch ZLibError.decompressionFailed(let code) where code == 2 { // Z_NEED_DICT
+    try decompressor.setDictionary(dictionaryData)
+    let decompressed = try decompressor.decompress(compressed)
+    // Success
+}
+```
+
+## Priming (Advanced Feature)
+
+### Priming Limitations
+- **Priming is a low-level feature** that affects the raw bit stream.
+- **Not supported for zlib/gzip streams** - only works with raw deflate streams.
+- **Round-trip compression/decompression with priming is not typically supported** because primed bits interfere with the compressed data format.
+- Priming is mainly used for specialized applications that need to insert bits into the raw deflate stream.
+
+### Priming Usage
+```swift
+// Only use with raw deflate streams
+let compressor = Compressor()
+try compressor.initializeAdvanced(level: .noCompression, windowBits: .raw)
+try compressor.prime(bits: 4, value: 0x5)
+let compressed = try compressor.compress(data, flush: .finish)
+```
+
+## Important zlib Behaviors
+
+### WindowBits Restrictions
+- **Compression:** Only `.raw`, `.deflate`, and `.gzip` are valid.
+- **Decompression:** All windowBits values are valid, including `.auto` for auto-detection.
+- **`.auto` for compression:** Will result in `Z_STREAM_ERROR` (-2).
+
+### Error Codes
+- `-1` (`Z_ERRNO`): System error
+- `-2` (`Z_STREAM_ERROR`): Invalid stream state or parameters
+- `-3` (`Z_DATA_ERROR`): Corrupted or invalid data
+- `-4` (`Z_MEM_ERROR`): Memory allocation failure
+- `-5` (`Z_BUF_ERROR`): Buffer error
+- `-6` (`Z_VERSION_ERROR`): Incompatible zlib version
+- `2` (`Z_NEED_DICT`): Dictionary required for decompression
+
+### Memory and Performance
+- **Compression levels:** Higher levels use more memory and CPU but produce smaller output.
+- **Window size:** Larger windows use more memory but may achieve better compression.
+- **Stream reuse:** Reinitialize streams for new data to avoid state corruption.
+
+### Thread Safety
+- **Per-instance concurrency:** Each thread must use its own Compressor/Decompressor instance.
+- **No shared instances:** Never share a single instance across threads without external synchronization.
+- **Global state:** zlib has some global state, so use separate instances per thread. 
