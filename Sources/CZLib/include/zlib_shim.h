@@ -80,7 +80,6 @@ const char* swift_zError(int err);
 
 // Advanced stream functions
 int swift_deflatePending(z_streamp strm, unsigned *pending, int *bits);
-uLong swift_deflateBound(z_streamp strm, uLong sourceLen);
 int swift_deflateTune(z_streamp strm, int good_length, int max_lazy, int nice_length, int max_chain);
 int swift_inflateSync(z_streamp strm);
 int swift_inflateSyncPoint(z_streamp strm);
@@ -123,7 +122,6 @@ int swift_gzprintf_simple(void* file, const char* str);
 int swift_gzgets_simple(void* file, char* buf, int len);
 
 // Advanced stream introspection
-int swift_deflatePending(z_streamp strm, unsigned *pending, int *bits);
 int swift_inflatePending(z_streamp strm, unsigned *pending, int *bits);
 
 // Gzip header manipulation

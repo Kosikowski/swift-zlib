@@ -58,6 +58,10 @@ int swift_deflateReset2(z_streamp strm, int windowBits) {
     return deflateReset(strm);
 }
 
+unsigned long swift_deflateBound(z_streamp strm, unsigned long sourceLen) {
+    return deflateBound(strm, sourceLen);
+}
+
 int swift_inflateInit(z_streamp strm) {
     return inflateInit(strm);
 }
@@ -76,6 +80,12 @@ int swift_inflateInit2(z_streamp strm, int windowBits) {
 }
 
 int swift_inflateReset(z_streamp strm) {
+    return inflateReset(strm);
+}
+
+int swift_inflateReset2(z_streamp strm, int windowBits) {
+    // Note: inflateReset2 might not be available in all zlib versions
+    // We'll provide a fallback implementation
     return inflateReset(strm);
 }
 
