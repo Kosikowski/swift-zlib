@@ -1,6 +1,16 @@
 #include "zlib_shim.h"
 #include <stdlib.h>
+#include <stdarg.h>
+
+// Define ZLIB_DEBUG to enable debug printf statements
+// This can be controlled via compiler flags: -DZLIB_DEBUG
+#ifndef ZLIB_DEBUG
+#define ZLIB_DEBUG 0
+#endif
+
+#if ZLIB_DEBUG
 #include <stdio.h>
+#endif
 
 int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
@@ -30,6 +40,7 @@ int swift_deflateInit(z_streamp strm, int level) {
 }
 
 int swift_deflate(z_streamp strm, int flush) {
+#if ZLIB_DEBUG
     // Debug: Print stream state before deflate
     printf("[C] deflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
            flush, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
@@ -42,12 +53,15 @@ int swift_deflate(z_streamp strm, int flush) {
         }
         printf("\n");
     }
+#endif
     
     int result = deflate(strm, flush);
     
+#if ZLIB_DEBUG
     // Debug: Print stream state after deflate
     printf("[C] deflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
            result, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
+#endif
     
     return result;
 }
@@ -94,6 +108,7 @@ int swift_inflateInit(z_streamp strm) {
 }
 
 int swift_inflate(z_streamp strm, int flush) {
+#if ZLIB_DEBUG
     // Debug: Print stream state before inflate
     printf("[C] inflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
            flush, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
@@ -106,12 +121,15 @@ int swift_inflate(z_streamp strm, int flush) {
         }
         printf("\n");
     }
+#endif
     
     int result = inflate(strm, flush);
     
+#if ZLIB_DEBUG
     // Debug: Print stream state after inflate
     printf("[C] inflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
            result, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
+#endif
     
     return result;
 }
