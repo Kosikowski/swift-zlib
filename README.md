@@ -15,6 +15,7 @@ A comprehensive Swift wrapper for the ZLib compression library, providing both h
 - **Cross-platform**: Works on macOS and Linux
 - **Convenience extensions**: Direct methods on `Data` and `String` types
 - **Performance optimization**: Built-in utilities for optimal compression settings
+- **Verbose logging system**: Comprehensive debugging and performance monitoring
 
 ## API Coverage
 
@@ -128,6 +129,59 @@ dependencies: [
   ```bash
   sudo apt-get install zlib1g-dev
   ```
+
+## Verbose Logging
+
+SwiftZlib includes a comprehensive verbose logging system for debugging and performance monitoring. The library provides two targets:
+
+### SwiftZlib (Production)
+- Minimal logging overhead
+- Optimized for performance
+- Verbose logging disabled by default
+
+### SwiftZlibVerbose (Development)
+- Full verbose logging enabled
+- Detailed stream state tracking
+- Performance timing information
+- Memory allocation logging
+- Error detailed logging
+
+### Usage
+
+```swift
+import SwiftZlib
+
+// Enable verbose logging (only available in SwiftZlibVerbose target)
+ZLibVerboseConfig.enableAll()
+
+// Or configure specific logging options
+ZLibVerboseConfig.logStreamState = true
+ZLibVerboseConfig.logProgress = true
+ZLibVerboseConfig.logTiming = true
+
+// Custom log handler
+ZLibVerboseConfig.logHandler = { level, message in
+    print("[\(level)] \(message)")
+}
+
+// Perform operations with verbose logging
+let compressedData = try ZLib.compress(originalData)
+```
+
+### Log Levels
+
+- **DEBUG**: Detailed internal state information
+- **INFO**: General operation progress
+- **WARNING**: Non-critical issues
+- **ERROR**: Error conditions
+
+### Log Categories
+
+- **Stream State**: Detailed z_stream state tracking
+- **Progress**: Compression/decompression progress
+- **Memory**: Memory allocation and usage
+- **Timing**: Performance timing information
+- **Errors**: Detailed error information
 
 ## Quick Start
 

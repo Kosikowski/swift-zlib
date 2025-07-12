@@ -20,11 +20,15 @@ let package = Package(
             ]
         ),
 
-        // ② your Swift façade
+        // ② your Swift façade with optional verbose logging
         .target(
             name: "SwiftZlib",
-            dependencies: ["CZLib"]
+            dependencies: ["CZLib"],
+            swiftSettings: [
+                .define("ZLIB_VERBOSE_DISABLED")
+            ]
         ),
+        
         .testTarget(
             name: "SwiftZlibTests",
             dependencies: ["SwiftZlib"]

@@ -1,6 +1,162 @@
 import Foundation
 import CZLib
 
+// MARK: - Verbose Logging System
+
+/// Verbose logging configuration for ZLib operations
+public struct ZLibVerboseConfig {
+    /// Enable verbose logging
+    public static var enabled: Bool = false
+    
+    /// Enable detailed stream state logging
+    public static var logStreamState: Bool = false
+    
+    /// Enable compression/decompression progress logging
+    public static var logProgress: Bool = false
+    
+    /// Enable memory allocation logging
+    public static var logMemory: Bool = false
+    
+    /// Enable error detailed logging
+    public static var logErrors: Bool = false
+    
+    /// Enable performance timing
+    public static var logTiming: Bool = false
+    
+    /// Log level for filtering messages
+    public enum LogLevel: Int, CaseIterable {
+        case debug = 0
+        case info = 1
+        case warning = 2
+        case error = 3
+        
+        public var description: String {
+            switch self {
+            case .debug: return "DEBUG"
+            case .info: return "INFO"
+            case .warning: return "WARNING"
+            case .error: return "ERROR"
+            }
+        }
+    }
+    
+    /// Current minimum log level
+    public static var minLogLevel: LogLevel = .info
+    
+    /// Custom log handler
+    public static var logHandler: ((LogLevel, String) -> Void)?
+    
+    /// Enable all verbose logging
+    public static func enableAll() {
+        enabled = true
+        logStreamState = true
+        logProgress = true
+        logMemory = true
+        logErrors = true
+        logTiming = true
+        minLogLevel = .debug
+    }
+    
+    /// Disable all verbose logging
+    public static func disableAll() {
+        enabled = false
+        logStreamState = false
+        logProgress = false
+        logMemory = false
+        logErrors = false
+        logTiming = false
+    }
+}
+
+/// Internal logging functions
+fileprivate func zlibLog(_ level: ZLibVerboseConfig.LogLevel, _ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    guard ZLibVerboseConfig.enabled && level.rawValue >= ZLibVerboseConfig.minLogLevel.rawValue else { return }
+    
+    let formatter = DateFormatter()
+    formatter.dateFormat = "HH:mm:ss.SSS"
+    let timestamp = formatter.string(from: Date())
+    
+    let fileName = (file as NSString).lastPathComponent
+    let logMessage = "[\(timestamp)] [\(level.description)] [\(fileName):\(line)] \(function): \(message)"
+    
+    if let handler = ZLibVerboseConfig.logHandler {
+        handler(level, logMessage)
+    } else {
+        print(logMessage)
+    }
+}
+
+fileprivate func zlibDebug(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    zlibLog(.debug, message, file: file, function: function, line: line)
+}
+
+fileprivate func zlibInfo(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    zlibLog(.info, message, file: file, function: function, line: line)
+}
+
+fileprivate func zlibWarning(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    zlibLog(.warning, message, file: file, function: function, line: line)
+}
+
+fileprivate func zlibError(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    zlibLog(.error, message, file: file, function: function, line: line)
+}
+
+/// Performance timing utilities
+fileprivate class ZLibTimer {
+    private let startTime: CFAbsoluteTime
+    private let operation: String
+    
+    init(_ operation: String) {
+        self.operation = operation
+        self.startTime = CFAbsoluteTimeGetCurrent()
+        zlibDebug("Starting \(operation)")
+    }
+    
+    func finish() -> TimeInterval {
+        let duration = CFAbsoluteTimeGetCurrent() - startTime
+        zlibDebug("Finished \(operation) in \(String(format: "%.4f", duration))s")
+        return duration
+    }
+}
+
+fileprivate func withTiming<T>(_ operation: String, _ block: () throws -> T) rethrows -> T {
+    if ZLibVerboseConfig.logTiming {
+        let timer = ZLibTimer(operation)
+        let result = try block()
+        _ = timer.finish()
+        return result
+    } else {
+        return try block()
+    }
+}
+
+/// Stream state logging utilities
+fileprivate func logStreamState(_ stream: z_stream, operation: String) {
+    guard ZLibVerboseConfig.logStreamState else { return }
+    
+    zlibDebug("""
+        Stream state for \(operation):
+        - total_in: \(stream.total_in)
+        - total_out: \(stream.total_out)
+        - avail_in: \(stream.avail_in)
+        - avail_out: \(stream.avail_out)
+        - next_in: \(stream.next_in != nil ? "valid" : "nil")
+        - next_out: \(stream.next_out != nil ? "valid" : "nil")
+        """)
+}
+
+fileprivate func logMemoryUsage(_ operation: String, bytes: Int) {
+    guard ZLibVerboseConfig.logMemory else { return }
+    zlibDebug("Memory allocation for \(operation): \(bytes) bytes")
+}
+
+fileprivate func logProgress(_ operation: String, processed: Int, total: Int, current: Int) {
+    guard ZLibVerboseConfig.logProgress else { return }
+    let percentage = total > 0 ? Double(current) / Double(total) * 100.0 : 0.0
+    zlibInfo("\(operation) progress: \(current)/\(total) bytes (\(String(format: "%.1f", percentage))%)")
+}
+
 /// Errors that can occur during ZLib operations
 public enum ZLibError: Error, LocalizedError {
     case compressionFailed(Int32)
@@ -541,29 +697,38 @@ public struct ZLib {
     /// - Returns: Compressed data
     /// - Throws: ZLibError if compression fails
     public static func compress(_ data: Data, level: CompressionLevel = .defaultCompression) throws -> Data {
-        let sourceLen = uLong(data.count)
-        var destLen = swift_compressBound(sourceLen)
+        zlibInfo("Starting compression: \(data.count) bytes, level: \(level)")
         
-        var compressedData = Data(count: Int(destLen))
-        
-        let result = compressedData.withUnsafeMutableBytes { destPtr in
-            data.withUnsafeBytes { sourcePtr in
-                swift_compress(
-                    destPtr.bindMemory(to: Bytef.self).baseAddress!,
-                    &destLen,
-                    sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
-                    sourceLen,
-                    level.zlibLevel
-                )
+        return try withTiming("Compression") {
+            let sourceLen = uLong(data.count)
+            var destLen = swift_compressBound(sourceLen)
+            
+            logMemoryUsage("Compression output buffer", bytes: Int(destLen))
+            var compressedData = Data(count: Int(destLen))
+            
+            let result = compressedData.withUnsafeMutableBytes { destPtr in
+                data.withUnsafeBytes { sourcePtr in
+                    swift_compress(
+                        destPtr.bindMemory(to: Bytef.self).baseAddress!,
+                        &destLen,
+                        sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
+                        sourceLen,
+                        level.zlibLevel
+                    )
+                }
             }
+            
+            if result != Z_OK {
+                zlibError("Compression failed with code: \(result) - \(String(cString: swift_zError(result)))")
+                throw ZLibError.compressionFailed(result)
+            }
+            
+            compressedData.count = Int(destLen)
+            let compressionRatio = Double(compressedData.count) / Double(data.count)
+            zlibInfo("Compression completed: \(data.count) -> \(compressedData.count) bytes (ratio: \(String(format: "%.2f", compressionRatio)))")
+            
+            return compressedData
         }
-        
-        guard result == Z_OK else {
-            throw ZLibError.compressionFailed(result)
-        }
-        
-        compressedData.count = Int(destLen)
-        return compressedData
     }
     
     /// Decompress data
@@ -571,28 +736,37 @@ public struct ZLib {
     /// - Returns: Decompressed data
     /// - Throws: ZLibError if decompression fails
     public static func decompress(_ data: Data) throws -> Data {
-        // For decompression, we need to estimate the output size
-        // Start with a reasonable guess and grow if needed
-        var destLen = uLong(data.count * 4) // Initial guess
-        var decompressedData = Data(count: Int(destLen))
+        zlibInfo("Starting decompression: \(data.count) bytes")
         
-        let result = decompressedData.withUnsafeMutableBytes { destPtr in
-            data.withUnsafeBytes { sourcePtr in
-                swift_uncompress(
-                    destPtr.bindMemory(to: Bytef.self).baseAddress!,
-                    &destLen,
-                    sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
-                    uLong(data.count)
-                )
+        return try withTiming("Decompression") {
+            // For decompression, we need to estimate the output size
+            // Start with a reasonable guess and grow if needed
+            var destLen = uLong(data.count * 4) // Initial guess
+            logMemoryUsage("Decompression output buffer", bytes: Int(destLen))
+            var decompressedData = Data(count: Int(destLen))
+            
+            let result = decompressedData.withUnsafeMutableBytes { destPtr in
+                data.withUnsafeBytes { sourcePtr in
+                    swift_uncompress(
+                        destPtr.bindMemory(to: Bytef.self).baseAddress!,
+                        &destLen,
+                        sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
+                        uLong(data.count)
+                    )
+                }
             }
+            
+            if result != Z_OK {
+                zlibError("Decompression failed with code: \(result) - \(String(cString: swift_zError(result)))")
+                throw ZLibError.decompressionFailed(result)
+            }
+            
+            decompressedData.count = Int(destLen)
+            let expansionRatio = Double(decompressedData.count) / Double(data.count)
+            zlibInfo("Decompression completed: \(data.count) -> \(decompressedData.count) bytes (ratio: \(String(format: "%.2f", expansionRatio)))")
+            
+            return decompressedData
         }
-        
-        guard result == Z_OK else {
-            throw ZLibError.decompressionFailed(result)
-        }
-        
-        decompressedData.count = Int(destLen)
-        return decompressedData
     }
     
     /// Partially decompress data, returning how much input/output was consumed
@@ -633,9 +807,14 @@ public struct ZLib {
     ///   - initialValue: Initial Adler-32 value (default: 1)
     /// - Returns: Adler-32 checksum
     public static func adler32(_ data: Data, initialValue: uLong = 1) -> uLong {
-        return data.withUnsafeBytes { buffer in
+        zlibDebug("Calculating Adler-32 for \(data.count) bytes with initial value: \(initialValue)")
+        
+        let result = data.withUnsafeBytes { buffer in
             swift_adler32(initialValue, buffer.bindMemory(to: Bytef.self).baseAddress!, uInt(data.count))
         }
+        
+        zlibDebug("Adler-32 result: \(result)")
+        return result
     }
     
     /// Calculate CRC-32 checksum
@@ -644,9 +823,14 @@ public struct ZLib {
     ///   - initialValue: Initial CRC-32 value (default: 0)
     /// - Returns: CRC-32 checksum
     public static func crc32(_ data: Data, initialValue: uLong = 0) -> uLong {
-        return data.withUnsafeBytes { buffer in
+        zlibDebug("Calculating CRC-32 for \(data.count) bytes with initial value: \(initialValue)")
+        
+        let result = data.withUnsafeBytes { buffer in
             swift_crc32(initialValue, buffer.bindMemory(to: Bytef.self).baseAddress!, uInt(data.count))
         }
+        
+        zlibDebug("CRC-32 result: \(result)")
+        return result
     }
     
     /// Calculate Adler-32 checksum for a string
@@ -945,13 +1129,17 @@ public class Compressor {
     /// - Parameter level: Compression level
     /// - Throws: ZLibError if initialization fails
     public func initialize(level: CompressionLevel = .defaultCompression) throws {
+        zlibInfo("Initializing compressor with level: \(level)")
+        
         // Use the exact same parameters as compress2: level, Z_DEFLATED, 15 (zlib format), 8 (default memory), Z_DEFAULT_STRATEGY
         // compress2 uses zlib format by default, which means windowBits = 15
         let result = swift_deflateInit2(&stream, level.zlibLevel, Z_DEFLATED, 15, 8, Z_DEFAULT_STRATEGY)
-        guard result == Z_OK else {
+        if result != Z_OK {
+            zlibError("Compressor initialization failed with code: \(result) - \(String(cString: swift_zError(result)))")
             throw ZLibError.compressionFailed(result)
         }
         isInitialized = true
+        zlibInfo("Compressor initialized successfully")
     }
     
     /// Initialize the compressor with advanced settings
@@ -1203,8 +1391,12 @@ public class Compressor {
     /// - Throws: ZLibError if compression fails
     public func compress(_ input: Data, flush: FlushMode = .noFlush) throws -> Data {
         guard isInitialized else {
+            zlibError("Compressor not initialized")
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
+        
+        zlibDebug("Compressing \(input.count) bytes with flush mode: \(flush)")
+        logStreamState(stream, operation: "Compression start")
         
         var output = Data()
         let outputBufferSize = 4096
@@ -1218,22 +1410,31 @@ public class Compressor {
         
         // Process all input data
         var result: Int32 = Z_OK
+        var iteration = 0
         repeat {
+            iteration += 1
+            zlibDebug("Compression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
+            
             try outputBuffer.withUnsafeMutableBufferPointer { buffer in
                 stream.next_out = buffer.baseAddress
                 stream.avail_out = uInt(outputBufferSize)
                 
                 result = swift_deflate(&stream, flush.zlibFlush)
-                guard result != Z_STREAM_ERROR else {
+                if result == Z_STREAM_ERROR {
+                    zlibError("Compression failed with Z_STREAM_ERROR")
                     throw ZLibError.streamError(result)
                 }
                 
                 let bytesProcessed = outputBufferSize - Int(stream.avail_out)
                 if bytesProcessed > 0 {
                     output.append(Data(bytes: buffer.baseAddress!, count: bytesProcessed))
+                    zlibDebug("Produced \(bytesProcessed) bytes of compressed data")
                 }
             }
-        } while stream.avail_out == 0 // Continue while output buffer is full
+        } while stream.avail_out == 0 && stream.avail_in > 0 // Continue while output buffer is full or input remains
+        
+        logStreamState(stream, operation: "Compression end")
+        zlibInfo("Compression completed: \(input.count) -> \(output.count) bytes")
         
         return output
     }
@@ -1306,11 +1507,15 @@ public class Decompressor {
     /// Initialize the decompressor with basic settings
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
+        zlibInfo("Initializing decompressor")
+        
         let result = swift_inflateInit(&stream)
-        guard result == Z_OK else {
+        if result != Z_OK {
+            zlibError("Decompressor initialization failed with code: \(result) - \(String(cString: swift_zError(result)))")
             throw ZLibError.decompressionFailed(result)
         }
         isInitialized = true
+        zlibInfo("Decompressor initialized successfully")
     }
     
     /// Initialize the decompressor with advanced settings
@@ -1512,8 +1717,12 @@ public class Decompressor {
     /// - Throws: ZLibError if decompression fails
     public func decompress(_ input: Data, flush: FlushMode = .noFlush) throws -> Data {
         guard isInitialized else {
+            zlibError("Decompressor not initialized")
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
+        
+        zlibDebug("Decompressing \(input.count) bytes with flush mode: \(flush)")
+        logStreamState(stream, operation: "Decompression start")
         
         var output = Data()
         var outputBuffer = Data(count: 1024) // 1KB chunks
@@ -1525,14 +1734,19 @@ public class Decompressor {
             
             // Process all input data
             var result: Int32 = Z_OK
+            var iteration = 0
             repeat {
+                iteration += 1
+                zlibDebug("Decompression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
+                
                 let outputBufferCount = outputBuffer.count
                 result = try outputBuffer.withUnsafeMutableBytes { outputPtr -> Int32 in
                     stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
                     stream.avail_out = uInt(outputBufferCount)
                     
                     let inflateResult = swift_inflate(&stream, flush.zlibFlush)
-                    guard inflateResult != Z_STREAM_ERROR else {
+                    if inflateResult == Z_STREAM_ERROR {
+                        zlibError("Decompression failed with Z_STREAM_ERROR")
                         throw ZLibError.streamError(inflateResult)
                     }
                     
@@ -1540,12 +1754,16 @@ public class Decompressor {
                     if bytesProcessed > 0 {
                         let temp = Data(bytes: outputPtr.baseAddress!, count: bytesProcessed)
                         output.append(temp)
+                        zlibDebug("Produced \(bytesProcessed) bytes of decompressed data")
                     }
                     
                     return inflateResult
                 }
-            } while stream.avail_out == 0 && result != Z_STREAM_END // Continue while output buffer is full or until stream ends
+            } while stream.avail_out == 0 && stream.avail_in > 0 && result != Z_STREAM_END // Continue while output buffer is full or input remains or until stream ends
         }
+        
+        logStreamState(stream, operation: "Decompression end")
+        zlibInfo("Decompression completed: \(input.count) -> \(output.count) bytes")
         
         return output
     }

@@ -14,7 +14,14 @@ int swift_uncompress(Bytef *dest, uLongf *destLen,
 
 int swift_uncompress2(Bytef *dest, uLongf *destLen,
                       const Bytef *source, uLong *sourceLen) {
-    return uncompress2(dest, destLen, source, sourceLen);
+    // uncompress2 might not be available in all zlib versions
+    // We'll provide a fallback implementation using uncompress
+    uLong sourceLenValue = *sourceLen;
+    int result = uncompress(dest, destLen, source, sourceLenValue);
+    if (result == Z_OK) {
+        *sourceLen = sourceLenValue; // All input consumed
+    }
+    return result;
 }
 
 int swift_deflateInit(z_streamp strm, int level) {
