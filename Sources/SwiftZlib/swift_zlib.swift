@@ -756,7 +756,36 @@ public struct ZLib {
                 }
             }
             
-            if result != Z_OK {
+            if result == Z_BUF_ERROR {
+                // Buffer too small, try with progressively larger buffers
+                zlibDebug("Buffer too small, retrying with larger buffer")
+                var bufferMultiplier = 8
+                var retryResult = result
+                
+                while retryResult == Z_BUF_ERROR && bufferMultiplier <= 32 {
+                    destLen = uLong(data.count * bufferMultiplier)
+                    logMemoryUsage("Decompression retry buffer (multiplier: \(bufferMultiplier))", bytes: Int(destLen))
+                    decompressedData = Data(count: Int(destLen))
+                    
+                    retryResult = decompressedData.withUnsafeMutableBytes { destPtr in
+                        data.withUnsafeBytes { sourcePtr in
+                            swift_uncompress(
+                                destPtr.bindMemory(to: Bytef.self).baseAddress!,
+                                &destLen,
+                                sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
+                                uLong(data.count)
+                            )
+                        }
+                    }
+                    
+                    bufferMultiplier *= 2
+                }
+                
+                if retryResult != Z_OK {
+                    zlibError("Decompression retry failed with code: \(retryResult) - \(String(cString: swift_zError(retryResult)))")
+                    throw ZLibError.decompressionFailed(retryResult)
+                }
+            } else if result != Z_OK {
                 zlibError("Decompression failed with code: \(result) - \(String(cString: swift_zError(result)))")
                 throw ZLibError.decompressionFailed(result)
             }
@@ -791,7 +820,34 @@ public struct ZLib {
             }
         }
         
-        guard result == Z_OK else {
+        if result == Z_BUF_ERROR {
+            // Buffer too small, try with progressively larger buffers
+            zlibDebug("Partial decompression buffer too small, retrying with larger buffer")
+            var bufferMultiplier = 2
+            var retryResult = result
+            
+            while retryResult == Z_BUF_ERROR && bufferMultiplier <= 16 {
+                destLen = uLong(maxOutputSize * bufferMultiplier)
+                decompressedData = Data(count: Int(destLen))
+                
+                retryResult = decompressedData.withUnsafeMutableBytes { destPtr in
+                    data.withUnsafeBytes { sourcePtr in
+                        swift_uncompress2(
+                            destPtr.bindMemory(to: Bytef.self).baseAddress!,
+                            &destLen,
+                            sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
+                            &sourceLen
+                        )
+                    }
+                }
+                
+                bufferMultiplier *= 2
+            }
+            
+            guard retryResult == Z_OK else {
+                throw ZLibError.decompressionFailed(retryResult)
+            }
+        } else if result != Z_OK {
             throw ZLibError.decompressionFailed(result)
         }
         
@@ -1931,7 +1987,7 @@ public class StreamingDecompressor {
             },
             outputHandler: { data in
                 output.append(data)
-                return output.count <= maxOutputSize
+                return true // Always continue processing
             }
         )
         
@@ -2013,13 +2069,16 @@ public class InflateBackDecompressor {
         var result: Int32 = Z_OK
         let bufferSize = 4096
         var outputBuffer = [Bytef](repeating: 0, count: bufferSize)
+        var hasProcessedInput = false
         
         while result != Z_STREAM_END {
             // Get input data
             guard let inputData = inputProvider() else {
-                // No more input data
+                // No more input data, finish processing
                 break
             }
+            
+            hasProcessedInput = true
             
             // Set input
             inputData.withUnsafeBytes { inputPtr in
@@ -2054,11 +2113,11 @@ public class InflateBackDecompressor {
                     throw ZLibError.streamError(result)
                 }
                 
-            } while stream.avail_out == 0 && result != Z_STREAM_END
+            } while stream.avail_out == 0 && stream.avail_in > 0 && result != Z_STREAM_END
         }
         
-        // Finish processing
-        if result == Z_OK {
+        // Finish processing if we have processed input
+        if hasProcessedInput && result == Z_OK {
             repeat {
                 let outputBufferCount = outputBuffer.count
                 result = outputBuffer.withUnsafeMutableBufferPointer { buffer in
@@ -2114,7 +2173,7 @@ public class InflateBackDecompressor {
             },
             outputHandler: { data in
                 output.append(data)
-                return output.count <= maxOutputSize
+                return true // Always continue processing
             }
         )
         
