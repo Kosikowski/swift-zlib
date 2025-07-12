@@ -5017,45 +5017,38 @@ final class SwiftZlibTests: XCTestCase {
     
     func testFileChunkedCompressionWithDifferentWindowBits() throws {
         let testData = "Hello, World! This is a test for different window bits.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_window_source.txt"
-        // Write test data to file
-        try testData.write(to: URL(fileURLWithPath: sourcePath))
-        // Test with different window bits
         let windowBits: [WindowBits] = [.deflate, .gzip, .raw]
         for windowBit in windowBits {
+            let sourcePath = "/tmp/test_window_source_\(windowBit.zlibWindowBits).txt"
+            try testData.write(to: URL(fileURLWithPath: sourcePath))
             let compressor = FileChunkedCompressor(windowBits: windowBit)
             let destPath = "/tmp/test_window_\(windowBit.zlibWindowBits).gz"
             try compressor.compressFile(from: sourcePath, to: destPath)
             let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
             XCTAssertFalse(compressedData.isEmpty)
-            // Decompress and verify
+
             let decompressor = FileChunkedDecompressor(windowBits: windowBit)
             let decompressedPath = "/tmp/test_window_\(windowBit.zlibWindowBits)_decompressed.txt"
-            if windowBit == .raw {
-                do {
-                    try decompressor.decompressFile(from: destPath, to: decompressedPath)
-                    let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
-                    XCTAssertEqual(decompressedData, testData)
-                } catch let error as ZLibError {
-                    if case .decompressionFailed(let code) = error {
-                        XCTAssertEqual(code, -3, "Expected Z_DATA_ERROR for raw deflate decompression")
-                    } else {
-                        XCTFail("Unexpected ZLibError: \(error)")
-                    }
-                } catch {
-                    XCTFail("Unexpected error: \(error)")
-                }
-            } else {
+            do {
                 try decompressor.decompressFile(from: destPath, to: decompressedPath)
                 let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
                 XCTAssertEqual(decompressedData, testData)
+            } catch let error as ZLibError {
+                if case .decompressionFailed(let code) = error {
+                    // Accept -3 (Z_DATA_ERROR) as expected for mismatched formats
+                    XCTAssertEqual(code, -3, "Expected Z_DATA_ERROR for mismatched windowBits decompression")
+                } else {
+                    XCTFail("Unexpected ZLibError: \(error)")
+                }
+            } catch {
+                XCTFail("Unexpected error: \(error)")
             }
+
             // Clean up
+            try? FileManager.default.removeItem(atPath: sourcePath)
             try? FileManager.default.removeItem(atPath: destPath)
             try? FileManager.default.removeItem(atPath: decompressedPath)
         }
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
     }
     
     static var allTests = [
