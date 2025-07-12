@@ -27,6 +27,10 @@ int swift_deflateReset(z_streamp strm);
 int swift_deflateCopy(z_streamp dest, z_streamp source);
 int swift_deflatePrime(z_streamp strm, int bits, int value);
 
+// Advanced compression functions
+int swift_deflateReset2(z_streamp strm, int windowBits);
+unsigned long swift_deflateBound(z_streamp strm, unsigned long sourceLen);
+
 // Stream-based decompression wrappers
 int swift_inflateInit(z_streamp strm);
 int swift_inflate(z_streamp strm, int flush);
@@ -105,6 +109,14 @@ int swift_gzputc(void* file, int c);
 int swift_gzgetc(void* file);
 int swift_gzungetc(int c, void* file);
 void swift_gzclearerr(void* file);
+
+// Advanced gzip functions
+int swift_gzprintf_simple(void* file, const char* str);
+int swift_gzgets_simple(void* file, char* buf, int len);
+
+// Advanced stream introspection
+int swift_deflatePending(z_streamp strm, unsigned *pending, int *bits);
+int swift_inflatePending(z_streamp strm, unsigned *pending, int *bits);
 
 // Gzip header manipulation
 int swift_deflateSetHeader(z_streamp strm, gz_headerp head);
