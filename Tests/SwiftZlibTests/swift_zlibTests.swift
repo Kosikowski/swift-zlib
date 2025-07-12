@@ -8,7 +8,7 @@ final class SwiftZlibTests: XCTestCase {
     override func setUp() {
         super.setUp()
         // Enable verbose logging for all tests
-        ZLibVerboseConfig.enableAll()
+//        ZLibVerboseConfig.enableAll()
     }
     
     override func tearDown() {
@@ -1296,7 +1296,7 @@ final class SwiftZlibTests: XCTestCase {
     
     func testInflatePrimeBasic() throws {
         let originalData = "test data".data(using: .utf8)!
-        let compressedData = try ZLib.compress(originalData)
+        _ = try ZLib.compress(originalData)
         
         let decompressor = Decompressor()
         try decompressor.initialize()
@@ -1311,7 +1311,7 @@ final class SwiftZlibTests: XCTestCase {
     
     func testInflatePrimeMultipleBits() throws {
         let originalData = "test data".data(using: .utf8)!
-        let compressedData = try ZLib.compress(originalData)
+        _ = try ZLib.compress(originalData)
         
         let decompressor = Decompressor()
         try decompressor.initialize()
@@ -1326,7 +1326,7 @@ final class SwiftZlibTests: XCTestCase {
     
     func testInflatePrimeLargeValue() throws {
         let originalData = "test data".data(using: .utf8)!
-        let compressedData = try ZLib.compress(originalData)
+        _ = try ZLib.compress(originalData)
         
         let decompressor = Decompressor()
         try decompressor.initialize()
@@ -1340,7 +1340,7 @@ final class SwiftZlibTests: XCTestCase {
     
     func testInflatePrimeBeforeDecompression() throws {
         let originalData = "test data".data(using: .utf8)!
-        let compressedData = try ZLib.compress(originalData)
+        _ = try ZLib.compress(originalData)
         
         let decompressor = Decompressor()
         try decompressor.initialize()
@@ -1756,7 +1756,7 @@ final class SwiftZlibTests: XCTestCase {
     
     func testGzipHeaderWithFilename() throws {
         let data = "test data".data(using: .utf8)!
-        let filename = "test.txt"
+        _ = "test.txt"
         
         // Note: Our current API doesn't support custom gzip headers
         // This test documents the current behavior
@@ -1984,7 +1984,7 @@ final class SwiftZlibTests: XCTestCase {
             XCTAssertNotEqual(decompressed, data)
         } catch let error as ZLibError {
             // Expected error for truncated data
-            XCTAssertTrue(error is ZLibError)
+            XCTAssertNotNil(error)
         }
     }
     
@@ -2085,7 +2085,7 @@ final class SwiftZlibTests: XCTestCase {
     }
     
     func testCompressionWithInvalidWindowBits() throws {
-        let data = "test data".data(using: .utf8)!
+        _ = "test data".data(using: .utf8)!
         let compressor = Compressor()
         
         // Test with valid window bits
@@ -2096,7 +2096,7 @@ final class SwiftZlibTests: XCTestCase {
     
     func testDecompressionWithInvalidWindowBits() throws {
         let data = "test data".data(using: .utf8)!
-        let compressed = try ZLib.compress(data)
+        _ = try ZLib.compress(data)
         let decompressor = Decompressor()
         
         // Test with valid window bits
@@ -2207,7 +2207,7 @@ final class SwiftZlibTests: XCTestCase {
     
     func testDecompressionWithInvalidState() throws {
         let data = "test data".data(using: .utf8)!
-        let compressed = try ZLib.compress(data)
+        _ = try ZLib.compress(data)
         let decompressor = Decompressor()
         
         // Try to set dictionary before initialization
@@ -2618,7 +2618,7 @@ final class SwiftZlibTests: XCTestCase {
         var results: [Data] = []
         let lock = NSLock()
         
-        for i in 0..<iterations {
+        for _ in 0..<iterations {
             queue.async(group: group) {
                 do {
                     let compressed = try ZLib.compress(testData)
