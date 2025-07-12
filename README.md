@@ -706,3 +706,11 @@ let compressed = try compressor.compress(data, flush: .finish)
 - **Per-instance concurrency:** Each thread must use its own Compressor/Decompressor instance.
 - **No shared instances:** Never share a single instance across threads without external synchronization.
 - **Global state:** zlib has some global state, so use separate instances per thread. 
+
+## Platform-Specific Behavior: Truncated/Corrupted Data
+
+When decompressing truncated or corrupted data, zlib may either:
+- Throw a decompression error (e.g., Z_DATA_ERROR), or
+- Return as much decompressed data as possible without error.
+
+This behavior depends on the zlib version and platform. The SwiftZlib test suite and API are robust to both outcomes, and your code should be prepared to handle either case. 
