@@ -217,6 +217,21 @@ let decompressed = try ZLib.decompress(compressed)
 // With options
 let compressed = try ZLib.compress(data, options: .init(level: .bestCompression))
 let decompressed = try ZLib.decompress(compressed, options: .init())
+
+// Dictionary compression (Simple API)
+let dictionary = "common prefix".data(using: .utf8)!
+let compressionOptions = CompressionOptions(
+    format: .raw,  // Required for dictionary support
+    level: .defaultCompression,
+    dictionary: dictionary
+)
+let compressedWithDict = try ZLib.compress(data, options: compressionOptions)
+
+let decompressionOptions = DecompressionOptions(
+    format: .raw,  // Must match compression format
+    dictionary: dictionary
+)
+let decompressed = try ZLib.decompress(compressedWithDict, options: decompressionOptions)
 ```
 
 ### Advanced API
@@ -322,12 +337,49 @@ let compressedData = try ZLib.compress(originalData, level: .bestCompression)
 
 **Returns:** Compressed data
 
+#### `ZLib.compress(_:options:)`
+Compress data with advanced options including dictionary support.
+
+```swift
+let dictionary = "common prefix".data(using: .utf8)!
+let options = CompressionOptions(
+    format: .raw,  // Required for dictionary support
+    level: .defaultCompression,
+    dictionary: dictionary
+)
+let compressedData = try ZLib.compress(originalData, options: options)
+```
+
+**Parameters:**
+- `data`: The data to compress
+- `options`: Compression configuration including dictionary
+
+**Returns:** Compressed data
+
 #### `ZLib.decompress(_:)`
 Decompress previously compressed data.
 
 ```swift
 let decompressedData = try ZLib.decompress(compressedData)
 ```
+
+**Returns:** Decompressed data
+
+#### `ZLib.decompress(_:options:)`
+Decompress data with advanced options including dictionary support.
+
+```swift
+let dictionary = "common prefix".data(using: .utf8)!
+let options = DecompressionOptions(
+    format: .raw,  // Must match compression format
+    dictionary: dictionary
+)
+let decompressedData = try ZLib.decompress(compressedData, options: options)
+```
+
+**Parameters:**
+- `data`: The compressed data to decompress
+- `options`: Decompression configuration including dictionary
 
 **Returns:** Decompressed data
 
