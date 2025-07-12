@@ -495,6 +495,9 @@ final class SwiftZlibTests: XCTestCase {
         try decompressor.setDictionary(dictionary)
         try decompressor.prime(bits: 8, value: 0x42)
         
+        // Reset the decompressor to ensure it's in a clean state for decompression
+        try decompressor.reset()
+        
         // Now decompress a small valid data chunk
         let testString = "hello advanced features"
         let testData = testString.data(using: .utf8)!

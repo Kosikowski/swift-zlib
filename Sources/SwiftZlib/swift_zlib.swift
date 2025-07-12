@@ -1899,41 +1899,40 @@ public class StreamingDecompressor {
             
             hasProcessedInput = true
             
-            // Copy input data to ensure pointer remains valid
-            let inputBytes = [Bytef](inputData)
-            
-            // Set input
-            stream.next_in = UnsafeMutablePointer(mutating: inputBytes)
-            stream.avail_in = uInt(inputBytes.count)
-            
-            // Process input
-            repeat {
-                let outputBufferCount = outputBuffer.count
-                result = outputBuffer.withUnsafeMutableBufferPointer { buffer in
-                    stream.next_out = buffer.baseAddress
-                    stream.avail_out = uInt(outputBufferCount)
-                    
-                    let inflateResult = swift_inflate(&stream, Z_NO_FLUSH)
-                    guard inflateResult != Z_STREAM_ERROR else {
-                        return Z_STREAM_ERROR
-                    }
-                    
-                    let bytesProcessed = outputBufferCount - Int(stream.avail_out)
-                    if bytesProcessed > 0 {
-                        let outputData = Data(bytes: buffer.baseAddress!, count: bytesProcessed)
-                        if !outputHandler(outputData) {
+            // Process input data with valid pointer
+            try inputData.withUnsafeBytes { inputPtr in
+                stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress!)
+                stream.avail_in = uInt(inputData.count)
+                
+                // Process input
+                repeat {
+                    let outputBufferCount = outputBuffer.count
+                    result = outputBuffer.withUnsafeMutableBufferPointer { buffer in
+                        stream.next_out = buffer.baseAddress
+                        stream.avail_out = uInt(outputBufferCount)
+                        
+                        let inflateResult = swift_inflate(&stream, Z_NO_FLUSH)
+                        guard inflateResult != Z_STREAM_ERROR else {
                             return Z_STREAM_ERROR
                         }
+                        
+                        let bytesProcessed = outputBufferCount - Int(stream.avail_out)
+                        if bytesProcessed > 0 {
+                            let outputData = Data(bytes: buffer.baseAddress!, count: bytesProcessed)
+                            if !outputHandler(outputData) {
+                                return Z_STREAM_ERROR
+                            }
+                        }
+                        
+                        return inflateResult
                     }
                     
-                    return inflateResult
-                }
-                
-                guard result != Z_STREAM_ERROR else {
-                    throw ZLibError.streamError(result)
-                }
-                
-            } while stream.avail_out == 0 && stream.avail_in > 0 && result != Z_STREAM_END
+                    guard result != Z_STREAM_ERROR else {
+                        throw ZLibError.streamError(result)
+                    }
+                    
+                } while stream.avail_out == 0 && stream.avail_in > 0 && result != Z_STREAM_END
+            }
         }
         
         // Finish processing if we have processed input
@@ -2086,41 +2085,40 @@ public class InflateBackDecompressor {
             
             hasProcessedInput = true
             
-            // Copy input data to ensure pointer remains valid
-            let inputBytes = [Bytef](inputData)
-            
-            // Set input
-            stream.next_in = UnsafeMutablePointer(mutating: inputBytes)
-            stream.avail_in = uInt(inputBytes.count)
-            
-            // Process input
-            repeat {
-                let outputBufferCount = outputBuffer.count
-                result = outputBuffer.withUnsafeMutableBufferPointer { buffer in
-                    stream.next_out = buffer.baseAddress
-                    stream.avail_out = uInt(outputBufferCount)
-                    
-                    let inflateResult = swift_inflate(&stream, Z_NO_FLUSH)
-                    guard inflateResult != Z_STREAM_ERROR else {
-                        return Z_STREAM_ERROR
-                    }
-                    
-                    let bytesProcessed = outputBufferCount - Int(stream.avail_out)
-                    if bytesProcessed > 0 {
-                        let outputData = Data(bytes: buffer.baseAddress!, count: bytesProcessed)
-                        if !outputHandler(outputData) {
+            // Process input data with valid pointer
+            try inputData.withUnsafeBytes { inputPtr in
+                stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress!)
+                stream.avail_in = uInt(inputData.count)
+                
+                // Process input
+                repeat {
+                    let outputBufferCount = outputBuffer.count
+                    result = outputBuffer.withUnsafeMutableBufferPointer { buffer in
+                        stream.next_out = buffer.baseAddress
+                        stream.avail_out = uInt(outputBufferCount)
+                        
+                        let inflateResult = swift_inflate(&stream, Z_NO_FLUSH)
+                        guard inflateResult != Z_STREAM_ERROR else {
                             return Z_STREAM_ERROR
                         }
+                        
+                        let bytesProcessed = outputBufferCount - Int(stream.avail_out)
+                        if bytesProcessed > 0 {
+                            let outputData = Data(bytes: buffer.baseAddress!, count: bytesProcessed)
+                            if !outputHandler(outputData) {
+                                return Z_STREAM_ERROR
+                            }
+                        }
+                        
+                        return inflateResult
                     }
                     
-                    return inflateResult
-                }
-                
-                guard result != Z_STREAM_ERROR else {
-                    throw ZLibError.streamError(result)
-                }
-                
-            } while stream.avail_out == 0 && stream.avail_in > 0 && result != Z_STREAM_END
+                    guard result != Z_STREAM_ERROR else {
+                        throw ZLibError.streamError(result)
+                    }
+                    
+                } while stream.avail_out == 0 && stream.avail_in > 0 && result != Z_STREAM_END
+            }
         }
         
         // Finish processing if we have processed input
