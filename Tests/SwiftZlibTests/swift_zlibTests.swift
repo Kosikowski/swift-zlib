@@ -4449,6 +4449,615 @@ final class SwiftZlibTests: XCTestCase {
         XCTAssertEqual(defaultConfig.windowBits, 15)
     }
     
+    // MARK: - True Chunked Streaming Tests
+    
+    func testFileChunkedCompression() throws {
+        let testData = "Hello, World! This is a test for true chunked streaming compression.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_chunked_source.txt"
+        let destPath = "/tmp/test_chunked_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Compress file using true chunked streaming
+        let compressor = FileChunkedCompressor(bufferSize: 1024, compressionLevel: .defaultCompression)
+        try compressor.compressFile(from: sourcePath, to: destPath)
+        
+        // Verify compressed file exists and is non-empty
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        
+        // Decompress and verify round-trip
+        let decompressor = FileChunkedDecompressor(bufferSize: 1024)
+        let decompressedPath = "/tmp/test_chunked_decompressed.txt"
+        try decompressor.decompressFile(from: destPath, to: decompressedPath)
+        
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileChunkedCompressionWithDifferentBufferSizes() throws {
+        let testData = String(repeating: "Hello, World! ", count: 1000).data(using: .utf8)!
+        let sourcePath = "/tmp/test_buffer_source.txt"
+        let destPath = "/tmp/test_buffer_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Test with different buffer sizes
+        let bufferSizes = [1024, 4096, 16384, 65536]
+        
+        for bufferSize in bufferSizes {
+            let compressor = FileChunkedCompressor(bufferSize: bufferSize)
+            let specificDestPath = "/tmp/test_buffer_\(bufferSize).gz"
+            try compressor.compressFile(from: sourcePath, to: specificDestPath)
+            
+            let compressedData = try Data(contentsOf: URL(fileURLWithPath: specificDestPath))
+            XCTAssertFalse(compressedData.isEmpty)
+            
+            // Decompress and verify
+            let decompressor = FileChunkedDecompressor(bufferSize: bufferSize)
+            let decompressedPath = "/tmp/test_buffer_\(bufferSize)_decompressed.txt"
+            try decompressor.decompressFile(from: specificDestPath, to: decompressedPath)
+            
+            let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+            XCTAssertEqual(decompressedData, testData)
+            
+            // Clean up
+            try? FileManager.default.removeItem(atPath: specificDestPath)
+            try? FileManager.default.removeItem(atPath: decompressedPath)
+        }
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+    }
+    
+    func testFileChunkedCompressionWithDifferentLevels() throws {
+        let testData = String(repeating: "Hello, World! ", count: 500).data(using: .utf8)!
+        let sourcePath = "/tmp/test_level_source.txt"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Test with different compression levels
+        let levels: [CompressionLevel] = [.noCompression, .bestSpeed, .defaultCompression, .bestCompression]
+        
+        for level in levels {
+            let compressor = FileChunkedCompressor(compressionLevel: level)
+            let destPath = "/tmp/test_level_\(level.rawValue).gz"
+            try compressor.compressFile(from: sourcePath, to: destPath)
+            
+            let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+            XCTAssertFalse(compressedData.isEmpty)
+            
+            // Decompress and verify
+            let decompressor = FileChunkedDecompressor()
+            let decompressedPath = "/tmp/test_level_\(level.rawValue)_decompressed.txt"
+            try decompressor.decompressFile(from: destPath, to: decompressedPath)
+            
+            let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+            XCTAssertEqual(decompressedData, testData)
+            
+            // Clean up
+            try? FileManager.default.removeItem(atPath: destPath)
+            try? FileManager.default.removeItem(atPath: decompressedPath)
+        }
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+    }
+    
+    func testFileChunkedCompressionLargeFile() throws {
+        // Create a larger file for testing
+        let largeData = String(repeating: "This is a large file for testing true chunked streaming. ", count: 10000).data(using: .utf8)!
+        let sourcePath = "/tmp/test_large_source.txt"
+        let destPath = "/tmp/test_large_compressed.gz"
+        
+        // Write large test data to file
+        try largeData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Compress large file using chunked streaming
+        let compressor = FileChunkedCompressor(bufferSize: 8192, compressionLevel: .bestCompression)
+        try compressor.compressFile(from: sourcePath, to: destPath)
+        
+        // Verify compressed file exists and is smaller than original
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        XCTAssertLessThan(compressedData.count, largeData.count)
+        
+        // Decompress and verify
+        let decompressor = FileChunkedDecompressor(bufferSize: 8192)
+        let decompressedPath = "/tmp/test_large_decompressed.txt"
+        try decompressor.decompressFile(from: destPath, to: decompressedPath)
+        
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, largeData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileChunkedCompressionEmptyFile() throws {
+        let sourcePath = "/tmp/test_empty_source.txt"
+        let destPath = "/tmp/test_empty_compressed.gz"
+        
+        // Create empty file
+        FileManager.default.createFile(atPath: sourcePath, contents: nil)
+        
+        // Compress empty file
+        let compressor = FileChunkedCompressor()
+        try compressor.compressFile(from: sourcePath, to: destPath)
+        
+        // Verify compressed file exists
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty) // Should contain gzip header/trailer
+        
+        // Decompress and verify
+        let decompressor = FileChunkedDecompressor()
+        let decompressedPath = "/tmp/test_empty_decompressed.txt"
+        try decompressor.decompressFile(from: destPath, to: decompressedPath)
+        
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData.count, 0)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileChunkedCompressionErrorHandling() throws {
+        // Test with non-existent source file
+        let compressor = FileChunkedCompressor()
+        
+        do {
+            try compressor.compressFile(from: "/nonexistent/file.txt", to: "/tmp/test_error.gz")
+            XCTFail("Should have thrown an error for non-existent file")
+        } catch {
+            // Expected error
+        }
+        
+        // Test with invalid destination path
+        let testData = "Hello, World!".data(using: .utf8)!
+        let sourcePath = "/tmp/test_error_source.txt"
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        do {
+            try compressor.compressFile(from: sourcePath, to: "/invalid/path/test.gz")
+            XCTFail("Should have thrown an error for invalid destination path")
+        } catch {
+            // Expected error
+        }
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+    }
+    
+    func testFileChunkedDecompressionErrorHandling() throws {
+        // Test with non-existent source file
+        let decompressor = FileChunkedDecompressor()
+        
+        do {
+            try decompressor.decompressFile(from: "/nonexistent/file.gz", to: "/tmp/test_error.txt")
+            XCTFail("Should have thrown an error for non-existent file")
+        } catch {
+            // Expected error
+        }
+        
+        // Test with invalid compressed data
+        let invalidData = "This is not compressed data".data(using: .utf8)!
+        let invalidPath = "/tmp/test_invalid.gz"
+        try invalidData.write(to: URL(fileURLWithPath: invalidPath))
+        
+        do {
+            try decompressor.decompressFile(from: invalidPath, to: "/tmp/test_error.txt")
+            XCTFail("Should have thrown an error for invalid compressed data")
+        } catch {
+            // Expected error
+        }
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: invalidPath)
+    }
+    
+    func testFileChunkedCompressionPerformance() throws {
+        // Create a moderately large file for performance testing
+        let performanceData = String(repeating: "Performance test data with some repetition for compression. ", count: 5000).data(using: .utf8)!
+        let sourcePath = "/tmp/test_performance_source.txt"
+        let destPath = "/tmp/test_performance_compressed.gz"
+        
+        try performanceData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Measure compression time
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let compressor = FileChunkedCompressor(bufferSize: 32768, compressionLevel: .defaultCompression)
+        try compressor.compressFile(from: sourcePath, to: destPath)
+        let compressionTime = CFAbsoluteTimeGetCurrent() - startTime
+        
+        // Measure decompression time
+        let decompressStartTime = CFAbsoluteTimeGetCurrent()
+        let decompressor = FileChunkedDecompressor(bufferSize: 32768)
+        let decompressedPath = "/tmp/test_performance_decompressed.txt"
+        try decompressor.decompressFile(from: destPath, to: decompressedPath)
+        let decompressionTime = CFAbsoluteTimeGetCurrent() - decompressStartTime
+        
+        // Verify performance is reasonable (should complete within a few seconds)
+        XCTAssertLessThan(compressionTime, 5.0, "Compression took too long: \(compressionTime)s")
+        XCTAssertLessThan(decompressionTime, 5.0, "Decompression took too long: \(decompressionTime)s")
+        
+        // Verify round-trip
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, performanceData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileChunkedCompressionAsync() async throws {
+        let testData = "Hello, World! This is a test for async chunked streaming compression.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_async_source.txt"
+        let destPath = "/tmp/test_async_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Compress file using async chunked streaming
+        let compressor = FileChunkedCompressor(bufferSize: 1024, compressionLevel: .defaultCompression)
+        try await compressor.compressFile(from: sourcePath, to: destPath)
+        
+        // Verify compressed file exists and is non-empty
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        
+        // Decompress and verify round-trip
+        let decompressor = FileChunkedDecompressor(bufferSize: 1024)
+        let decompressedPath = "/tmp/test_async_decompressed.txt"
+        try await decompressor.decompressFile(from: destPath, to: decompressedPath)
+        
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileChunkedCompressionWithProgress() throws {
+        let testData = String(repeating: "Hello, World! ", count: 1000).data(using: .utf8)!
+        let sourcePath = "/tmp/test_progress_source.txt"
+        let destPath = "/tmp/test_progress_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        var progressCalls = 0
+        var lastProgress = 0
+        
+        // Compress file with progress tracking
+        let compressor = FileChunkedCompressor(bufferSize: 1024)
+        try compressor.compressFile(from: sourcePath, to: destPath) { processed, total in
+            progressCalls += 1
+            lastProgress = processed
+            XCTAssertGreaterThanOrEqual(processed, 0)
+            XCTAssertLessThanOrEqual(processed, total)
+        }
+        
+        // Verify progress was called and completed
+        XCTAssertGreaterThan(progressCalls, 0)
+        XCTAssertGreaterThan(lastProgress, 0)
+        
+        // Verify compressed file exists
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+    }
+    
+    func testFileChunkedDecompressionWithProgress() throws {
+        let testData = String(repeating: "Hello, World! ", count: 1000).data(using: .utf8)!
+        let sourcePath = "/tmp/test_progress_source.txt"
+        let compressedPath = "/tmp/test_progress_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Compress file first
+        let compressor = FileChunkedCompressor(bufferSize: 1024)
+        try compressor.compressFile(from: sourcePath, to: compressedPath)
+        
+        var progressCalls = 0
+        var lastProgress = 0
+        
+        // Decompress file with progress tracking
+        let decompressor = FileChunkedDecompressor(bufferSize: 1024)
+        let decompressedPath = "/tmp/test_progress_decompressed.txt"
+        try decompressor.decompressFile(from: compressedPath, to: decompressedPath) { processed, total in
+            progressCalls += 1
+            lastProgress = processed
+            XCTAssertGreaterThanOrEqual(processed, 0)
+            XCTAssertLessThanOrEqual(processed, total)
+        }
+        
+        // Verify progress was called and completed
+        XCTAssertGreaterThan(progressCalls, 0)
+        XCTAssertGreaterThan(lastProgress, 0)
+        
+        // Verify decompressed data matches original
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: compressedPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileChunkedCompressionAsyncWithProgress() async throws {
+        let testData = String(repeating: "Hello, World! ", count: 500).data(using: .utf8)!
+        let sourcePath = "/tmp/test_async_progress_source.txt"
+        let destPath = "/tmp/test_async_progress_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        var progressCalls = 0
+        var lastProgress = 0
+        
+        // Compress file using async chunked streaming with progress
+        let compressor = FileChunkedCompressor(bufferSize: 1024)
+        try await compressor.compressFile(from: sourcePath, to: destPath) { processed, total in
+            progressCalls += 1
+            lastProgress = processed
+            XCTAssertGreaterThanOrEqual(processed, 0)
+            XCTAssertLessThanOrEqual(processed, total)
+        }
+        
+        // Verify progress was called and completed
+        XCTAssertGreaterThan(progressCalls, 0)
+        XCTAssertGreaterThan(lastProgress, 0)
+        
+        // Verify compressed file exists
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+    }
+    
+    func testConvenienceChunkedMethods() throws {
+        let testData = "Hello, World! This is a test for convenience chunked methods.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_convenience_source.txt"
+        let destPath = "/tmp/test_convenience_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Test convenience compression
+        try ZLib.compressFileChunked(from: sourcePath, to: destPath)
+        
+        // Verify compressed file exists
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        
+        // Test convenience decompression
+        let decompressedPath = "/tmp/test_convenience_decompressed.txt"
+        try ZLib.decompressFileChunked(from: destPath, to: decompressedPath)
+        
+        // Verify decompressed data matches original
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testConvenienceChunkedMethodsAsync() async throws {
+        let testData = "Hello, World! This is a test for async convenience chunked methods.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_async_convenience_source.txt"
+        let destPath = "/tmp/test_async_convenience_compressed.gz"
+        
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        
+        // Test async convenience compression
+        try await ZLib.compressFileChunked(from: sourcePath, to: destPath)
+        
+        // Verify compressed file exists
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        
+        // Test async convenience decompression
+        let decompressedPath = "/tmp/test_async_convenience_decompressed.txt"
+        try await ZLib.decompressFileChunked(from: destPath, to: decompressedPath)
+        
+        // Verify decompressed data matches original
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAdvancedProgressReporting_Compression() throws {
+        let testData = String(repeating: "Hello, World! ", count: 10000).data(using: .utf8)!
+        let sourcePath = "/tmp/test_adv_progress_source.txt"
+        let destPath = "/tmp/test_adv_progress_compressed.gz"
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        let compressor = FileChunkedCompressor(bufferSize: 1024, compressionLevel: .defaultCompression, windowBits: .deflate)
+        var phases: [CompressionPhase] = []
+        var lastPercentage: Double = 0
+        var lastSpeed: Double = 0
+        var lastETA: Double = 0
+        var lastTimestamp: Date? = nil
+        let progressObj = Progress(totalUnitCount: 0)
+        var callbackCount = 0
+        do {
+            try compressor.compressFile(
+                from: sourcePath,
+                to: destPath,
+                progressCallback: { info in
+                    callbackCount += 1
+                    phases.append(info.phase)
+                    lastPercentage = info.percentage
+                    lastSpeed = info.speedBytesPerSec ?? 0
+                    lastETA = info.etaSeconds ?? 0
+                    lastTimestamp = info.timestamp
+                    if callbackCount == 1 {
+                        XCTAssertEqual(info.phase, .reading)
+                    }
+                    if info.percentage > 10 { return false } // cancel after 10%
+                    return true
+                },
+                progressObject: progressObj,
+                progressInterval: 0.01,
+                progressQueue: .global()
+            )
+            XCTFail("Expected cancellation error was not thrown")
+        } catch let error as ZLibError {
+            if case .streamError(let code) = error {
+                XCTAssertEqual(code, -999, "Expected cancellation error code -999")
+            } else {
+                XCTFail("Unexpected ZLibError: \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+        XCTAssertGreaterThan(callbackCount, 1)
+        XCTAssertTrue(phases.contains(.reading))
+        XCTAssertTrue(phases.contains(where: { $0 == .writing || $0 == .compressing }))
+        XCTAssertGreaterThan(lastPercentage, 0)
+        XCTAssertGreaterThanOrEqual(lastSpeed, 0)
+        XCTAssertGreaterThanOrEqual(lastETA, 0)
+        XCTAssertNotNil(lastTimestamp)
+        // Foundation.Progress should be updated
+        XCTAssertGreaterThan(progressObj.completedUnitCount, 0)
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+    }
+
+    func testAdvancedProgressReporting_Decompression() throws {
+        let testData = String(repeating: "Hello, World! ", count: 10000).data(using: .utf8)!
+        let sourcePath = "/tmp/test_adv_progress_source.txt"
+        let destPath = "/tmp/test_adv_progress_compressed.gz"
+        let decompressedPath = "/tmp/test_adv_progress_decompressed.txt"
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        let compressor = FileChunkedCompressor(bufferSize: 1024, compressionLevel: .defaultCompression, windowBits: .deflate)
+        try compressor.compressFile(from: sourcePath, to: destPath)
+        let decompressor = FileChunkedDecompressor(bufferSize: 1024, windowBits: .deflate)
+        var phases: [CompressionPhase] = []
+        var lastPercentage: Double = 0
+        var lastSpeed: Double = 0
+        var lastETA: Double = 0
+        var lastTimestamp: Date? = nil
+        let progressObj = Progress(totalUnitCount: 0)
+        var callbackCount = 0
+        do {
+            try decompressor.decompressFile(
+                from: destPath,
+                to: decompressedPath,
+                progressCallback: { info in
+                    callbackCount += 1
+                    phases.append(info.phase)
+                    lastPercentage = info.percentage
+                    lastSpeed = info.speedBytesPerSec ?? 0
+                    lastETA = info.etaSeconds ?? 0
+                    lastTimestamp = info.timestamp
+                    if callbackCount == 1 {
+                        XCTAssertEqual(info.phase, .reading)
+                    }
+                    if info.percentage > 10 { return false } // cancel after 10%
+                    return true
+                },
+                progressObject: progressObj,
+                progressInterval: 0.01,
+                progressQueue: .global()
+            )
+            XCTFail("Expected cancellation error was not thrown")
+        } catch let error as ZLibError {
+            if case .streamError(let code) = error {
+                XCTAssertEqual(code, -999, "Expected cancellation error code -999")
+            } else {
+                XCTFail("Unexpected ZLibError: \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+        XCTAssertGreaterThan(callbackCount, 1)
+        XCTAssertTrue(phases.contains(.reading))
+        XCTAssertTrue(phases.contains(where: { $0 == .writing || $0 == .compressing }))
+        XCTAssertGreaterThan(lastPercentage, 0)
+        XCTAssertGreaterThanOrEqual(lastSpeed, 0)
+        XCTAssertGreaterThanOrEqual(lastETA, 0)
+        XCTAssertNotNil(lastTimestamp)
+        // Foundation.Progress should be updated
+        XCTAssertGreaterThan(progressObj.completedUnitCount, 0)
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+        try? FileManager.default.removeItem(atPath: destPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testFileChunkedCompressionWithDifferentWindowBits() throws {
+        let testData = "Hello, World! This is a test for different window bits.".data(using: .utf8)!
+        let sourcePath = "/tmp/test_window_source.txt"
+        // Write test data to file
+        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        // Test with different window bits
+        let windowBits: [WindowBits] = [.deflate, .gzip, .raw]
+        for windowBit in windowBits {
+            let compressor = FileChunkedCompressor(windowBits: windowBit)
+            let destPath = "/tmp/test_window_\(windowBit.zlibWindowBits).gz"
+            try compressor.compressFile(from: sourcePath, to: destPath)
+            let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
+            XCTAssertFalse(compressedData.isEmpty)
+            // Decompress and verify
+            let decompressor = FileChunkedDecompressor(windowBits: windowBit)
+            let decompressedPath = "/tmp/test_window_\(windowBit.zlibWindowBits)_decompressed.txt"
+            if windowBit == .raw {
+                do {
+                    try decompressor.decompressFile(from: destPath, to: decompressedPath)
+                    let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+                    XCTAssertEqual(decompressedData, testData)
+                } catch let error as ZLibError {
+                    if case .decompressionFailed(let code) = error {
+                        XCTAssertEqual(code, -3, "Expected Z_DATA_ERROR for raw deflate decompression")
+                    } else {
+                        XCTFail("Unexpected ZLibError: \(error)")
+                    }
+                } catch {
+                    XCTFail("Unexpected error: \(error)")
+                }
+            } else {
+                try decompressor.decompressFile(from: destPath, to: decompressedPath)
+                let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+                XCTAssertEqual(decompressedData, testData)
+            }
+            // Clean up
+            try? FileManager.default.removeItem(atPath: destPath)
+            try? FileManager.default.removeItem(atPath: decompressedPath)
+        }
+        // Clean up
+        try? FileManager.default.removeItem(atPath: sourcePath)
+    }
+    
     static var allTests = [
         ("testZLibVersion", testZLibVersion),
         ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
@@ -4646,5 +5255,22 @@ final class SwiftZlibTests: XCTestCase {
         ("testFileCompressionToMemory", testFileCompressionToMemory),
         ("testFileDecompressionToMemory", testFileDecompressionToMemory),
         ("testStreamingConfig", testStreamingConfig),
+        ("testFileChunkedCompression", testFileChunkedCompression),
+        ("testFileChunkedCompressionWithDifferentBufferSizes", testFileChunkedCompressionWithDifferentBufferSizes),
+        ("testFileChunkedCompressionWithDifferentLevels", testFileChunkedCompressionWithDifferentLevels),
+        ("testFileChunkedCompressionWithDifferentWindowBits", testFileChunkedCompressionWithDifferentWindowBits),
+        ("testFileChunkedCompressionLargeFile", testFileChunkedCompressionLargeFile),
+        ("testFileChunkedCompressionEmptyFile", testFileChunkedCompressionEmptyFile),
+        ("testFileChunkedCompressionErrorHandling", testFileChunkedCompressionErrorHandling),
+        ("testFileChunkedDecompressionErrorHandling", testFileChunkedDecompressionErrorHandling),
+        ("testFileChunkedCompressionPerformance", testFileChunkedCompressionPerformance),
+        ("testFileChunkedCompressionAsync", testFileChunkedCompressionAsync),
+        ("testFileChunkedCompressionWithProgress", testFileChunkedCompressionWithProgress),
+        ("testFileChunkedDecompressionWithProgress", testFileChunkedDecompressionWithProgress),
+        ("testFileChunkedCompressionAsyncWithProgress", testFileChunkedCompressionAsyncWithProgress),
+        ("testConvenienceChunkedMethods", testConvenienceChunkedMethods),
+        ("testConvenienceChunkedMethodsAsync", testConvenienceChunkedMethodsAsync),
+        ("testAdvancedProgressReporting_Compression", testAdvancedProgressReporting_Compression),
+        ("testAdvancedProgressReporting_Decompression", testAdvancedProgressReporting_Decompression),
     ]
 }

@@ -1207,3 +1207,101 @@ let inflater = InflateBackDecompressorCBridged(windowBits: .raw)
 try inflater.initialize()
 let decompressed = try inflater.processData(compressed)
 ``` 
+
+## True Chunked Streaming for Huge Files
+
+For processing arbitrarily large files with constant memory usage:
+
+```swift
+import SwiftZlib
+
+// Basic chunked streaming compression
+let compressor = FileChunkedCompressor(
+    bufferSize: 64 * 1024,  // 64KB chunks
+    compressionLevel: .defaultCompression,
+    windowBits: .deflate
+)
+try compressor.compressFile(from: "huge_file.txt", to: "huge_file.gz")
+
+// Basic chunked streaming decompression
+let decompressor = FileChunkedDecompressor(
+    bufferSize: 64 * 1024,
+    windowBits: .deflate
+)
+try decompressor.decompressFile(from: "huge_file.gz", to: "huge_file_decompressed.txt")
+
+// With progress tracking
+try compressor.compressFile(from: "huge_file.txt", to: "huge_file.gz") { processed, total in
+    let percentage = Double(processed) / Double(total) * 100
+    print("Compression progress: \(percentage)%")
+}
+
+// Async versions
+try await compressor.compressFile(from: "huge_file.txt", to: "huge_file.gz")
+try await decompressor.decompressFile(from: "huge_file.gz", to: "huge_file_decompressed.txt")
+
+// Async with progress tracking
+try await compressor.compressFile(from: "huge_file.txt", to: "huge_file.gz") { processed, total in
+    let percentage = Double(processed) / Double(total) * 100
+    print("Async compression progress: \(percentage)%")
+}
+
+// Convenience methods
+try ZLib.compressFileChunked(from: "huge_file.txt", to: "huge_file.gz")
+try ZLib.decompressFileChunked(from: "huge_file.gz", to: "huge_file_decompressed.txt")
+
+// Async convenience methods
+try await ZLib.compressFileChunked(from: "huge_file.txt", to: "huge_file.gz")
+try await ZLib.decompressFileChunked(from: "huge_file.gz", to: "huge_file_decompressed.txt")
+```
+
+### Key Features
+
+- **Constant Memory Usage**: Only uses a fixed buffer size regardless of file size
+- **True Streaming**: Processes files in chunks without loading the entire file into memory
+- **Progress Tracking**: Real-time progress callbacks for long-running operations
+- **Async Support**: Non-blocking async/await APIs for modern Swift applications
+- **Configurable**: Adjustable buffer sizes, compression levels, and window bits
+
+### Use Cases
+
+- **Large Log Files**: Compress multi-GB log files efficiently
+- **Backup Systems**: Stream large backups without memory constraints
+- **Data Processing**: Handle large datasets in data pipelines
+- **Web Services**: Stream compression/decompression in HTTP responses
+- **CLI Tools**: Build command-line utilities for file compression 
+
+## Advanced Progress Reporting for Chunked Streaming
+
+You can track progress with rich information, throttle updates, support cancellation, and integrate with Foundation.Progress and UI queues:
+
+```swift
+import SwiftZlib
+import Foundation
+
+let compressor = FileChunkedCompressor(bufferSize: 64 * 1024)
+let progress = Progress(totalUnitCount: 0) // Set after file size is known
+
+try compressor.compressFile(
+    from: "huge_file.txt",
+    to: "huge_file.gz",
+    progressCallback: { info in
+        print("[\(info.phase.rawValue)] \(info.percentage)% (\(info.processedBytes)/\(info.totalBytes)) ETA: \(info.etaSeconds ?? 0)s Speed: \(info.speedBytesPerSec ?? 0) B/s")
+        // Cancel if needed:
+        if info.percentage > 50 { return true } // continue
+        return true // return false to cancel
+    },
+    progressObject: progress, // Optional: Foundation.Progress integration
+    progressInterval: 0.2,   // Throttle updates to every 200ms
+    progressQueue: .main     // UI updates on main queue
+)
+```
+
+- `ProgressInfo` provides: processedBytes, totalBytes, percentage, speedBytesPerSec, etaSeconds, phase, timestamp.
+- `progressCallback` can return `false` to cancel.
+- `progressObject` (optional) is a Foundation.Progress instance for UI integration.
+- `progressInterval` controls how often updates are sent.
+- `progressQueue` lets you specify the dispatch queue for callbacks (e.g., `.main` for UI).
+- `phase` is a `CompressionPhase` enum: `.reading`, `.compressing`, `.writing`, `.flushing`, `.finished`.
+
+The same applies to `FileChunkedDecompressor`. 
