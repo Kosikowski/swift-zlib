@@ -194,7 +194,7 @@ public enum ZLibError: Error, LocalizedError {
 }
 
 /// Compression levels for ZLib
-public enum CompressionLevel: Int32 {
+public enum CompressionLevel: Int32, Sendable {
     case noCompression = 0
     case bestSpeed = 1
     case bestCompression = 9
@@ -215,7 +215,7 @@ public enum CompressionMethod: Int32 {
 }
 
 /// Window bits for different formats
-public enum WindowBits: Int32 {
+public enum WindowBits: Int32, Sendable {
     case deflate = 15      // Standard deflate format
     case gzip = 31         // Gzip format (16 + 15)
     case raw = -15         // Raw deflate format (no header/trailer)
@@ -227,7 +227,7 @@ public enum WindowBits: Int32 {
 }
 
 /// Memory levels for compression
-public enum MemoryLevel: Int32 {
+public enum MemoryLevel: Int32, Sendable {
     case minimum = 1
     case level2 = 2
     case level3 = 3
@@ -244,7 +244,7 @@ public enum MemoryLevel: Int32 {
 }
 
 /// Compression strategies
-public enum CompressionStrategy: Int32 {
+public enum CompressionStrategy: Int32, Sendable {
     case defaultStrategy = 0
     case filtered = 1
     case huffmanOnly = 2
@@ -257,7 +257,7 @@ public enum CompressionStrategy: Int32 {
 }
 
 /// Flush modes for stream operations
-public enum FlushMode: Int32 {
+public enum FlushMode: Int32, Sendable {
     case noFlush = 0
     case partialFlush = 1
     case syncFlush = 2
@@ -324,7 +324,7 @@ public enum ZLibErrorCode: Int32 {
 }
 
 /// Swifty representation of a gzip header (gz_header)
-public struct GzipHeader {
+public struct GzipHeader: Sendable {
     public var text: Int32 = 0
     public var time: UInt32 = 0
     public var xflags: Int32 = 0
@@ -394,7 +394,7 @@ fileprivate func from_c_gz_header(_ cHeader: UnsafePointer<gz_header>) -> GzipHe
 }
 
 /// Compression configuration options
-public struct CompressionOptions {
+public struct CompressionOptions: Sendable {
     /// Compression format (zlib, gzip, or raw deflate)
     public var format: CompressionFormat
     /// Compression level
@@ -426,7 +426,7 @@ public struct CompressionOptions {
 }
 
 /// Decompression configuration options
-public struct DecompressionOptions {
+public struct DecompressionOptions: Sendable {
     /// Decompression format (zlib, gzip, raw deflate, or auto-detect)
     public var format: CompressionFormat
     /// Dictionary for decompression (optional)
@@ -446,7 +446,7 @@ public struct DecompressionOptions {
 }
 
 /// Compression format enum for better API
-public enum CompressionFormat {
+public enum CompressionFormat: Sendable {
     case zlib
     case gzip
     case raw
@@ -2926,13 +2926,13 @@ public class ZLibStream {
     private var isFinished = false
     
     /// Stream operation mode
-    public enum StreamMode {
+    public enum StreamMode: Sendable {
         case compress
         case decompress
     }
     
     /// Stream configuration options
-    public struct StreamOptions {
+    public struct StreamOptions: Sendable {
         /// Compression options (used for compress mode)
         public var compression: CompressionOptions
         /// Decompression options (used for decompress mode)
@@ -3214,7 +3214,8 @@ public extension ZLib {
 }
 
 /// Async streaming compressor for non-blocking compression
-public class AsyncCompressor {
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public class AsyncCompressor: @unchecked Sendable {
     private let compressor: Compressor
     private let queue: DispatchQueue
     private let bufferSize: Int
@@ -3236,14 +3237,15 @@ public class AsyncCompressor {
     /// - Throws: ZLibError if initialization fails
     public func initialize() async throws {
         return try await withCheckedThrowingContinuation { continuation in
+            let options = self.options
             queue.async {
                 do {
                     try self.compressor.initializeAdvanced(
-                        level: self.options.level,
+                        level: options.level,
                         method: .deflate,
-                        windowBits: self.options.format.windowBits,
-                        memoryLevel: self.options.memoryLevel,
-                        strategy: self.options.strategy
+                        windowBits: options.format.windowBits,
+                        memoryLevel: options.memoryLevel,
+                        strategy: options.strategy
                     )
                     continuation.resume()
                 } catch {
@@ -3261,9 +3263,10 @@ public class AsyncCompressor {
     /// - Throws: ZLibError if compression fails
     public func compress(_ data: Data, flush: FlushMode = .noFlush) async throws -> Data {
         return try await withCheckedThrowingContinuation { continuation in
+            let flushMode = flush
             queue.async {
                 do {
-                    let result = try self.compressor.compress(data, flush: flush)
+                    let result = try self.compressor.compress(data, flush: flushMode)
                     continuation.resume(returning: result)
                 } catch {
                     continuation.resume(throwing: error)
@@ -3321,7 +3324,8 @@ public class AsyncCompressor {
 }
 
 /// Async streaming decompressor for non-blocking decompression
-public class AsyncDecompressor {
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public class AsyncDecompressor: @unchecked Sendable {
     private let decompressor: Decompressor
     private let queue: DispatchQueue
     private let bufferSize: Int
@@ -3343,9 +3347,10 @@ public class AsyncDecompressor {
     /// - Throws: ZLibError if initialization fails
     public func initialize() async throws {
         return try await withCheckedThrowingContinuation { continuation in
+            let options = self.options
             queue.async {
                 do {
-                    try self.decompressor.initializeAdvanced(windowBits: self.options.format.windowBits)
+                    try self.decompressor.initializeAdvanced(windowBits: options.format.windowBits)
                     continuation.resume()
                 } catch {
                     continuation.resume(throwing: error)
@@ -3404,7 +3409,8 @@ public class AsyncDecompressor {
 }
 
 /// Async unified streaming interface
-public class AsyncZLibStream {
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public class AsyncZLibStream: @unchecked Sendable {
     private var asyncCompressor: AsyncCompressor?
     private var asyncDecompressor: AsyncDecompressor?
     private let mode: ZLibStream.StreamMode
@@ -3528,7 +3534,8 @@ public class AsyncZLibStream {
 // MARK: - Async Stream Builder
 
 /// Builder for creating async ZLib streams with fluent API
-public class AsyncZLibStreamBuilder {
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public class AsyncZLibStreamBuilder: @unchecked Sendable {
     private var mode: ZLibStream.StreamMode = .compress
     private var options = ZLibStream.StreamOptions()
     
