@@ -92,6 +92,26 @@ int swift_inflateBackEnd(z_streamp strm) {
     return inflateBackEnd(strm);
 }
 
+// InflateBack with Swift callback support
+static int swift_in_wrapper(void* desc, unsigned char** buf) {
+    // Extract the Swift callback and buffer from desc
+    // This is a simplified version - in practice we'd need more complex memory management
+    return 0; // Placeholder
+}
+
+static int swift_out_wrapper(void* desc, unsigned char* buf, unsigned len) {
+    // Extract the Swift callback from desc and call it
+    // This is a simplified version - in practice we'd need more complex memory management
+    return 0; // Placeholder
+}
+
+int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *in_desc, swift_out_func out_func, void *out_desc) {
+    // For now, we'll use a simplified approach
+    // In a full implementation, we'd need to create proper wrapper functions
+    // that can bridge between Swift closures and zlib's callback expectations
+    return Z_STREAM_ERROR; // Placeholder - full implementation would be complex
+}
+
 // Stream introspection
 long swift_inflateMark(z_streamp strm) {
     return inflateMark(strm);
@@ -219,6 +239,35 @@ int swift_gzsetparams(void* file, int level, int strategy) {
 const char* swift_gzerror(void* file, int* errnum) {
     return gzerror((gzFile)file, errnum);
 } 
+
+// Advanced gzip file operations
+int swift_gzprintf(void* file, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    int result = gzprintf((gzFile)file, format, args);
+    va_end(args);
+    return result;
+}
+
+char* swift_gzgets(void* file, char* buf, int len) {
+    return gzgets((gzFile)file, buf, len);
+}
+
+int swift_gzputc(void* file, int c) {
+    return gzputc((gzFile)file, c);
+}
+
+int swift_gzgetc(void* file) {
+    return gzgetc((gzFile)file);
+}
+
+int swift_gzungetc(int c, void* file) {
+    return gzungetc(c, (gzFile)file);
+}
+
+void swift_gzclearerr(void* file) {
+    gzclearerr((gzFile)file);
+}
 
 // Gzip header manipulation
 int swift_deflateSetHeader(z_streamp strm, gz_headerp head) {

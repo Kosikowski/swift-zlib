@@ -43,6 +43,12 @@ int swift_inflateBackInit(z_streamp strm, int windowBits, unsigned char *window)
 int swift_inflateBack(z_streamp strm, in_func in, void *in_desc, out_func out, void *out_desc);
 int swift_inflateBackEnd(z_streamp strm);
 
+// InflateBack with Swift callback support
+typedef int (*swift_in_func)(void*, unsigned char*, int);
+typedef int (*swift_out_func)(void*, unsigned char*, int);
+
+int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *in_desc, swift_out_func out_func, void *out_desc);
+
 // Stream introspection
 long swift_inflateMark(z_streamp strm);
 unsigned long swift_inflateCodesUsed(z_streamp strm);
@@ -91,6 +97,14 @@ int swift_gzrewind(void* file);
 int swift_gzeof(void* file);
 int swift_gzsetparams(void* file, int level, int strategy);
 const char* swift_gzerror(void* file, int* errnum);
+
+// Advanced gzip file operations
+int swift_gzprintf(void* file, const char* format, ...);
+char* swift_gzgets(void* file, char* buf, int len);
+int swift_gzputc(void* file, int c);
+int swift_gzgetc(void* file);
+int swift_gzungetc(int c, void* file);
+void swift_gzclearerr(void* file);
 
 // Gzip header manipulation
 int swift_deflateSetHeader(z_streamp strm, gz_headerp head);

@@ -250,6 +250,65 @@ public struct ZLib {
         return swift_zlibCompileFlags()
     }
     
+    /// Get detailed ZLib compile flags information
+    public static var compileFlagsInfo: ZLibCompileFlags {
+        return ZLibCompileFlags(flags: compileFlags)
+    }
+    
+    /// ZLib compile flags breakdown
+    public struct ZLibCompileFlags {
+        public let flags: UInt
+        
+        public init(flags: UInt) {
+            self.flags = flags
+        }
+        
+        /// ZLib version
+        public var version: String {
+            return ZLib.version
+        }
+        
+        /// Size of unsigned int
+        public var sizeOfUInt: Int {
+            return Int((flags >> 0) & 0xFF)
+        }
+        
+        /// Size of unsigned long
+        public var sizeOfULong: Int {
+            return Int((flags >> 8) & 0xFF)
+        }
+        
+        /// Size of pointer
+        public var sizeOfPointer: Int {
+            return Int((flags >> 16) & 0xFF)
+        }
+        
+        /// Size of z_off_t
+        public var sizeOfZOffT: Int {
+            return Int((flags >> 24) & 0xFF)
+        }
+        
+        /// Compiler flags
+        public var compilerFlags: UInt {
+            return (flags >> 32) & 0xFFFF
+        }
+        
+        /// Library flags
+        public var libraryFlags: UInt {
+            return (flags >> 48) & 0xFFFF
+        }
+        
+        /// Is debug build
+        public var isDebug: Bool {
+            return (flags & 0x1000000000000000) != 0
+        }
+        
+        /// Is optimized build
+        public var isOptimized: Bool {
+            return (flags & 0x2000000000000000) != 0
+        }
+    }
+    
     /// Compress data with the specified compression level
     /// - Parameters:
     ///   - data: The data to compress
@@ -552,6 +611,65 @@ public final class GzipFile {
             return String(cString: cstr)
         }
         return "Unknown error (code: \(errnum))"
+    }
+    
+    /// Read a line from gzip file
+    /// - Parameter maxLength: Maximum line length
+    /// - Returns: Line read from file, or nil if EOF
+    /// - Throws: GzipFileError if operation fails
+    public func gets(maxLength: Int = 1024) throws -> String? {
+        guard let ptr = filePtr else { throw GzipFileError.readFailed("File not open") }
+        var buffer = [CChar](repeating: 0, count: maxLength)
+        guard let result = swift_gzgets(ptr, &buffer, Int32(maxLength)) else {
+            return nil // EOF
+        }
+        return String(cString: result)
+    }
+    
+    /// Write a single character to gzip file
+    /// - Parameter character: Character to write
+    /// - Throws: GzipFileError if operation fails
+    public func putc(_ character: Character) throws {
+        guard let ptr = filePtr else { throw GzipFileError.writeFailed("File not open") }
+        let c = Int32(character.asciiValue ?? 0)
+        let result = swift_gzputc(ptr, c)
+        if result != c {
+            throw GzipFileError.writeFailed(errorMessage())
+        }
+    }
+    
+    /// Read a single character from gzip file
+    /// - Returns: Character read, or nil if EOF
+    /// - Throws: GzipFileError if operation fails
+    public func getc() throws -> Character? {
+        guard let ptr = filePtr else { throw GzipFileError.readFailed("File not open") }
+        let result = swift_gzgetc(ptr)
+        if result == -1 {
+            return nil // EOF
+        }
+        guard let asciiValue = UInt8(exactly: result) else {
+            throw GzipFileError.readFailed("Invalid character")
+        }
+        let char = Character(String(UnicodeScalar(asciiValue)))
+        return char
+    }
+    
+    /// Push back a character to gzip file
+    /// - Parameter character: Character to push back
+    /// - Throws: GzipFileError if operation fails
+    public func ungetc(_ character: Character) throws {
+        guard let ptr = filePtr else { throw GzipFileError.writeFailed("File not open") }
+        let c = Int32(character.asciiValue ?? 0)
+        let result = swift_gzungetc(c, ptr)
+        if result != c {
+            throw GzipFileError.writeFailed(errorMessage())
+        }
+    }
+    
+    /// Clear error state of gzip file
+    public func clearError() {
+        guard let ptr = filePtr else { return }
+        swift_gzclearerr(ptr)
     }
 }
 
@@ -1193,6 +1311,41 @@ public extension Data {
     func decompressed() throws -> Data {
         return try ZLib.decompress(self)
     }
+    
+    /// Partially decompress this data
+    /// - Parameter maxOutputSize: Maximum output buffer size
+    /// - Returns: Tuple of (decompressed data, input consumed, output written)
+    /// - Throws: ZLibError if decompression fails
+    func partialDecompressed(maxOutputSize: Int = 4096) throws -> (decompressed: Data, inputConsumed: Int, outputWritten: Int) {
+        return try ZLib.partialDecompress(self, maxOutputSize: maxOutputSize)
+    }
+    
+    /// Compress this data with gzip header
+    /// - Parameters:
+    ///   - level: Compression level
+    ///   - header: Gzip header information
+    /// - Returns: Compressed data with gzip header
+    /// - Throws: ZLibError if compression fails
+    func compressedWithGzipHeader(level: CompressionLevel = .defaultCompression, header: GzipHeader) throws -> Data {
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: level, windowBits: .gzip)
+        try compressor.setGzipHeader(header)
+        return try compressor.compress(self) + compressor.finish()
+    }
+    
+    /// Calculate Adler-32 checksum
+    /// - Parameter initialValue: Initial Adler-32 value (default: 1)
+    /// - Returns: Adler-32 checksum
+    func adler32(initialValue: uLong = 1) -> uLong {
+        return ZLib.adler32(self, initialValue: initialValue)
+    }
+    
+    /// Calculate CRC-32 checksum
+    /// - Parameter initialValue: Initial CRC-32 value (default: 0)
+    /// - Returns: CRC-32 checksum
+    func crc32(initialValue: uLong = 0) -> uLong {
+        return ZLib.crc32(self, initialValue: initialValue)
+    }
 }
 
 public extension String {
@@ -1217,5 +1370,32 @@ public extension String {
             throw ZLibError.invalidData
         }
         return string
+    }
+    
+    /// Compress this string with gzip header
+    /// - Parameters:
+    ///   - level: Compression level
+    ///   - header: Gzip header information
+    /// - Returns: Compressed data with gzip header
+    /// - Throws: ZLibError if compression fails
+    func compressedWithGzipHeader(level: CompressionLevel = .defaultCompression, header: GzipHeader) throws -> Data {
+        guard let data = self.data(using: .utf8) else {
+            throw ZLibError.invalidData
+        }
+        return try data.compressedWithGzipHeader(level: level, header: header)
+    }
+    
+    /// Calculate Adler-32 checksum
+    /// - Parameter initialValue: Initial Adler-32 value (default: 1)
+    /// - Returns: Adler-32 checksum
+    func adler32(initialValue: uLong = 1) -> uLong? {
+        return ZLib.adler32(self, initialValue: initialValue)
+    }
+    
+    /// Calculate CRC-32 checksum
+    /// - Parameter initialValue: Initial CRC-32 value (default: 0)
+    /// - Returns: CRC-32 checksum
+    func crc32(initialValue: uLong = 0) -> uLong? {
+        return ZLib.crc32(self, initialValue: initialValue)
     }
 }
