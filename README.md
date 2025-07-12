@@ -204,6 +204,107 @@ try compressor.initialize(level: .bestCompression)
 let compressed = try compressor.compress(data) + compressor.finish()
 ```
 
+## API Overview
+
+### Simple API
+For basic compression and decompression:
+
+```swift
+// Simple compression
+let compressed = try ZLib.compress(data)
+let decompressed = try ZLib.decompress(compressed)
+
+// With options
+let compressed = try ZLib.compress(data, options: .init(level: .bestCompression))
+let decompressed = try ZLib.decompress(compressed, options: .init())
+```
+
+### Advanced API
+For fine-grained control:
+
+```swift
+// Compression with advanced options
+let compressor = Compressor()
+try compressor.initializeAdvanced(
+    level: .bestCompression,
+    format: .gzip,
+    memoryLevel: 8,
+    strategy: .defaultStrategy
+)
+let compressed = try compressor.compress(data, flush: .finish)
+
+// Decompression with advanced options
+let decompressor = Decompressor()
+try decompressor.initializeAdvanced(windowBits: .gzip)
+let decompressed = try decompressor.decompress(compressed)
+```
+
+### Unified Streaming API
+For ergonomic streaming with builder pattern:
+
+```swift
+// Builder pattern for compression
+let compressionStream = ZLib.stream()
+    .compress()
+    .format(.zlib)
+    .level(.bestCompression)
+    .bufferSize(1024)
+    .build()
+
+try compressionStream.initialize()
+let compressed = try compressionStream.process(data, flush: .finish)
+
+// Builder pattern for decompression
+let decompressionStream = ZLib.stream()
+    .decompress()
+    .format(.zlib)
+    .bufferSize(1024)
+    .build()
+
+try decompressionStream.initialize()
+let decompressed = try decompressionStream.process(compressed)
+
+// Direct stream creation
+let directCompressStream = ZLib.compressionStream()
+let directDecompressStream = ZLib.decompressionStream()
+
+// Streaming with chunks
+let chunkStream = ZLib.stream().compress().format(.gzip).build()
+try chunkStream.initialize()
+
+var chunkedCompressed = Data()
+for chunk in dataChunks {
+    let compressedChunk = try chunkStream.process(chunk, flush: .noFlush)
+    chunkedCompressed.append(compressedChunk)
+}
+let finalChunk = try chunkStream.process(Data(), flush: .finish)
+chunkedCompressed.append(finalChunk)
+```
+
+### Configuration-Based API
+For structured configuration:
+
+```swift
+// Compression configuration
+let compressionConfig = CompressionOptions(
+    level: .bestCompression,
+    format: .gzip,
+    memoryLevel: 8,
+    strategy: .defaultStrategy,
+    dictionary: dictionaryData
+)
+
+let compressed = try ZLib.compress(data, options: compressionConfig)
+
+// Decompression configuration
+let decompressionConfig = DecompressionOptions(
+    format: .gzip,
+    dictionary: dictionaryData
+)
+
+let decompressed = try ZLib.decompress(compressed, options: decompressionConfig)
+```
+
 ## API Reference
 
 ### High-Level API
@@ -557,6 +658,259 @@ func createGzipFile(data: Data, at path: String) throws {
     
     try gzipFile.writeData(data)
     try gzipFile.flush()
+}
+```
+
+## Usage Examples
+
+### Basic Compression and Decompression
+
+```swift
+import SwiftZlib
+
+// Simple compression
+let originalData = "Hello, World!".data(using: .utf8)!
+let compressed = try ZLib.compress(originalData)
+let decompressed = try ZLib.decompress(compressed)
+
+print("Original: \(originalData.count) bytes")
+print("Compressed: \(compressed.count) bytes")
+print("Decompressed: \(decompressed.count) bytes")
+print("Success: \(originalData == decompressed)")
+```
+
+### Advanced Streaming with Builder Pattern
+
+```swift
+import SwiftZlib
+
+let largeData = generateLargeData() // Your data source
+
+// Create compression stream with builder pattern
+let compressionStream = ZLib.stream()
+    .compress()
+    .format(.gzip)
+    .level(.bestCompression)
+    .bufferSize(4096)
+    .build()
+
+try compressionStream.initialize()
+
+// Process data in chunks
+var compressedData = Data()
+let chunkSize = 1024
+
+for i in stride(from: 0, to: largeData.count, by: chunkSize) {
+    let end = min(i + chunkSize, largeData.count)
+    let chunk = largeData.subdata(in: i..<end)
+    
+    let isLastChunk = (end == largeData.count)
+    let flush: FlushMode = isLastChunk ? .finish : .noFlush
+    
+    let compressedChunk = try compressionStream.process(chunk, flush: flush)
+    compressedData.append(compressedChunk)
+}
+
+// Create decompression stream
+let decompressionStream = ZLib.stream()
+    .decompress()
+    .format(.gzip)
+    .bufferSize(4096)
+    .build()
+
+try decompressionStream.initialize()
+
+// Decompress the data
+let decompressedData = try decompressionStream.process(compressedData)
+
+print("Original: \(largeData.count) bytes")
+print("Compressed: \(compressedData.count) bytes")
+print("Decompressed: \(decompressedData.count) bytes")
+print("Success: \(largeData == decompressedData)")
+```
+
+### Configuration-Based API
+
+```swift
+import SwiftZlib
+
+// Create compression configuration
+let compressionConfig = CompressionOptions(
+    level: .bestCompression,
+    format: .zlib,
+    memoryLevel: 8,
+    strategy: .defaultStrategy
+)
+
+// Create decompression configuration
+let decompressionConfig = DecompressionOptions(
+    format: .zlib
+)
+
+let data = "Compressible data that will be compressed efficiently".data(using: .utf8)!
+
+// Compress with configuration
+let compressed = try ZLib.compress(data, options: compressionConfig)
+
+// Decompress with configuration
+let decompressed = try ZLib.decompress(compressed, options: decompressionConfig)
+
+print("Compression ratio: \(Double(compressed.count) / Double(data.count))")
+```
+
+### Dictionary-Based Compression
+
+```swift
+import SwiftZlib
+
+// Create a dictionary for better compression of similar data
+let dictionary = "common prefix data that appears frequently".data(using: .utf8)!
+
+// Compression configuration with dictionary
+let compressionConfig = CompressionOptions(
+    level: .bestCompression,
+    format: .zlib,
+    dictionary: dictionary
+)
+
+// Decompression configuration with same dictionary
+let decompressionConfig = DecompressionOptions(
+    format: .zlib,
+    dictionary: dictionary
+)
+
+let data = "common prefix data that appears frequently in this text".data(using: .utf8)!
+
+let compressed = try ZLib.compress(data, options: compressionConfig)
+let decompressed = try ZLib.decompress(compressed, options: decompressionConfig)
+
+print("With dictionary: \(compressed.count) bytes")
+print("Without dictionary: \(try ZLib.compress(data).count) bytes")
+```
+
+### Gzip File Operations
+
+```swift
+import SwiftZlib
+
+// Create a gzip file
+let gzipFile = try GzipFile(path: "example.txt.gz", mode: .write)
+try gzipFile.setHeader(GzipHeader(
+    filename: "example.txt",
+    comment: "Compressed example file",
+    timestamp: Date()
+))
+
+let data = "File content to compress".data(using: .utf8)!
+try gzipFile.write(data)
+try gzipFile.close()
+
+// Read the gzip file
+let readFile = try GzipFile(path: "example.txt.gz", mode: .read)
+let header = try readFile.getHeader()
+let decompressedData = try readFile.readAll()
+try readFile.close()
+
+print("Filename: \(header.filename ?? "unknown")")
+print("Comment: \(header.comment ?? "none")")
+print("Timestamp: \(header.timestamp ?? Date())")
+print("Content: \(String(data: decompressedData, encoding: .utf8) ?? "invalid")")
+```
+
+### Error Handling
+
+```swift
+import SwiftZlib
+
+do {
+    let compressed = try ZLib.compress(data)
+    let decompressed = try ZLib.decompress(compressed)
+} catch ZLibError.compressionFailed(let code) {
+    print("Compression failed with code: \(code)")
+} catch ZLibError.decompressionFailed(let code) {
+    print("Decompression failed with code: \(code)")
+} catch ZLibError.streamError(let code) {
+    print("Stream error with code: \(code)")
+} catch {
+    print("Unexpected error: \(error)")
+}
+```
+
+### Performance Monitoring
+
+```swift
+import SwiftZlib
+
+let data = generateTestData(size: 1024 * 1024) // 1MB
+
+// Monitor compression performance
+let startTime = CFAbsoluteTimeGetCurrent()
+let compressed = try ZLib.compress(data)
+let compressionTime = CFAbsoluteTimeGetCurrent() - startTime
+
+let startTime2 = CFAbsoluteTimeGetCurrent()
+let decompressed = try ZLib.decompress(compressed)
+let decompressionTime = CFAbsoluteTimeGetCurrent() - startTime2
+
+print("Compression time: \(compressionTime)s")
+print("Decompression time: \(decompressionTime)s")
+print("Compression ratio: \(Double(compressed.count) / Double(data.count))")
+print("Throughput: \(Double(data.count) / compressionTime / 1024 / 1024) MB/s")
+```
+
+### Async/Await Support
+
+For non-blocking compression and decompression:
+
+```swift
+import SwiftZlib
+
+// Simple async compression/decompression
+let originalData = "Async compression test".data(using: .utf8)!
+let compressed = try await ZLib.compressAsync(originalData)
+let decompressed = try await ZLib.decompressAsync(compressed)
+
+// Async compression with options
+let compressionOptions = CompressionOptions(
+    format: .gzip,
+    level: .bestCompression
+)
+let compressedWithOptions = try await ZLib.compressAsync(originalData, options: compressionOptions)
+
+// Async streaming compression
+let asyncCompressor = AsyncCompressor(options: compressionOptions)
+try await asyncCompressor.initialize()
+let streamCompressed = try await asyncCompressor.compress(originalData, flush: FlushMode.finish)
+
+// Async streaming decompression
+let asyncDecompressor = AsyncDecompressor(options: DecompressionOptions(format: .gzip))
+try await asyncDecompressor.initialize()
+let streamDecompressed = try await asyncDecompressor.decompress(streamCompressed)
+
+// Async unified streaming API
+let asyncStream = ZLib.asyncStream()
+    .compress()
+    .format(.zlib)
+    .level(.bestSpeed)
+    .bufferSize(1024)
+    .build()
+
+try await asyncStream.initialize()
+let unifiedCompressed = try await asyncStream.process(originalData, flush: FlushMode.finish)
+
+// Async streaming with chunks
+let chunkStream = ZLib.asyncStream().compress().format(.gzip).build()
+try await chunkStream.initialize()
+
+var chunkedCompressed = Data()
+let chunkSize = 5
+
+for i in stride(from: 0, to: originalData.count, by: chunkSize) {
+    let end = min(i + chunkSize, originalData.count)
+    let chunk = originalData.subdata(in: i..<end)
+    let flush: FlushMode = (end == originalData.count) ? .finish : .noFlush
+    let compressedChunk = try await chunkStream.process(chunk, flush: flush)
+    chunkedCompressed.append(compressedChunk)
 }
 ```
 

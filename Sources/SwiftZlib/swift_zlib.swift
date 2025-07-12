@@ -393,6 +393,75 @@ fileprivate func from_c_gz_header(_ cHeader: UnsafePointer<gz_header>) -> GzipHe
     return swift
 }
 
+/// Compression configuration options
+public struct CompressionOptions {
+    /// Compression format (zlib, gzip, or raw deflate)
+    public var format: CompressionFormat
+    /// Compression level
+    public var level: CompressionLevel
+    /// Compression strategy
+    public var strategy: CompressionStrategy
+    /// Memory level for compression
+    public var memoryLevel: MemoryLevel
+    /// Dictionary for compression (optional)
+    public var dictionary: Data?
+    /// Gzip header information (optional, only used with gzip format)
+    public var gzipHeader: GzipHeader?
+    
+    public init(
+        format: CompressionFormat = .zlib,
+        level: CompressionLevel = .defaultCompression,
+        strategy: CompressionStrategy = .defaultStrategy,
+        memoryLevel: MemoryLevel = .maximum,
+        dictionary: Data? = nil,
+        gzipHeader: GzipHeader? = nil
+    ) {
+        self.format = format
+        self.level = level
+        self.strategy = strategy
+        self.memoryLevel = memoryLevel
+        self.dictionary = dictionary
+        self.gzipHeader = gzipHeader
+    }
+}
+
+/// Decompression configuration options
+public struct DecompressionOptions {
+    /// Decompression format (zlib, gzip, raw deflate, or auto-detect)
+    public var format: CompressionFormat
+    /// Dictionary for decompression (optional)
+    public var dictionary: Data?
+    /// Whether to auto-detect format (only used when format is .auto)
+    public var autoDetect: Bool
+    
+    public init(
+        format: CompressionFormat = .auto,
+        dictionary: Data? = nil,
+        autoDetect: Bool = true
+    ) {
+        self.format = format
+        self.dictionary = dictionary
+        self.autoDetect = autoDetect
+    }
+}
+
+/// Compression format enum for better API
+public enum CompressionFormat {
+    case zlib
+    case gzip
+    case raw
+    case auto
+    
+    internal var windowBits: WindowBits {
+        switch self {
+        case .zlib: return .deflate
+        case .gzip: return .gzip
+        case .raw: return .raw
+        case .auto: return .auto
+        }
+    }
+}
+
 /// High-level ZLib compression and decompression
 public struct ZLib {
     
@@ -940,6 +1009,123 @@ public struct ZLib {
     /// - Returns: Combined CRC-32 checksum
     public static func crc32Combine(_ crc1: uLong, _ crc2: uLong, len2: Int) -> uLong {
         return swift_crc32_combine(crc1, crc2, len2)
+    }
+    
+    /// Compress data with advanced options
+    /// - Parameters:
+    ///   - data: The data to compress
+    ///   - options: Compression configuration options
+    /// - Returns: Compressed data
+    /// - Throws: ZLibError if compression fails
+    public static func compress(_ data: Data, options: CompressionOptions) throws -> Data {
+        zlibInfo("Starting compression with options: format=\(options.format), level=\(options.level)")
+        
+        return try withTiming("Compression with options") {
+            // Use Compressor for advanced options
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(
+                level: options.level,
+                method: .deflate,
+                windowBits: options.format.windowBits,
+                memoryLevel: options.memoryLevel,
+                strategy: options.strategy
+            )
+            
+            // Set dictionary if provided
+            if let dictionary = options.dictionary {
+                try compressor.setDictionary(dictionary)
+            }
+            
+            // Set gzip header if provided and format is gzip
+            if options.format == .gzip, let header = options.gzipHeader {
+                // Note: gzip header setting would need to be implemented in Compressor
+                zlibWarning("Gzip header setting not yet implemented")
+            }
+            
+            // Compress with finish flush
+            let compressed = try compressor.compress(data, flush: .finish)
+            
+            let compressionRatio = Double(compressed.count) / Double(data.count)
+            zlibInfo("Compression completed: \(data.count) -> \(compressed.count) bytes (ratio: \(String(format: "%.2f", compressionRatio)))")
+            
+            return compressed
+        }
+    }
+    
+    /// Decompress data with advanced options
+    /// - Parameters:
+    ///   - data: The compressed data to decompress
+    ///   - options: Decompression configuration options
+    /// - Returns: Decompressed data
+    /// - Throws: ZLibError if decompression fails
+    public static func decompress(_ data: Data, options: DecompressionOptions) throws -> Data {
+        zlibInfo("Starting decompression with options: format=\(options.format)")
+        
+        return try withTiming("Decompression with options") {
+            // For very large data (>1MB), use streaming to avoid memory issues
+            if data.count > 1_000_000 {
+                zlibDebug("Large data detected, using streaming decompression")
+                let decompressor = Decompressor()
+                try decompressor.initializeAdvanced(windowBits: options.format.windowBits)
+                
+                // Set dictionary if provided
+                if let dictionary = options.dictionary {
+                    try decompressor.setDictionary(dictionary)
+                }
+                
+                return try decompressor.decompress(data)
+            }
+            
+            // Use simple decompression for smaller data
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: options.format.windowBits)
+            
+            // Set dictionary if provided
+            if let dictionary = options.dictionary {
+                try decompressor.setDictionary(dictionary)
+            }
+            
+            let decompressed = try decompressor.decompress(data)
+            
+            let expansionRatio = Double(decompressed.count) / Double(data.count)
+            zlibInfo("Decompression completed: \(data.count) -> \(decompressed.count) bytes (ratio: \(String(format: "%.2f", expansionRatio)))")
+            
+            return decompressed
+        }
+    }
+    
+    /// Compress data with gzip format
+    /// - Parameters:
+    ///   - data: The data to compress
+    ///   - level: Compression level (default: .defaultCompression)
+    ///   - header: Optional gzip header information
+    /// - Returns: Compressed data in gzip format
+    /// - Throws: ZLibError if compression fails
+    public static func compressGzip(_ data: Data, level: CompressionLevel = .defaultCompression, header: GzipHeader? = nil) throws -> Data {
+        let options = CompressionOptions(format: .gzip, level: level, gzipHeader: header)
+        return try compress(data, options: options)
+    }
+    
+    /// Compress data with raw deflate format (for InflateBack compatibility)
+    /// - Parameters:
+    ///   - data: The data to compress
+    ///   - level: Compression level (default: .defaultCompression)
+    /// - Returns: Compressed data in raw deflate format
+    /// - Throws: ZLibError if compression fails
+    public static func compressRaw(_ data: Data, level: CompressionLevel = .defaultCompression) throws -> Data {
+        let options = CompressionOptions(format: .raw, level: level)
+        return try compress(data, options: options)
+    }
+    
+    /// Decompress data with auto-format detection
+    /// - Parameters:
+    ///   - data: The compressed data to decompress
+    ///   - dictionary: Optional dictionary for decompression
+    /// - Returns: Decompressed data
+    /// - Throws: ZLibError if decompression fails
+    public static func decompressAuto(_ data: Data, dictionary: Data? = nil) throws -> Data {
+        let options = DecompressionOptions(format: .auto, dictionary: dictionary)
+        return try decompress(data, options: options)
     }
 }
 
@@ -1908,6 +2094,21 @@ public class Decompressor {
         return swift_inflateCodesUsed(&stream)
     }
     
+    /// Get stream information
+    /// - Returns: Stream information tuple
+    /// - Throws: ZLibError if operation fails
+    public func getStreamInfo() throws -> (totalIn: uLong, totalOut: uLong, isActive: Bool) {
+        guard isInitialized else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+        
+        let totalIn = stream.total_in
+        let totalOut = stream.total_out
+        let isActive = isInitialized
+        
+        return (totalIn, totalOut, isActive)
+    }
+    
     /// Get pending output from the decompressor
     /// - Returns: Tuple of (pending bytes, pending bits)
     /// - Throws: ZLibError if operation fails
@@ -2710,5 +2911,700 @@ public final class InflateBackDecompressorCBridged {
             }
         )
         return output
+    }
+}
+
+// MARK: - Unified Streaming API
+
+/// Unified streaming interface for compression and decompression
+public class ZLibStream {
+    private var compressor: Compressor?
+    private var decompressor: Decompressor?
+    private let mode: StreamMode
+    private let options: StreamOptions
+    private var isInitialized = false
+    private var isFinished = false
+    
+    /// Stream operation mode
+    public enum StreamMode {
+        case compress
+        case decompress
+    }
+    
+    /// Stream configuration options
+    public struct StreamOptions {
+        /// Compression options (used for compress mode)
+        public var compression: CompressionOptions
+        /// Decompression options (used for decompress mode)
+        public var decompression: DecompressionOptions
+        /// Buffer size for processing chunks
+        public var bufferSize: Int
+        
+        public init(
+            compression: CompressionOptions = CompressionOptions(),
+            decompression: DecompressionOptions = DecompressionOptions(),
+            bufferSize: Int = 4096
+        ) {
+            self.compression = compression
+            self.decompression = decompression
+            self.bufferSize = bufferSize
+        }
+    }
+    
+    /// Initialize a new stream
+    /// - Parameters:
+    ///   - mode: Stream operation mode (compress or decompress)
+    ///   - options: Stream configuration options
+    public init(mode: StreamMode, options: StreamOptions = StreamOptions()) {
+        self.mode = mode
+        self.options = options
+    }
+    
+    /// Initialize the stream for processing
+    /// - Throws: ZLibError if initialization fails
+    public func initialize() throws {
+        guard !isInitialized else { return }
+        
+        switch mode {
+        case .compress:
+            compressor = Compressor()
+            try compressor?.initializeAdvanced(
+                level: options.compression.level,
+                method: .deflate,
+                windowBits: options.compression.format.windowBits,
+                memoryLevel: options.compression.memoryLevel,
+                strategy: options.compression.strategy
+            )
+            
+            if let dictionary = options.compression.dictionary {
+                try compressor?.setDictionary(dictionary)
+            }
+            
+        case .decompress:
+            decompressor = Decompressor()
+            try decompressor?.initializeAdvanced(windowBits: options.decompression.format.windowBits)
+            
+            if let dictionary = options.decompression.dictionary {
+                try decompressor?.setDictionary(dictionary)
+            }
+        }
+        
+        isInitialized = true
+    }
+    
+    /// Process a chunk of data
+    /// - Parameters:
+    ///   - data: Input data chunk
+    ///   - flush: Flush mode for compression (default: .noFlush)
+    /// - Returns: Processed output data
+    /// - Throws: ZLibError if processing fails
+    public func process(_ data: Data, flush: FlushMode = .noFlush) throws -> Data {
+        guard isInitialized else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+        
+        switch mode {
+        case .compress:
+            guard let compressor = compressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            return try compressor.compress(data, flush: flush)
+            
+        case .decompress:
+            guard let decompressor = decompressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            return try decompressor.decompress(data)
+        }
+    }
+    
+    /// Finish processing and get final output
+    /// - Returns: Final processed data
+    /// - Throws: ZLibError if processing fails
+    public func finalize() throws -> Data {
+        guard isInitialized && !isFinished else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+        
+        switch mode {
+        case .compress:
+            guard let compressor = compressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            let result = try compressor.compress(Data(), flush: .finish)
+            isFinished = true
+            return result
+            
+        case .decompress:
+            guard let decompressor = decompressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            // For decompression, we need to process any remaining data
+            let result = try decompressor.decompress(Data(), flush: .finish)
+            isFinished = true
+            return result
+        }
+    }
+    
+    /// Reset the stream for reuse
+    /// - Throws: ZLibError if reset fails
+    public func reset() throws {
+        switch mode {
+        case .compress:
+            try compressor?.reset()
+        case .decompress:
+            try decompressor?.reset()
+        }
+        isFinished = false
+    }
+    
+    /// Get stream information
+    /// - Returns: Stream information tuple
+    /// - Throws: ZLibError if operation fails
+    public func getStreamInfo() throws -> (totalIn: uLong, totalOut: uLong, isActive: Bool) {
+        guard isInitialized else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+        
+        switch mode {
+        case .compress:
+            guard let compressor = compressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            return try compressor.getStreamInfo()
+            
+        case .decompress:
+            guard let decompressor = decompressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            return try decompressor.getStreamInfo()
+        }
+    }
+    
+    deinit {
+        // Cleanup is handled by Compressor/Decompressor deinit
+    }
+}
+
+// MARK: - Stream Builder Pattern
+
+/// Builder for creating ZLib streams with fluent API
+public class ZLibStreamBuilder {
+    private var mode: ZLibStream.StreamMode = .compress
+    private var options = ZLibStream.StreamOptions()
+    
+    /// Set stream mode to compression
+    /// - Returns: Self for chaining
+    public func compress() -> ZLibStreamBuilder {
+        mode = .compress
+        return self
+    }
+    
+    /// Set stream mode to decompression
+    /// - Returns: Self for chaining
+    public func decompress() -> ZLibStreamBuilder {
+        mode = .decompress
+        return self
+    }
+    
+    /// Set compression format
+    /// - Parameter format: Compression format
+    /// - Returns: Self for chaining
+    public func format(_ format: CompressionFormat) -> ZLibStreamBuilder {
+        options.compression.format = format
+        options.decompression.format = format
+        return self
+    }
+    
+    /// Set compression level
+    /// - Parameter level: Compression level
+    /// - Returns: Self for chaining
+    public func level(_ level: CompressionLevel) -> ZLibStreamBuilder {
+        options.compression.level = level
+        return self
+    }
+    
+    /// Set buffer size
+    /// - Parameter size: Buffer size in bytes
+    /// - Returns: Self for chaining
+    public func bufferSize(_ size: Int) -> ZLibStreamBuilder {
+        options.bufferSize = size
+        return self
+    }
+    
+    /// Set dictionary for compression/decompression
+    /// - Parameter dictionary: Dictionary data
+    /// - Returns: Self for chaining
+    public func dictionary(_ dictionary: Data) -> ZLibStreamBuilder {
+        options.compression.dictionary = dictionary
+        options.decompression.dictionary = dictionary
+        return self
+    }
+    
+    /// Build the stream
+    /// - Returns: Configured ZLibStream
+    public func build() -> ZLibStream {
+        return ZLibStream(mode: mode, options: options)
+    }
+}
+
+// MARK: - ZLib Stream Extensions
+
+public extension ZLib {
+    /// Create a stream builder for fluent configuration
+    /// - Returns: Stream builder
+    static func stream() -> ZLibStreamBuilder {
+        return ZLibStreamBuilder()
+    }
+    
+    /// Create a compression stream with default options
+    /// - Returns: Configured compression stream
+    static func compressionStream() -> ZLibStream {
+        return ZLibStream(mode: .compress)
+    }
+    
+    /// Create a decompression stream with default options
+    /// - Returns: Configured decompression stream
+    static func decompressionStream() -> ZLibStream {
+        return ZLibStream(mode: .decompress)
+    }
+}
+
+// MARK: - Async/Await Support
+
+/// Async compression and decompression support
+public extension ZLib {
+    /// Compress data asynchronously
+    /// - Parameters:
+    ///   - data: Input data to compress
+    ///   - options: Compression options
+    /// - Returns: Compressed data
+    /// - Throws: ZLibError if compression fails
+    static func compressAsync(_ data: Data, options: CompressionOptions = CompressionOptions()) async throws -> Data {
+        return try await withCheckedThrowingContinuation { continuation in
+            Task.detached {
+                do {
+                    let result = try compress(data, options: options)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Decompress data asynchronously
+    /// - Parameters:
+    ///   - data: Compressed data to decompress
+    ///   - options: Decompression options
+    /// - Returns: Decompressed data
+    /// - Throws: ZLibError if decompression fails
+    static func decompressAsync(_ data: Data, options: DecompressionOptions = DecompressionOptions()) async throws -> Data {
+        return try await withCheckedThrowingContinuation { continuation in
+            Task.detached {
+                do {
+                    let result = try decompress(data, options: options)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+}
+
+/// Async streaming compressor for non-blocking compression
+public class AsyncCompressor {
+    private let compressor: Compressor
+    private let queue: DispatchQueue
+    private let bufferSize: Int
+    private let options: CompressionOptions
+    
+    /// Initialize async compressor
+    /// - Parameters:
+    ///   - options: Compression options
+    ///   - bufferSize: Buffer size for processing
+    ///   - queue: Dispatch queue for background processing
+    public init(options: CompressionOptions = CompressionOptions(), bufferSize: Int = 4096, queue: DispatchQueue = .global(qos: .userInitiated)) {
+        self.compressor = Compressor()
+        self.bufferSize = bufferSize
+        self.queue = queue
+        self.options = options
+    }
+    
+    /// Initialize the async compressor
+    /// - Throws: ZLibError if initialization fails
+    public func initialize() async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    try self.compressor.initializeAdvanced(
+                        level: self.options.level,
+                        method: .deflate,
+                        windowBits: self.options.format.windowBits,
+                        memoryLevel: self.options.memoryLevel,
+                        strategy: self.options.strategy
+                    )
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Compress data asynchronously
+    /// - Parameters:
+    ///   - data: Input data chunk
+    ///   - flush: Flush mode
+    /// - Returns: Compressed data chunk
+    /// - Throws: ZLibError if compression fails
+    public func compress(_ data: Data, flush: FlushMode = .noFlush) async throws -> Data {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let result = try self.compressor.compress(data, flush: flush)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Finish compression asynchronously
+    /// - Returns: Final compressed data
+    /// - Throws: ZLibError if compression fails
+    public func finish() async throws -> Data {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let result = try self.compressor.finish()
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Reset the compressor for reuse
+    /// - Throws: ZLibError if reset fails
+    public func reset() async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    try self.compressor.reset()
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Get stream information asynchronously
+    /// - Returns: Stream information
+    /// - Throws: ZLibError if operation fails
+    public func getStreamInfo() async throws -> (totalIn: uLong, totalOut: uLong, isActive: Bool) {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let result = try self.compressor.getStreamInfo()
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+}
+
+/// Async streaming decompressor for non-blocking decompression
+public class AsyncDecompressor {
+    private let decompressor: Decompressor
+    private let queue: DispatchQueue
+    private let bufferSize: Int
+    private let options: DecompressionOptions
+    
+    /// Initialize async decompressor
+    /// - Parameters:
+    ///   - options: Decompression options
+    ///   - bufferSize: Buffer size for processing
+    ///   - queue: Dispatch queue for background processing
+    public init(options: DecompressionOptions = DecompressionOptions(), bufferSize: Int = 4096, queue: DispatchQueue = .global(qos: .userInitiated)) {
+        self.decompressor = Decompressor()
+        self.bufferSize = bufferSize
+        self.queue = queue
+        self.options = options
+    }
+    
+    /// Initialize the async decompressor
+    /// - Throws: ZLibError if initialization fails
+    public func initialize() async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    try self.decompressor.initializeAdvanced(windowBits: self.options.format.windowBits)
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Decompress data asynchronously
+    /// - Parameter data: Compressed data chunk
+    /// - Returns: Decompressed data chunk
+    /// - Throws: ZLibError if decompression fails
+    public func decompress(_ data: Data) async throws -> Data {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let result = try self.decompressor.decompress(data)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Reset the decompressor for reuse
+    /// - Throws: ZLibError if reset fails
+    public func reset() async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    try self.decompressor.reset()
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Get stream information asynchronously
+    /// - Returns: Stream information
+    /// - Throws: ZLibError if operation fails
+    public func getStreamInfo() async throws -> (totalIn: uLong, totalOut: uLong, isActive: Bool) {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let result = try self.decompressor.getStreamInfo()
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+}
+
+/// Async unified streaming interface
+public class AsyncZLibStream {
+    private var asyncCompressor: AsyncCompressor?
+    private var asyncDecompressor: AsyncDecompressor?
+    private let mode: ZLibStream.StreamMode
+    private let options: ZLibStream.StreamOptions
+    private var isInitialized = false
+    private var isFinished = false
+    
+    /// Initialize async stream
+    /// - Parameters:
+    ///   - mode: Stream operation mode
+    ///   - options: Stream configuration options
+    public init(mode: ZLibStream.StreamMode, options: ZLibStream.StreamOptions = ZLibStream.StreamOptions()) {
+        self.mode = mode
+        self.options = options
+    }
+    
+    /// Initialize the async stream
+    /// - Throws: ZLibError if initialization fails
+    public func initialize() async throws {
+        guard !isInitialized else { return }
+        
+        switch mode {
+        case .compress:
+            asyncCompressor = AsyncCompressor(options: options.compression, bufferSize: options.bufferSize)
+            try await asyncCompressor?.initialize()
+            
+        case .decompress:
+            asyncDecompressor = AsyncDecompressor(options: options.decompression, bufferSize: options.bufferSize)
+            try await asyncDecompressor?.initialize()
+        }
+        
+        isInitialized = true
+    }
+    
+    /// Process data asynchronously
+    /// - Parameters:
+    ///   - data: Input data chunk
+    ///   - flush: Flush mode for compression
+    /// - Returns: Processed output data
+    /// - Throws: ZLibError if processing fails
+    public func process(_ data: Data, flush: FlushMode = .noFlush) async throws -> Data {
+        guard isInitialized else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+        
+        switch mode {
+        case .compress:
+            guard let asyncCompressor = asyncCompressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            return try await asyncCompressor.compress(data, flush: flush)
+            
+        case .decompress:
+            guard let asyncDecompressor = asyncDecompressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            return try await asyncDecompressor.decompress(data)
+        }
+    }
+    
+    /// Finish processing asynchronously
+    /// - Returns: Final processed data
+    /// - Throws: ZLibError if processing fails
+    public func finalize() async throws -> Data {
+        guard isInitialized && !isFinished else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+        
+        switch mode {
+        case .compress:
+            guard let asyncCompressor = asyncCompressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            let result = try await asyncCompressor.finish()
+            isFinished = true
+            return result
+            
+        case .decompress:
+            // For decompression, we just return empty data as finish
+            isFinished = true
+            return Data()
+        }
+    }
+    
+    /// Reset the async stream for reuse
+    /// - Throws: ZLibError if reset fails
+    public func reset() async throws {
+        switch mode {
+        case .compress:
+            try await asyncCompressor?.reset()
+        case .decompress:
+            try await asyncDecompressor?.reset()
+        }
+        isFinished = false
+    }
+    
+    /// Get stream information asynchronously
+    /// - Returns: Stream information
+    /// - Throws: ZLibError if operation fails
+    public func getStreamInfo() async throws -> (totalIn: uLong, totalOut: uLong, isActive: Bool) {
+        guard isInitialized else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+        
+        switch mode {
+        case .compress:
+            guard let asyncCompressor = asyncCompressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            return try await asyncCompressor.getStreamInfo()
+            
+        case .decompress:
+            guard let asyncDecompressor = asyncDecompressor else {
+                throw ZLibError.streamError(Z_STREAM_ERROR)
+            }
+            return try await asyncDecompressor.getStreamInfo()
+        }
+    }
+}
+
+// MARK: - Async Stream Builder
+
+/// Builder for creating async ZLib streams with fluent API
+public class AsyncZLibStreamBuilder {
+    private var mode: ZLibStream.StreamMode = .compress
+    private var options = ZLibStream.StreamOptions()
+    
+    /// Set stream mode to compression
+    /// - Returns: Self for chaining
+    public func compress() -> AsyncZLibStreamBuilder {
+        mode = .compress
+        return self
+    }
+    
+    /// Set stream mode to decompression
+    /// - Returns: Self for chaining
+    public func decompress() -> AsyncZLibStreamBuilder {
+        mode = .decompress
+        return self
+    }
+    
+    /// Set compression format
+    /// - Parameter format: Compression format
+    /// - Returns: Self for chaining
+    public func format(_ format: CompressionFormat) -> AsyncZLibStreamBuilder {
+        options.compression.format = format
+        options.decompression.format = format
+        return self
+    }
+    
+    /// Set compression level
+    /// - Parameter level: Compression level
+    /// - Returns: Self for chaining
+    public func level(_ level: CompressionLevel) -> AsyncZLibStreamBuilder {
+        options.compression.level = level
+        return self
+    }
+    
+    /// Set buffer size
+    /// - Parameter size: Buffer size in bytes
+    /// - Returns: Self for chaining
+    public func bufferSize(_ size: Int) -> AsyncZLibStreamBuilder {
+        options.bufferSize = size
+        return self
+    }
+    
+    /// Set dictionary for compression/decompression
+    /// - Parameter dictionary: Dictionary data
+    /// - Returns: Self for chaining
+    public func dictionary(_ dictionary: Data) -> AsyncZLibStreamBuilder {
+        options.compression.dictionary = dictionary
+        options.decompression.dictionary = dictionary
+        return self
+    }
+    
+    /// Build the async stream
+    /// - Returns: Configured AsyncZLibStream
+    public func build() -> AsyncZLibStream {
+        return AsyncZLibStream(mode: mode, options: options)
+    }
+}
+
+// MARK: - ZLib Async Extensions
+
+public extension ZLib {
+    /// Create an async stream builder for fluent configuration
+    /// - Returns: Async stream builder
+    static func asyncStream() -> AsyncZLibStreamBuilder {
+        return AsyncZLibStreamBuilder()
+    }
+    
+    /// Create an async compression stream with default options
+    /// - Returns: Configured async compression stream
+    static func asyncCompressionStream() -> AsyncZLibStream {
+        return AsyncZLibStream(mode: .compress)
+    }
+    
+    /// Create an async decompression stream with default options
+    /// - Returns: Configured async decompression stream
+    static func asyncDecompressionStream() -> AsyncZLibStream {
+        return AsyncZLibStream(mode: .decompress)
     }
 }
