@@ -1,4 +1,5 @@
 #include "zlib_shim.h"
+#include <stdlib.h>
 
 int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
@@ -100,23 +101,42 @@ int swift_inflateBackEnd(z_streamp strm) {
 }
 
 // InflateBack with Swift callback support
-static int swift_in_wrapper(void* desc, unsigned char** buf) {
-    // Extract the Swift callback and buffer from desc
-    // This is a simplified version - in practice we'd need more complex memory management
-    return 0; // Placeholder
+static unsigned int swift_inflateback_in_wrapper(void* desc, unsigned char** buf) {
+    swift_inflateback_context_t* context = (swift_inflateback_context_t*)desc;
+    if (context && context->swift_in_func) {
+        int available = 0;
+        return (unsigned int)context->swift_in_func(context->swift_context, buf, &available);
+    }
+    return Z_STREAM_ERROR;
 }
 
-static int swift_out_wrapper(void* desc, unsigned char* buf, unsigned len) {
-    // Extract the Swift callback from desc and call it
-    // This is a simplified version - in practice we'd need more complex memory management
-    return 0; // Placeholder
+static int swift_inflateback_out_wrapper(void* desc, unsigned char* buf, unsigned len) {
+    swift_inflateback_context_t* context = (swift_inflateback_context_t*)desc;
+    if (context && context->swift_out_func) {
+        return context->swift_out_func(context->swift_context, buf, (int)len);
+    }
+    return Z_STREAM_ERROR;
 }
 
 int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *in_desc, swift_out_func out_func, void *out_desc) {
-    // For now, we'll use a simplified approach
-    // In a full implementation, we'd need to create proper wrapper functions
-    // that can bridge between Swift closures and zlib's callback expectations
-    return Z_STREAM_ERROR; // Placeholder - full implementation would be complex
+    // Allocate context structure
+    swift_inflateback_context_t* context = malloc(sizeof(swift_inflateback_context_t));
+    if (!context) {
+        return Z_MEM_ERROR;
+    }
+    
+    // Initialize context
+    context->swift_in_func = in_func;
+    context->swift_out_func = out_func;
+    context->swift_context = in_desc; // Use in_desc as context
+    
+    // Call inflateBack with our wrapper functions
+    int result = inflateBack(strm, swift_inflateback_in_wrapper, context, swift_inflateback_out_wrapper, context);
+    
+    // Clean up context
+    free(context);
+    
+    return result;
 }
 
 // Stream introspection

@@ -48,10 +48,18 @@ int swift_inflateBack(z_streamp strm, in_func in, void *in_desc, out_func out, v
 int swift_inflateBackEnd(z_streamp strm);
 
 // InflateBack with Swift callback support
-typedef int (*swift_in_func)(void*, unsigned char*, int);
+typedef int (*swift_in_func)(void*, unsigned char**, int*);
 typedef int (*swift_out_func)(void*, unsigned char*, int);
 
 int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *in_desc, swift_out_func out_func, void *out_desc);
+
+// InflateBack Swift wrapper structures
+typedef struct {
+    void *swift_callback;
+    void *swift_context;
+    int (*swift_in_func)(void*, unsigned char**, int*);
+    int (*swift_out_func)(void*, unsigned char*, int);
+} swift_inflateback_context_t;
 
 // Stream introspection
 long swift_inflateMark(z_streamp strm);
