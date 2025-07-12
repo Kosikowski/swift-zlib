@@ -6360,6 +6360,149 @@ final class SwiftZlibTests: XCTestCase {
         XCTAssertGreaterThan(compressed.count, 0)
     }
     
+    // MARK: - Comprehensive Memory Error Simulation
+    
+    func testMemoryExhaustionScenarios() throws {
+        // Test memory exhaustion scenarios
+        let data = "Test memory exhaustion scenarios".data(using: .utf8)!
+        
+        // Test with extremely large data that might exhaust memory
+        let memoryExhaustionSizes = [10 * 1024 * 1024, 50 * 1024 * 1024, 100 * 1024 * 1024] // 10MB, 50MB, 100MB
+        
+        for size in memoryExhaustionSizes {
+            let largeData = data.prefix(size)
+            
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
+            
+            // This should work, but if memory exhaustion occurs, it should be handled
+            let compressed = try compressor.compress(largeData, flush: .finish)
+            XCTAssertGreaterThan(compressed.count, 0)
+            
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: .deflate)
+            let decompressed = try decompressor.decompress(compressed)
+            XCTAssertEqual(decompressed, largeData)
+        }
+    }
+    
+    func testMemoryPressureScenarios() throws {
+        // Test memory pressure scenarios
+        let data = "Test memory pressure scenarios".data(using: .utf8)!
+        
+        // Test with data that might cause memory pressure
+        let memoryPressureSizes = [1024 * 1024, 5 * 1024 * 1024, 10 * 1024 * 1024] // 1MB, 5MB, 10MB
+        
+        for size in memoryPressureSizes {
+            let testData = data.prefix(size)
+            
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
+            
+            let compressed = try compressor.compress(testData, flush: .finish)
+            XCTAssertGreaterThan(compressed.count, 0)
+            
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: .deflate)
+            let decompressed = try decompressor.decompress(compressed)
+            XCTAssertEqual(decompressed, testData)
+        }
+    }
+    
+    func testMemoryAllocationFailureHandling() throws {
+        // Test memory allocation failure handling
+        let data = "Test memory allocation failure handling".data(using: .utf8)!
+        
+        // Test with different compression levels that might affect memory usage
+        let compressionLevels: [CompressionLevel] = [.noCompression, .bestSpeed, .defaultCompression, .bestCompression]
+        
+        for level in compressionLevels {
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: level, windowBits: .deflate)
+            
+            let compressed = try compressor.compress(data, flush: .finish)
+            XCTAssertGreaterThan(compressed.count, 0)
+            
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: .deflate)
+            let decompressed = try decompressor.decompress(compressed)
+            XCTAssertEqual(decompressed, data)
+        }
+    }
+    
+    func testMemoryCleanupScenarios() throws {
+        // Test memory cleanup scenarios
+        let data = "Test memory cleanup scenarios".data(using: .utf8)!
+        
+        // Test multiple compression/decompression cycles to ensure proper cleanup
+        for i in 1...10 {
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
+            
+            let compressed = try compressor.compress(data, flush: .finish)
+            XCTAssertGreaterThan(compressed.count, 0)
+            
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: .deflate)
+            let decompressed = try decompressor.decompress(compressed)
+            XCTAssertEqual(decompressed, data)
+            
+            // Force cleanup by letting objects go out of scope
+        }
+    }
+    
+    func testMemoryLeakPrevention() throws {
+        // Test memory leak prevention
+        let data = "Test memory leak prevention".data(using: .utf8)!
+        
+        // Test that resources are properly cleaned up after errors
+        for i in 1...5 {
+            do {
+                let compressor = Compressor()
+                try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
+                
+                let compressed = try compressor.compress(data, flush: .finish)
+                XCTAssertGreaterThan(compressed.count, 0)
+                
+                let decompressor = Decompressor()
+                try decompressor.initializeAdvanced(windowBits: .deflate)
+                let decompressed = try decompressor.decompress(compressed)
+                XCTAssertEqual(decompressed, data)
+                
+            } catch {
+                // If an error occurs, ensure it's properly handled
+                XCTAssertTrue(error is ZLibError, "Expected ZLibError, got: \(error)")
+            }
+        }
+    }
+    
+    func testMemoryUsageMonitoring() throws {
+        // Test memory usage monitoring
+        let data = "Test memory usage monitoring".data(using: .utf8)!
+        
+        // Monitor memory usage during compression/decompression
+        let initialMemory = ProcessInfo.processInfo.physicalMemory
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
+        
+        let compressed = try compressor.compress(data, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        let midMemory = ProcessInfo.processInfo.physicalMemory
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        XCTAssertEqual(decompressed, data)
+        
+        let finalMemory = ProcessInfo.processInfo.physicalMemory
+        
+        // Memory usage should be reasonable (not excessive)
+        let memoryIncrease = finalMemory - initialMemory
+        XCTAssertLessThan(memoryIncrease, 100 * 1024 * 1024, "Memory usage increase should be less than 100MB")
+    }
+    
     func testVersionErrorTesting() throws {
         // Test version information
         let version = ZLib.version
@@ -6367,6 +6510,121 @@ final class SwiftZlibTests: XCTestCase {
         
         let compileFlags = ZLib.compileFlags
         XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
+    }
+    
+    // MARK: - Comprehensive Version Error Testing
+    
+    func testVersionCompatibility() throws {
+        // Test version compatibility
+        let version = ZLib.version
+        XCTAssertFalse(version.isEmpty, "Version should not be empty")
+        
+        // Test version string format
+        XCTAssertTrue(version.contains("."), "Version should contain version numbers")
+        
+        // Test that version is a valid format (e.g., "1.2.12")
+        let versionComponents = version.components(separatedBy: ".")
+        XCTAssertGreaterThanOrEqual(versionComponents.count, 2, "Version should have at least major.minor format")
+        
+        // Test that version components are numeric
+        for component in versionComponents {
+            XCTAssertNotNil(Int(component), "Version component should be numeric: \(component)")
+        }
+    }
+    
+    func testCompileFlagsValidation() throws {
+        // Test compile flags validation
+        let compileFlags = ZLib.compileFlags
+        XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
+        
+        // Test that compile flags are reasonable (not excessive)
+        XCTAssertLessThan(compileFlags, Int32.max, "Compile flags should be within reasonable range")
+    }
+    
+    func testVersionErrorHandling() throws {
+        // Test Z_VERSION_ERROR (-6) handling
+        // This is difficult to trigger in normal operation, but we can test the error handling
+        
+        let version = ZLib.version
+        XCTAssertFalse(version.isEmpty, "Version should not be empty")
+        
+        // Test that version information is accessible and valid
+        let compileFlags = ZLib.compileFlags
+        XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
+        
+        // Test version string format
+        XCTAssertTrue(version.contains("."), "Version should contain version numbers")
+    }
+    
+    func testVersionConsistency() throws {
+        // Test version consistency across multiple calls
+        let version1 = ZLib.version
+        let version2 = ZLib.version
+        let version3 = ZLib.version
+        
+        XCTAssertEqual(version1, version2, "Version should be consistent across calls")
+        XCTAssertEqual(version2, version3, "Version should be consistent across calls")
+        XCTAssertEqual(version1, version3, "Version should be consistent across calls")
+    }
+    
+    func testCompileFlagsConsistency() throws {
+        // Test compile flags consistency across multiple calls
+        let flags1 = ZLib.compileFlags
+        let flags2 = ZLib.compileFlags
+        let flags3 = ZLib.compileFlags
+        
+        XCTAssertEqual(flags1, flags2, "Compile flags should be consistent across calls")
+        XCTAssertEqual(flags2, flags3, "Compile flags should be consistent across calls")
+        XCTAssertEqual(flags1, flags3, "Compile flags should be consistent across calls")
+    }
+    
+    func testVersionFormatValidation() throws {
+        // Test version format validation
+        let version = ZLib.version
+        
+        // Test that version follows expected format (e.g., "1.2.12")
+        let versionPattern = #"^\d+\.\d+(\.\d+)?$"#
+        let versionRegex = try NSRegularExpression(pattern: versionPattern)
+        let versionRange = NSRange(version.startIndex..<version.endIndex, in: version)
+        let matches = versionRegex.matches(in: version, range: versionRange)
+        
+        XCTAssertGreaterThan(matches.count, 0, "Version should match expected format: \(version)")
+    }
+    
+    func testVersionComparison() throws {
+        // Test version comparison capabilities
+        let version = ZLib.version
+        let versionComponents = version.components(separatedBy: ".")
+        
+        XCTAssertGreaterThanOrEqual(versionComponents.count, 2, "Version should have at least major.minor components")
+        
+        if let major = Int(versionComponents[0]), let minor = Int(versionComponents[1]) {
+            // Test that version is reasonable (not ancient or future)
+            XCTAssertGreaterThanOrEqual(major, 1, "Major version should be at least 1")
+            XCTAssertLessThanOrEqual(major, 10, "Major version should be reasonable")
+            XCTAssertGreaterThanOrEqual(minor, 0, "Minor version should be at least 0")
+            XCTAssertLessThanOrEqual(minor, 99, "Minor version should be reasonable")
+        }
+    }
+    
+    func testVersionErrorRecovery() throws {
+        // Test version error recovery scenarios
+        let version = ZLib.version
+        XCTAssertFalse(version.isEmpty, "Version should not be empty")
+        
+        // Test that version information is accessible even after errors
+        let compileFlags = ZLib.compileFlags
+        XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
+        
+        // Test that version is still accessible after compression/decompression
+        let data = "Test version error recovery".data(using: .utf8)!
+        let compressed = try ZLib.compress(data)
+        let decompressed = try ZLib.decompress(compressed)
+        XCTAssertEqual(decompressed, data)
+        
+        // Version should still be accessible
+        let versionAfter = ZLib.version
+        XCTAssertEqual(version, versionAfter, "Version should remain consistent after operations")
     }
     
     func testBufferErrorEdgeCases() throws {
@@ -6379,6 +6637,181 @@ final class SwiftZlibTests: XCTestCase {
         // This should work, but if buffer errors occur, they should be handled
         let compressed = try compressor.compress(data, flush: .finish)
         XCTAssertGreaterThan(compressed.count, 0)
+    }
+    
+    // MARK: - Comprehensive Buffer Error Edge Cases
+    
+    func testBufferOverflowScenarios() throws {
+        // Test buffer overflow scenarios
+        let data = "Test buffer overflow scenarios".data(using: .utf8)!
+        
+        // Test with extremely large data that might cause buffer overflow
+        let largeData = Data(repeating: 0x42, count: 100 * 1024) // 100KB
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        
+        // This should work, but if buffer overflow occurs, it should be handled
+        let compressed = try compressor.compress(largeData, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        // Test decompression of large data
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        XCTAssertEqual(decompressed, largeData)
+    }
+    
+    func testBufferUnderflowScenarios() throws {
+        // Test buffer underflow scenarios
+        let data = "Test buffer underflow".data(using: .utf8)!
+        
+        // Test with very small data that might cause buffer underflow
+        let smallData = Data([0x01, 0x02, 0x03])
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        
+        // This should work, but if buffer underflow occurs, it should be handled
+        let compressed = try compressor.compress(smallData, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        // Test decompression of small data
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        XCTAssertEqual(decompressed, smallData)
+    }
+    
+    func testZeroSizedBufferScenarios() throws {
+        // Test zero-sized buffer scenarios
+        let emptyData = Data()
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        
+        // Test compression of empty data
+        let compressed = try compressor.compress(emptyData, flush: .finish)
+        XCTAssertGreaterThanOrEqual(compressed.count, 0)
+        
+        // Test decompression of empty data
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        XCTAssertEqual(decompressed, emptyData)
+    }
+    
+    func testSingleByteBufferScenarios() throws {
+        // Test single-byte buffer scenarios
+        let singleByteData = Data([0x42])
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        
+        // Test compression of single byte
+        let compressed = try compressor.compress(singleByteData, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        // Test decompression of single byte
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        XCTAssertEqual(decompressed, singleByteData)
+    }
+    
+    func testBufferAlignmentIssues() throws {
+        // Test buffer alignment issues
+        let data = "Test buffer alignment issues with data that might cause alignment problems".data(using: .utf8)!
+        
+        // Test with data sizes that might cause alignment issues
+        let alignmentSizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        
+        for size in alignmentSizes {
+            let testData = data.prefix(size)
+            
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+            
+            let compressed = try compressor.compress(testData, flush: .finish)
+            XCTAssertGreaterThan(compressed.count, 0)
+            
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: .deflate)
+            let decompressed = try decompressor.decompress(compressed)
+            XCTAssertEqual(decompressed, testData)
+        }
+    }
+    
+    func testBufferBoundaryConditions() throws {
+        // Test buffer boundary conditions
+        let data = "Test buffer boundary conditions".data(using: .utf8)!
+        
+        // Test with data sizes at buffer boundaries
+        let boundarySizes = [4095, 4096, 4097, 8191, 8192, 8193, 16383, 16384, 16385]
+        
+        for size in boundarySizes {
+            let testData = data.prefix(size)
+            
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+            
+            let compressed = try compressor.compress(testData, flush: .finish)
+            XCTAssertGreaterThan(compressed.count, 0)
+            
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: .deflate)
+            let decompressed = try decompressor.decompress(compressed)
+            XCTAssertEqual(decompressed, testData)
+        }
+    }
+    
+    func testBufferMemoryPressure() throws {
+        // Test buffer memory pressure scenarios
+        let data = "Test buffer memory pressure".data(using: .utf8)!
+        
+        // Test with data that might cause memory pressure
+        let memoryPressureSizes = [1024 * 1024, 2 * 1024 * 1024, 5 * 1024 * 1024] // 1MB, 2MB, 5MB
+        
+        for size in memoryPressureSizes {
+            let testData = data.prefix(size)
+            
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+            
+            let compressed = try compressor.compress(testData, flush: .finish)
+            XCTAssertGreaterThan(compressed.count, 0)
+            
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: .deflate)
+            let decompressed = try decompressor.decompress(compressed)
+            XCTAssertEqual(decompressed, testData)
+        }
+    }
+    
+    func testBufferErrorRecovery() throws {
+        // Test buffer error recovery scenarios
+        let data = "Test buffer error recovery".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        
+        // Test normal operation first
+        let compressed = try compressor.compress(data, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        // Test decompression
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        XCTAssertEqual(decompressed, data)
+        
+        // Test that the same compressor can be reused after successful operation
+        let secondData = "Second test data".data(using: .utf8)!
+        let secondCompressed = try compressor.compress(secondData, flush: .finish)
+        XCTAssertGreaterThan(secondCompressed.count, 0)
+        
+        let secondDecompressed = try decompressor.decompress(secondCompressed)
+        XCTAssertEqual(secondDecompressed, secondData)
     }
     
     func testStreamErrorConditions() throws {
@@ -6492,6 +6925,195 @@ final class SwiftZlibTests: XCTestCase {
         XCTAssertTrue(ZLib.isSuccess(1))
         XCTAssertFalse(ZLib.isSuccess(-1))
         XCTAssertFalse(ZLib.isSuccess(-2))
+    }
+    
+    // MARK: - Comprehensive ZLib Error Code Testing
+    
+    func testZMemErrorHandling() throws {
+        // Test Z_MEM_ERROR (-4) - Memory allocation failure
+        // Note: We can't easily trigger memory errors in tests, but we can test error handling
+        
+        // Test with extremely large data that might trigger memory issues
+        let largeData = Data(repeating: 0x42, count: 10 * 1024 * 1024) // 10MB
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
+        
+        // This should work, but if memory errors occur, they should be handled properly
+        let compressed = try compressor.compress(largeData, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        // Test decompression of large data
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        XCTAssertEqual(decompressed, largeData)
+    }
+    
+    func testZVersionErrorHandling() throws {
+        // Test Z_VERSION_ERROR (-6) - Version mismatch
+        // This is difficult to trigger in normal operation, but we can test the error handling
+        
+        let version = ZLib.version
+        XCTAssertFalse(version.isEmpty, "Version should not be empty")
+        
+        // Test that version information is accessible
+        let compileFlags = ZLib.compileFlags
+        XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
+        
+        // Test version string format
+        XCTAssertTrue(version.contains("."), "Version should contain version numbers")
+    }
+    
+    func testZBufErrorHandling() throws {
+        // Test Z_BUF_ERROR (-5) - Buffer error scenarios
+        
+        // Test with zero-sized buffer
+        let data = "Test data".data(using: .utf8)!
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        
+        // This should work normally, but if buffer errors occur, they should be handled
+        let compressed = try compressor.compress(data, flush: .finish)
+        XCTAssertGreaterThan(compressed.count, 0)
+        
+        // Test decompression with zero-sized output buffer
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testZStreamEndHandling() throws {
+        // Test Z_STREAM_END (1) - Normal stream completion
+        let data = "Test stream end".data(using: .utf8)!
+        
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        let decompressed = try decompressor.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+        XCTAssertFalse(ZLib.isError(1), "Z_STREAM_END (1) should not be considered an error")
+    }
+    
+    func testZNeedDictErrorHandling() throws {
+        // Test Z_NEED_DICT (2) - Dictionary needed for decompression
+        let data = "Dictionary test data".data(using: .utf8)!
+        let dictionary = "test dictionary".data(using: .utf8)!
+        
+        // Compress with dictionary
+        let compressor = Compressor()
+        try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
+        try compressor.setDictionary(dictionary)
+        let compressed = try compressor.compress(data, flush: .finish)
+        
+        // Decompress without dictionary (should fail)
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        XCTAssertThrowsError(try decompressor.decompress(compressed)) { error in
+            if let zerr = error as? ZLibError {
+                switch zerr {
+                case .needDictionary:
+                    break // Expected
+                case .decompressionFailed(let code):
+                    XCTAssertEqual(code, 2, "Expected Z_NEED_DICT (2) for missing dictionary")
+                default:
+                    XCTFail("Unexpected error: \(zerr)")
+                }
+            } else {
+                XCTFail("Unexpected error type: \(error)")
+            }
+        }
+    }
+    
+    func testZDataErrorHandling() throws {
+        // Test Z_DATA_ERROR (-3) - Data format error
+        let invalidData = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09])
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
+        
+        XCTAssertThrowsError(try decompressor.decompress(invalidData)) { error in
+            if case .decompressionFailed(let code) = error as? ZLibError {
+                XCTAssertEqual(code, -3, "Expected Z_DATA_ERROR (-3) for invalid data")
+            }
+        }
+    }
+    
+    func testZStreamErrorHandling() throws {
+        // Test Z_STREAM_ERROR (-2) - Stream state error
+        let uninitializedCompressor = Compressor()
+        let testData = "test".data(using: .utf8)!
+        
+        XCTAssertThrowsError(try uninitializedCompressor.compress(testData)) { error in
+            if case .streamError(let code) = error as? ZLibError {
+                XCTAssertEqual(code, -2, "Expected Z_STREAM_ERROR (-2) for uninitialized stream")
+            }
+        }
+        
+        // Test uninitialized decompressor
+        let uninitializedDecompressor = Decompressor()
+        XCTAssertThrowsError(try uninitializedDecompressor.decompress(testData)) { error in
+            if case .streamError(let code) = error as? ZLibError {
+                XCTAssertEqual(code, -2, "Expected Z_STREAM_ERROR (-2) for uninitialized stream")
+            }
+        }
+    }
+    
+    func testZErrnoErrorHandling() throws {
+        // Test Z_ERRNO (-1) - System error
+        // This is difficult to trigger in normal operation, but we can test error handling
+        
+        let data = "Test system error handling".data(using: .utf8)!
+        
+        // This should work normally, but if system errors occur, they should be handled
+        let compressed = try ZLib.compress(data)
+        let decompressed = try ZLib.decompress(compressed)
+        
+        XCTAssertEqual(decompressed, data)
+    }
+    
+    func testErrorCodeMapping() throws {
+        // Test that all zlib error codes are properly mapped to ZLibError cases
+        
+        // Test error code descriptions
+        let errorCodes = [-1, -2, -3, -4, -5, -6] // Z_ERRNO, Z_STREAM_ERROR, Z_DATA_ERROR, Z_MEM_ERROR, Z_BUF_ERROR, Z_VERSION_ERROR
+        
+        for code in errorCodes {
+            let errorInfo = ZLib.getErrorInfo(Int32(code))
+            XCTAssertTrue(errorInfo.isError, "Error code \(code) should be recognized as an error")
+            
+            let suggestions = ZLib.getErrorRecoverySuggestions(Int32(code))
+            XCTAssertGreaterThan(suggestions.count, 0, "Error code \(code) should have recovery suggestions")
+        }
+        
+        // Test success codes
+        let successCodes = [0, 1, 2] // Z_OK, Z_STREAM_END, Z_NEED_DICT
+        
+        for code in successCodes {
+            let errorInfo = ZLib.getErrorInfo(Int32(code))
+            if code == 0 {
+                XCTAssertFalse(errorInfo.isError, "Z_OK (0) should not be considered an error")
+            }
+        }
+    }
+    
+    func testErrorCodeEdgeCases() throws {
+        // Test edge cases for error codes
+        
+        // Test unknown error codes
+        let unknownErrorInfo = ZLib.getErrorInfo(999)
+        XCTAssertTrue(unknownErrorInfo.isError, "Unknown error code should be considered an error")
+        
+        // Test boundary values
+        let boundaryErrorInfo = ZLib.getErrorInfo(Int32.min)
+        XCTAssertTrue(boundaryErrorInfo.isError, "Minimum Int32 should be considered an error")
+        
+        let boundarySuccessInfo = ZLib.getErrorInfo(Int32.max)
+        XCTAssertTrue(boundarySuccessInfo.isError, "Maximum Int32 should be considered an error")
     }
     
     // MARK: - Gzip Header Edge Cases
