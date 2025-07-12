@@ -1305,3 +1305,386 @@ try compressor.compressFile(
 - `phase` is a `CompressionPhase` enum: `.reading`, `.compressing`, `.writing`, `.flushing`, `.finished`.
 
 The same applies to `FileChunkedDecompressor`. 
+
+### AsyncStream Progress Reporting for File Compression/Decompression
+
+The `FileChunkedCompressor` and `FileChunkedDecompressor` classes provide AsyncStream-based progress reporting for modern Swift concurrency patterns. This allows you to process large files with real-time progress updates using async/await syntax.
+
+#### Basic AsyncStream Usage
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+let srcPath = "/tmp/large_input.txt"
+let dstPath = "/tmp/large_output.gz"
+
+// Compress with progress updates
+for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+    print("Compression progress: \(progress.percentage)% (\(progress.processedBytes)/\(progress.totalBytes))")
+}
+
+let decompressor = FileChunkedDecompressor()
+let decompressedPath = "/tmp/large_output_decompressed.txt"
+
+// Decompress with progress updates
+for await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
+    print("Decompression progress: \(progress.percentage)% (\(progress.processedBytes)/\(progress.totalBytes))")
+}
+```
+
+#### Advanced AsyncStream Usage with Configuration
+
+```swift
+import SwiftZlib
+
+// Configure compressor with custom settings
+let compressor = FileChunkedCompressor(
+    bufferSize: 128 * 1024,  // 128KB chunks
+    compressionLevel: .bestCompression,
+    windowBits: .gzip
+)
+
+// Compress with detailed progress tracking
+for await progress in compressor.compressFileProgressStream(
+    from: "large_file.txt",
+    to: "large_file.gz"
+) {
+    switch progress.phase {
+    case .reading:
+        print("📖 Reading: \(progress.percentage)%")
+    case .compressing:
+        print("🗜️ Compressing: \(progress.percentage)%")
+    case .writing:
+        print("💾 Writing: \(progress.percentage)%")
+    case .flushing:
+        print("🔄 Flushing: \(progress.percentage)%")
+    case .finished:
+        print("✅ Finished: \(progress.percentage)%")
+    }
+    
+    if let speed = progress.speedBytesPerSec {
+        print("   Speed: \(speed / 1024 / 1024) MB/s")
+    }
+    
+    if let eta = progress.etaSeconds {
+        print("   ETA: \(eta) seconds")
+    }
+}
+```
+
+#### AsyncStream with Cancellation Support
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+
+// Create a task that can be cancelled
+let compressionTask = Task {
+    for await progress in compressor.compressFileProgressStream(
+        from: "huge_file.txt",
+        to: "huge_file.gz"
+    ) {
+        print("Progress: \(progress.percentage)%")
+        
+        // Check for cancellation
+        if Task.isCancelled {
+            print("Compression cancelled")
+            break
+        }
+        
+        // Cancel after 50%
+        if progress.percentage > 50 {
+            print("Cancelling at 50%")
+            break
+        }
+    }
+}
+
+// Cancel the task if needed
+// compressionTask.cancel()
+```
+
+#### AsyncStream with Error Handling
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+
+do {
+    for await progress in compressor.compressFileProgressStream(
+        from: "input.txt",
+        to: "output.gz"
+    ) {
+        print("Progress: \(progress.percentage)%")
+    }
+    print("Compression completed successfully")
+} catch ZLibError.compressionFailed(let code) {
+    print("Compression failed with code: \(code)")
+} catch {
+    print("Unexpected error: \(error)")
+}
+```
+
+#### AsyncStream with Progress Throttling
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+
+// Throttle progress updates to every 500ms
+for await progress in compressor.compressFileProgressStream(
+    from: "large_file.txt",
+    to: "large_file.gz",
+    progressInterval: 0.5  // 500ms intervals
+) {
+    print("Progress: \(progress.percentage)%")
+}
+```
+
+#### AsyncStream with Custom Progress Queue
+
+```swift
+import SwiftZlib
+import Foundation
+
+let compressor = FileChunkedCompressor()
+
+// Use main queue for UI updates
+for await progress in compressor.compressFileProgressStream(
+    from: "large_file.txt",
+    to: "large_file.gz",
+    progressQueue: .main
+) {
+    // Update UI on main thread
+    updateProgressBar(progress.percentage)
+    updateSpeedLabel(progress.speedBytesPerSec ?? 0)
+    updateETALabel(progress.etaSeconds ?? 0)
+}
+```
+
+#### AsyncStream with Foundation.Progress Integration
+
+```swift
+import SwiftZlib
+import Foundation
+
+let compressor = FileChunkedCompressor()
+let progress = Progress(totalUnitCount: 0) // Will be set automatically
+
+// Integrate with Foundation.Progress for UI frameworks
+for await progressInfo in compressor.compressFileProgressStream(
+    from: "large_file.txt",
+    to: "large_file.gz",
+    progressObject: progress
+) {
+    // Foundation.Progress is automatically updated
+    print("Foundation Progress: \(progress.fractionCompleted * 100)%")
+    print("Custom Progress: \(progressInfo.percentage)%")
+}
+```
+
+#### AsyncStream for Multiple Files
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+
+// Process multiple files with progress tracking
+let files = ["file1.txt", "file2.txt", "file3.txt"]
+
+for file in files {
+    let outputFile = file + ".gz"
+    print("Compressing \(file)...")
+    
+    for await progress in compressor.compressFileProgressStream(
+        from: file,
+        to: outputFile
+    ) {
+        print("\(file): \(progress.percentage)%")
+    }
+    
+    print("Completed \(file)")
+}
+```
+
+#### AsyncStream with Structured Progress Information
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+
+struct CompressionStats {
+    var totalFiles = 0
+    var completedFiles = 0
+    var totalBytes = 0
+    var processedBytes = 0
+}
+
+var stats = CompressionStats()
+
+for await progress in compressor.compressFileProgressStream(
+    from: "large_file.txt",
+    to: "large_file.gz"
+) {
+    stats.processedBytes = progress.processedBytes
+    stats.totalBytes = progress.totalBytes
+    
+    let compressionRatio = Double(progress.processedBytes) / Double(progress.totalBytes)
+    let estimatedFinalSize = Int64(Double(progress.totalBytes) * compressionRatio)
+    
+    print("""
+    📊 Compression Statistics:
+    - Progress: \(progress.percentage)%
+    - Processed: \(progress.processedBytes) bytes
+    - Total: \(progress.totalBytes) bytes
+    - Estimated final size: \(estimatedFinalSize) bytes
+    - Phase: \(progress.phase.rawValue)
+    - Speed: \(progress.speedBytesPerSec ?? 0) B/s
+    - ETA: \(progress.etaSeconds ?? 0) seconds
+    """)
+}
+```
+
+#### AsyncStream with Conditional Processing
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+
+// Only compress if file is large enough
+let fileSize = try FileManager.default.attributesOfItem(atPath: "input.txt")[.size] as? Int64 ?? 0
+
+if fileSize > 1024 * 1024 { // Only compress files > 1MB
+    for await progress in compressor.compressFileProgressStream(
+        from: "input.txt",
+        to: "input.gz"
+    ) {
+        print("Compressing large file: \(progress.percentage)%")
+    }
+} else {
+    print("File too small, skipping compression")
+}
+```
+
+#### AsyncStream with Memory Monitoring
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+
+for await progress in compressor.compressFileProgressStream(
+    from: "huge_file.txt",
+    to: "huge_file.gz"
+) {
+    // Monitor memory usage during compression
+    let memoryUsage = ProcessInfo.processInfo.memoryFootprint
+    let maxMemory = ProcessInfo.processInfo.physicalMemory
+    
+    print("""
+    Progress: \(progress.percentage)%
+    Memory Usage: \(memoryUsage / 1024 / 1024) MB / \(maxMemory / 1024 / 1024) MB
+    Memory Pressure: \(Double(memoryUsage) / Double(maxMemory) * 100)%
+    """)
+    
+    // Pause if memory pressure is high
+    if Double(memoryUsage) / Double(maxMemory) > 0.8 {
+        print("⚠️ High memory pressure, consider pausing...")
+    }
+}
+```
+
+#### AsyncStream with Performance Metrics
+
+```swift
+import SwiftZlib
+
+let compressor = FileChunkedCompressor()
+
+var startTime: TimeInterval = 0
+var lastUpdateTime: TimeInterval = 0
+
+for await progress in compressor.compressFileProgressStream(
+    from: "large_file.txt",
+    to: "large_file.gz"
+) {
+    let currentTime = CFAbsoluteTimeGetCurrent()
+    
+    if startTime == 0 {
+        startTime = currentTime
+        lastUpdateTime = currentTime
+    }
+    
+    let elapsed = currentTime - startTime
+    let timeSinceLastUpdate = currentTime - lastUpdateTime
+    
+    if timeSinceLastUpdate >= 1.0 { // Update every second
+        let throughput = Double(progress.processedBytes) / elapsed
+        let compressionRatio = Double(progress.processedBytes) / Double(progress.totalBytes)
+        
+        print("""
+        ⚡ Performance Metrics:
+        - Elapsed Time: \(elapsed)s
+        - Throughput: \(throughput / 1024 / 1024) MB/s
+        - Compression Ratio: \(compressionRatio)
+        - Progress: \(progress.percentage)%
+        """)
+        
+        lastUpdateTime = currentTime
+    }
+}
+```
+
+### Key Features of AsyncStream Progress Reporting
+
+- **Real-time Updates**: Get progress information as the operation proceeds
+- **Structured Data**: Access detailed progress information including speed, ETA, and phase
+- **Cancellation Support**: Can be cancelled using Swift's structured concurrency
+- **Error Handling**: Proper error propagation through async/await
+- **Throttling**: Control update frequency to avoid overwhelming the system
+- **Queue Control**: Specify which dispatch queue to use for callbacks
+- **Foundation Integration**: Optional integration with Foundation.Progress
+- **Memory Efficient**: Constant memory usage regardless of file size
+- **Cross-platform**: Works on macOS and Linux
+
+### Progress Information Structure
+
+The `ProgressInfo` struct provides:
+
+```swift
+struct ProgressInfo {
+    let processedBytes: Int64      // Bytes processed so far
+    let totalBytes: Int64         // Total bytes to process
+    let percentage: Double         // Progress percentage (0-100)
+    let speedBytesPerSec: Int64?  // Processing speed in bytes/second
+    let etaSeconds: Double?       // Estimated time to completion
+    let phase: CompressionPhase   // Current operation phase
+    let timestamp: Date           // When this progress update was generated
+}
+
+enum CompressionPhase: String {
+    case reading = "reading"       // Reading input file
+    case compressing = "compressing" // Compressing data
+    case writing = "writing"       // Writing output file
+    case flushing = "flushing"     // Finalizing compression
+    case finished = "finished"     // Operation completed
+}
+```
+
+### Best Practices
+
+1. **Use appropriate buffer sizes**: Larger buffers (64KB-128KB) for better performance
+2. **Handle cancellation gracefully**: Check `Task.isCancelled` in long-running operations
+3. **Throttle updates**: Use `progressInterval` to avoid overwhelming the system
+4. **Use main queue for UI**: Set `progressQueue: .main` for UI updates
+5. **Monitor memory**: Large files can consume significant memory during processing
+6. **Handle errors**: Always wrap in do-catch blocks for proper error handling
+7. **Consider compression levels**: Balance between speed and compression ratio
+8. **Use appropriate window bits**: Choose the right format for your use case

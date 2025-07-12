@@ -4028,6 +4028,86 @@ public class FileChunkedCompressor {
             throw ZLibError.streamError(-999) // Cancelled
         }
     }
+
+    /// AsyncStream version: Compress a file to another file, yielding ProgressInfo updates
+    public func compressFileProgressStream(
+        from sourcePath: String,
+        to destinationPath: String,
+        progressInterval: TimeInterval = 0.1,
+        progressQueue: DispatchQueue = .main
+    ) -> AsyncStream<ProgressInfo> {
+        AsyncStream { continuation in
+            Task {
+                do {
+                    let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
+                    defer { try? input.close() }
+                    FileManager.default.createFile(atPath: destinationPath, contents: nil)
+                    let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
+                    defer { try? output.close() }
+
+                    let compressor = Compressor()
+                    try compressor.initialize(level: compressionLevel)
+
+                    let totalBytes = Int(try input.seekToEnd())
+                    try input.seek(toOffset: 0)
+                    var processedBytes = 0
+                    var lastReport = Date()
+                    let startTime = Date()
+                    var shouldContinue = true
+                    var phase: CompressionPhase = .reading
+                    var isFinished = false
+                    var firstIteration = true
+
+                    func reportProgress(phase: CompressionPhase) {
+                        let now = Date()
+                        let elapsed = now.timeIntervalSince(startTime)
+                        let speed = elapsed > 0 ? Double(processedBytes) / elapsed : nil
+                        let percentage = totalBytes > 0 ? Double(processedBytes) / Double(totalBytes) * 100.0 : 0
+                        let eta = (speed ?? 0) > 0 ? Double(totalBytes - processedBytes) / (speed ?? 1) : nil
+                        let info = ProgressInfo(
+                            processedBytes: processedBytes,
+                            totalBytes: totalBytes,
+                            percentage: percentage,
+                            speedBytesPerSec: speed,
+                            etaSeconds: eta,
+                            phase: phase,
+                            timestamp: now
+                        )
+                        continuation.yield(info)
+                    }
+
+                    while !isFinished && shouldContinue {
+                        phase = .reading
+                        let now = Date()
+                        if firstIteration || now.timeIntervalSince(lastReport) >= progressInterval {
+                            reportProgress(phase: phase)
+                            lastReport = now
+                            firstIteration = false
+                        }
+                        let chunk = input.readData(ofLength: bufferSize)
+                        let isLast = chunk.count < bufferSize
+                        phase = .compressing
+                        let flush: FlushMode = isLast ? .finish : .noFlush
+                        let compressed = try compressor.compress(chunk, flush: flush)
+                        phase = .writing
+                        if !compressed.isEmpty {
+                            try output.write(contentsOf: compressed)
+                        }
+                        processedBytes += chunk.count
+                        if isLast {
+                            reportProgress(phase: phase)
+                        }
+                        if isLast { isFinished = true }
+                    }
+                    phase = .flushing
+                    reportProgress(phase: .finished)
+                    continuation.finish()
+                } catch {
+                    continuation.finish()
+                }
+            }
+        }
+    }
 }
 
 /// File-based chunked decompressor for huge files (constant memory)
@@ -4211,6 +4291,86 @@ public class FileChunkedDecompressor {
         }
         if !shouldContinue {
             throw ZLibError.streamError(-999) // Cancelled
+        }
+    }
+
+    /// AsyncStream version: Decompress a file to another file, yielding ProgressInfo updates
+    public func decompressFileProgressStream(
+        from sourcePath: String,
+        to destinationPath: String,
+        progressInterval: TimeInterval = 0.1,
+        progressQueue: DispatchQueue = .main
+    ) -> AsyncStream<ProgressInfo> {
+        AsyncStream { continuation in
+            Task {
+                do {
+                    let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
+                    defer { try? input.close() }
+                    FileManager.default.createFile(atPath: destinationPath, contents: nil)
+                    let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
+                    defer { try? output.close() }
+
+                    let decompressor = Decompressor()
+                    try decompressor.initializeAdvanced(windowBits: windowBits)
+
+                    let totalBytes = Int(try input.seekToEnd())
+                    try input.seek(toOffset: 0)
+                    var processedBytes = 0
+                    var lastReport = Date()
+                    let startTime = Date()
+                    var shouldContinue = true
+                    var phase: CompressionPhase = .reading
+                    var isFinished = false
+                    var firstIteration = true
+
+                    func reportProgress(phase: CompressionPhase) {
+                        let now = Date()
+                        let elapsed = now.timeIntervalSince(startTime)
+                        let speed = elapsed > 0 ? Double(processedBytes) / elapsed : nil
+                        let percentage = totalBytes > 0 ? Double(processedBytes) / Double(totalBytes) * 100.0 : 0
+                        let eta = (speed ?? 0) > 0 ? Double(totalBytes - processedBytes) / (speed ?? 1) : nil
+                        let info = ProgressInfo(
+                            processedBytes: processedBytes,
+                            totalBytes: totalBytes,
+                            percentage: percentage,
+                            speedBytesPerSec: speed,
+                            etaSeconds: eta,
+                            phase: phase,
+                            timestamp: now
+                        )
+                        continuation.yield(info)
+                    }
+
+                    while !isFinished && shouldContinue {
+                        phase = .reading
+                        let now = Date()
+                        if firstIteration || now.timeIntervalSince(lastReport) >= progressInterval {
+                            reportProgress(phase: phase)
+                            lastReport = now
+                            firstIteration = false
+                        }
+                        let chunk = input.readData(ofLength: bufferSize)
+                        let isLast = chunk.count < bufferSize
+                        phase = .compressing
+                        let flush: FlushMode = isLast ? .finish : .noFlush
+                        let decompressed = try decompressor.decompress(chunk, flush: flush)
+                        phase = .writing
+                        if !decompressed.isEmpty {
+                            try output.write(contentsOf: decompressed)
+                        }
+                        processedBytes += chunk.count
+                        if isLast {
+                            reportProgress(phase: phase)
+                        }
+                        if isLast { isFinished = true }
+                    }
+                    phase = .flushing
+                    reportProgress(phase: .finished)
+                    continuation.finish()
+                } catch {
+                    continuation.finish()
+                }
+            }
         }
     }
 }

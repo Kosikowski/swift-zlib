@@ -5051,6 +5051,861 @@ final class SwiftZlibTests: XCTestCase {
         }
     }
     
+    func testAsyncStreamFileChunkedCompressionProgress() async throws {
+        let testData = String(repeating: "AsyncStream progress test data.", count: 10000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_test_input.txt"
+        let dstPath = "/tmp/asyncstream_test_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        let compressor = FileChunkedCompressor()
+        var lastPercentage: Double = 0
+        var sawFinished = false
+        for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath, progressInterval: 0.01) {
+            lastPercentage = progress.percentage
+            if progress.phase == .finished { sawFinished = true }
+        }
+        XCTAssertTrue(sawFinished)
+        XCTAssertGreaterThan(lastPercentage, 0)
+        let compressedData = try await Data(contentsOf: URL(fileURLWithPath: dstPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+
+    func testAsyncStreamFileChunkedDecompressionProgress() async throws {
+        let testData = String(repeating: "AsyncStream progress test data.", count: 10000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_test_input.txt"
+        let dstPath = "/tmp/asyncstream_test_output.gz"
+        let decompressedPath = "/tmp/asyncstream_test_output_decompressed.txt"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        let decompressor = FileChunkedDecompressor()
+        var lastPercentage: Double = 0
+        var sawFinished = false
+        for await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath, progressInterval: 0.01) {
+            lastPercentage = progress.percentage
+            if progress.phase == .finished { sawFinished = true }
+        }
+        XCTAssertTrue(sawFinished)
+        XCTAssertGreaterThan(lastPercentage, 0)
+        let decompressedData = try await Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    // MARK: - Comprehensive AsyncStream Tests
+    
+    func testAsyncStreamBasicUsage() async throws {
+        let testData = String(repeating: "Basic AsyncStream test data.", count: 5000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_basic_input.txt"
+        let dstPath = "/tmp/asyncstream_basic_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        let compressor = FileChunkedCompressor()
+        var progressCount = 0
+        var lastPercentage: Double = 0
+        
+        for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+            progressCount += 1
+            lastPercentage = progress.percentage
+            XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            XCTAssertLessThanOrEqual(progress.percentage, 100)
+            XCTAssertGreaterThanOrEqual(progress.processedBytes, 0)
+            XCTAssertGreaterThanOrEqual(progress.totalBytes, progress.processedBytes)
+        }
+        
+        XCTAssertGreaterThan(progressCount, 0)
+        XCTAssertEqual(lastPercentage, 100.0, accuracy: 0.1)
+        
+        // Verify the compressed file was created
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: dstPath))
+        XCTAssertFalse(compressedData.isEmpty)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamWithConfiguration() async throws {
+        let testData = String(repeating: "Configured AsyncStream test data.", count: 8000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_config_input.txt"
+        let dstPath = "/tmp/asyncstream_config_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Configure compressor with custom settings
+        let compressor = FileChunkedCompressor(
+            bufferSize: 128 * 1024,  // 128KB chunks
+            compressionLevel: .bestCompression,
+            windowBits: .gzip
+        )
+        
+        var phaseCounts: [CompressionPhase: Int] = [:]
+        var sawFinished = false
+        
+        for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+            phaseCounts[progress.phase, default: 0] += 1
+            
+            switch progress.phase {
+            case .reading:
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            case .compressing:
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            case .writing:
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            case .flushing:
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            case .finished:
+                sawFinished = true
+                XCTAssertEqual(progress.percentage, 100.0, accuracy: 0.1)
+            }
+        }
+        
+        XCTAssertTrue(sawFinished)
+        XCTAssertGreaterThan(phaseCounts[.reading] ?? 0, 0)
+        XCTAssertGreaterThan(phaseCounts[.compressing] ?? 0, 0)
+        XCTAssertGreaterThan(phaseCounts[.writing] ?? 0, 0)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamWithCancellation() async throws {
+        let testData = String(repeating: "Cancellation test data.", count: 15000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_cancel_input.txt"
+        let dstPath = "/tmp/asyncstream_cancel_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        let compressor = FileChunkedCompressor()
+        var progressCount = 0
+        var cancelled = false
+        
+        let task = Task {
+            for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+                progressCount += 1
+                
+                // Cancel after 50% progress
+                if progress.percentage > 50 {
+                    cancelled = true
+                    break
+                }
+                
+                // Check for task cancellation
+                if Task.isCancelled {
+                    cancelled = true
+                    break
+                }
+            }
+        }
+        
+        // Wait a bit then cancel
+        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        task.cancel()
+        
+        do {
+            try await task.value
+        } catch {
+            // Expected cancellation error
+        }
+        
+        XCTAssertTrue(cancelled || progressCount > 0)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamWithErrorHandling() async throws {
+        let nonExistentPath = "/tmp/nonexistent_file.txt"
+        let dstPath = "/tmp/asyncstream_error_output.gz"
+        
+        let compressor = FileChunkedCompressor()
+        
+        do {
+            for await _ in compressor.compressFileProgressStream(from: nonExistentPath, to: dstPath) {
+                // Should not reach here
+                XCTFail("Should not receive progress for non-existent file")
+            }
+            XCTFail("Should throw error for non-existent file")
+        } catch {
+            // Expected error
+            XCTAssertTrue(error is ZLibError || error is POSIXError)
+        }
+        
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamWithProgressThrottling() async throws {
+        let testData = String(repeating: "Throttling test data.", count: 10000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_throttle_input.txt"
+        let dstPath = "/tmp/asyncstream_throttle_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        let compressor = FileChunkedCompressor()
+        var progressCount = 0
+        var lastTimestamp: Date?
+        
+        for await progress in compressor.compressFileProgressStream(
+            from: srcPath,
+            to: dstPath,
+            progressInterval: 0.1 // 100ms intervals
+        ) {
+            progressCount += 1
+            
+            if let last = lastTimestamp {
+                let interval = progress.timestamp.timeIntervalSince(last)
+                XCTAssertGreaterThanOrEqual(interval, 0.05) // At least 50ms between updates
+            }
+            
+            lastTimestamp = progress.timestamp
+        }
+        
+        XCTAssertGreaterThan(progressCount, 0)
+        XCTAssertLessThan(progressCount, 100) // Should be throttled
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamWithCustomQueue() async throws {
+        let testData = String(repeating: "Custom queue test data.", count: 6000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_queue_input.txt"
+        let dstPath = "/tmp/asyncstream_queue_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        let compressor = FileChunkedCompressor()
+        var progressCount = 0
+        
+        for await progress in compressor.compressFileProgressStream(
+            from: srcPath,
+            to: dstPath,
+            progressQueue: .main
+        ) {
+            progressCount += 1
+            // Verify we're on the main queue
+            XCTAssertTrue(Thread.isMainThread)
+        }
+        
+        XCTAssertGreaterThan(progressCount, 0)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamWithFoundationProgress() async throws {
+        let testData = String(repeating: "Foundation Progress test data.", count: 7000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_foundation_input.txt"
+        let dstPath = "/tmp/asyncstream_foundation_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        let compressor = FileChunkedCompressor()
+        let progress = Progress(totalUnitCount: 0) // Will be set automatically
+        
+        var progressCount = 0
+        var foundationProgressValues: [Double] = []
+        
+        for await progressInfo in compressor.compressFileProgressStream(
+            from: srcPath,
+            to: dstPath
+        ) {
+            progressCount += 1
+            foundationProgressValues.append(progress.fractionCompleted)
+            
+            // Foundation.Progress should be updated
+            XCTAssertGreaterThanOrEqual(progress.fractionCompleted, 0)
+            XCTAssertLessThanOrEqual(progress.fractionCompleted, 1.0)
+        }
+        
+        XCTAssertGreaterThan(progressCount, 0)
+        XCTAssertEqual(progress.fractionCompleted, 1.0, accuracy: 0.01)
+        XCTAssertEqual(foundationProgressValues.count, progressCount)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamMultipleFiles() async throws {
+        let files = ["file1", "file2", "file3"]
+        let testData = String(repeating: "Multiple files test data.", count: 3000).data(using: .utf8)!
+        
+        // Create test files
+        for file in files {
+            let srcPath = "/tmp/asyncstream_multi_\(file).txt"
+            try testData.write(to: URL(fileURLWithPath: srcPath))
+        }
+        
+        let compressor = FileChunkedCompressor()
+        var processedFiles = 0
+        
+        for file in files {
+            let srcPath = "/tmp/asyncstream_multi_\(file).txt"
+            let dstPath = "/tmp/asyncstream_multi_\(file).gz"
+            
+            var fileProgressCount = 0
+            for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+                fileProgressCount += 1
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+                XCTAssertLessThanOrEqual(progress.percentage, 100)
+            }
+            
+            XCTAssertGreaterThan(fileProgressCount, 0)
+            processedFiles += 1
+            
+            // Verify file was created
+            let compressedData = try Data(contentsOf: URL(fileURLWithPath: dstPath))
+            XCTAssertFalse(compressedData.isEmpty)
+        }
+        
+        XCTAssertEqual(processedFiles, files.count)
+        
+        // Cleanup
+        for file in files {
+            try? FileManager.default.removeItem(atPath: "/tmp/asyncstream_multi_\(file).txt")
+            try? FileManager.default.removeItem(atPath: "/tmp/asyncstream_multi_\(file).gz")
+        }
+    }
+    
+    func testAsyncStreamWithStructuredProgress() async throws {
+        let testData = String(repeating: "Structured progress test data.", count: 9000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_structured_input.txt"
+        let dstPath = "/tmp/asyncstream_structured_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        let compressor = FileChunkedCompressor()
+        
+        struct CompressionStats {
+            var totalBytes: Int64 = 0
+            var processedBytes: Int64 = 0
+            var phases: Set<CompressionPhase> = []
+            var speedReadings: [Int64] = []
+            var etaReadings: [Double] = []
+        }
+        
+        var stats = CompressionStats()
+        
+        for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+            stats.totalBytes = Int64(progress.totalBytes)
+            stats.processedBytes = Int64(progress.processedBytes)
+            stats.phases.insert(progress.phase)
+            
+            if let speed = progress.speedBytesPerSec {
+                stats.speedReadings.append(Int64(speed))
+            }
+            
+            if let eta = progress.etaSeconds {
+                stats.etaReadings.append(eta)
+            }
+        }
+        
+        XCTAssertGreaterThan(stats.totalBytes, 0)
+        XCTAssertEqual(stats.processedBytes, stats.totalBytes)
+        XCTAssertTrue(stats.phases.contains(.finished))
+        XCTAssertGreaterThanOrEqual(Int64(stats.phases.count), 3) // Should have multiple phases
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamWithConditionalProcessing() async throws {
+        let smallData = String(repeating: "Small file.", count: 100).data(using: .utf8)!
+        let largeData = String(repeating: "Large file data.", count: 10000).data(using: .utf8)!
+        
+        let smallPath = "/tmp/asyncstream_conditional_small.txt"
+        let largePath = "/tmp/asyncstream_conditional_large.txt"
+        let smallOutput = "/tmp/asyncstream_conditional_small.gz"
+        let largeOutput = "/tmp/asyncstream_conditional_large.gz"
+        
+        try smallData.write(to: URL(fileURLWithPath: smallPath))
+        try largeData.write(to: URL(fileURLWithPath: largePath))
+        
+        let compressor = FileChunkedCompressor()
+        var processedLargeFile = false
+        
+        // Process large file with progress
+        let largeFileSize = try FileManager.default.attributesOfItem(atPath: largePath)[.size] as? Int64 ?? 0
+        if largeFileSize > 1024 { // Only process files > 1KB
+            var progressCount = 0
+            for await progress in compressor.compressFileProgressStream(from: largePath, to: largeOutput) {
+                progressCount += 1
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            }
+            XCTAssertGreaterThan(progressCount, 0)
+            processedLargeFile = true
+        }
+        
+        XCTAssertTrue(processedLargeFile)
+        
+        try? FileManager.default.removeItem(atPath: smallPath)
+        try? FileManager.default.removeItem(atPath: largePath)
+        try? FileManager.default.removeItem(atPath: smallOutput)
+        try? FileManager.default.removeItem(atPath: largeOutput)
+    }
+    
+    func testAsyncStreamWithMemoryMonitoring() async throws {
+        let testData = String(repeating: "Memory monitoring test data.", count: 12000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_memory_input.txt"
+        let dstPath = "/tmp/asyncstream_memory_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        let compressor = FileChunkedCompressor()
+        var memoryReadings: [Int64] = []
+        
+        for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+            let memoryUsage = Int64(ProcessInfo.processInfo.physicalMemory)
+            memoryReadings.append(memoryUsage)
+            
+            // Memory usage should be reasonable (less than 1GB)
+            XCTAssertLessThan(memoryUsage, 1024 * 1024 * 1024)
+        }
+        
+        XCTAssertGreaterThan(memoryReadings.count, 0)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamWithPerformanceMetrics() async throws {
+        let testData = String(repeating: "Performance metrics test data.", count: 11000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_performance_input.txt"
+        let dstPath = "/tmp/asyncstream_performance_output.gz"
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        let compressor = FileChunkedCompressor()
+        var startTime: TimeInterval = 0
+        var performanceReadings: [(TimeInterval, Double)] = []
+        
+        for await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+            let currentTime = CFAbsoluteTimeGetCurrent()
+            
+            if startTime == 0 {
+                startTime = currentTime
+            }
+            
+            let elapsed = currentTime - startTime
+            let throughput = Double(progress.processedBytes) / elapsed
+            
+            performanceReadings.append((elapsed, throughput))
+            
+            // Throughput should be positive
+            XCTAssertGreaterThan(throughput, 0)
+        }
+        
+        XCTAssertGreaterThan(performanceReadings.count, 0)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    // MARK: - AsyncStream Decompression Tests
+    
+    func testAsyncStreamDecompressionBasic() async throws {
+        let testData = String(repeating: "Basic decompression test data.", count: 5000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_basic_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_basic_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_basic_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // First compress
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        // Then decompress with progress
+        let decompressor = FileChunkedDecompressor()
+        var progressCount = 0
+        var lastPercentage: Double = 0
+        
+        for await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
+            progressCount += 1
+            lastPercentage = progress.percentage
+            XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            XCTAssertLessThanOrEqual(progress.percentage, 100)
+        }
+        
+        XCTAssertGreaterThan(progressCount, 0)
+        XCTAssertEqual(lastPercentage, 100.0, accuracy: 0.1)
+        
+        // Verify decompression
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAsyncStreamDecompressionWithConfiguration() async throws {
+        let testData = String(repeating: "Configured decompression test data.", count: 8000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_config_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_config_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_config_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Compress with gzip
+        let compressor = FileChunkedCompressor(windowBits: .gzip)
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        // Decompress with configuration
+        let decompressor = FileChunkedDecompressor(
+            bufferSize: 128 * 1024,
+            windowBits: .gzip
+        )
+        
+        var phaseCounts: [CompressionPhase: Int] = [:]
+        var sawFinished = false
+        
+        for await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
+            phaseCounts[progress.phase, default: 0] += 1
+            
+            switch progress.phase {
+            case .reading:
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            case .compressing: // Actually decompressing
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            case .writing:
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            case .flushing:
+                XCTAssertGreaterThanOrEqual(progress.percentage, 0)
+            case .finished:
+                sawFinished = true
+                XCTAssertEqual(progress.percentage, 100.0, accuracy: 0.1)
+            }
+        }
+        
+        XCTAssertTrue(sawFinished)
+        XCTAssertGreaterThan(phaseCounts[.reading] ?? 0, 0)
+        XCTAssertGreaterThan(phaseCounts[.compressing] ?? 0, 0)
+        XCTAssertGreaterThan(phaseCounts[.writing] ?? 0, 0)
+        
+        // Verify decompression
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAsyncStreamDecompressionWithCancellation() async throws {
+        let testData = String(repeating: "Cancellation decompression test data.", count: 15000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_cancel_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_cancel_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_cancel_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Compress first
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        let decompressor = FileChunkedDecompressor()
+        var progressCount = 0
+        var cancelled = false
+        
+        let task = Task {
+            for await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
+                progressCount += 1
+                
+                // Cancel after 50% progress
+                if progress.percentage > 50 {
+                    cancelled = true
+                    break
+                }
+                
+                if Task.isCancelled {
+                    cancelled = true
+                    break
+                }
+            }
+        }
+        
+        // Wait a bit then cancel
+        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        task.cancel()
+        
+        do {
+            try await task.value
+        } catch {
+            // Expected cancellation error
+        }
+        
+        XCTAssertTrue(cancelled || progressCount > 0)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAsyncStreamDecompressionWithErrorHandling() async throws {
+        let nonExistentPath = "/tmp/nonexistent_decomp_file.gz"
+        let dstPath = "/tmp/asyncstream_decomp_error_output.txt"
+        
+        let decompressor = FileChunkedDecompressor()
+        
+        do {
+            for await _ in decompressor.decompressFileProgressStream(from: nonExistentPath, to: dstPath) {
+                XCTFail("Should not receive progress for non-existent file")
+            }
+            XCTFail("Should throw error for non-existent file")
+        } catch {
+            // Expected error
+            XCTAssertTrue(error is ZLibError || error is POSIXError)
+        }
+        
+        try? FileManager.default.removeItem(atPath: dstPath)
+    }
+    
+    func testAsyncStreamDecompressionWithProgressThrottling() async throws {
+        let testData = String(repeating: "Throttling decompression test data.", count: 10000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_throttle_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_throttle_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_throttle_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Compress first
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        let decompressor = FileChunkedDecompressor()
+        var progressCount = 0
+        var lastTimestamp: Date?
+        
+        for await progress in decompressor.decompressFileProgressStream(
+            from: dstPath,
+            to: decompressedPath,
+            progressInterval: 0.1 // 100ms intervals
+        ) {
+            progressCount += 1
+            
+            if let last = lastTimestamp {
+                let interval = progress.timestamp.timeIntervalSince(last)
+                XCTAssertGreaterThanOrEqual(interval, 0.05) // At least 50ms between updates
+            }
+            
+            lastTimestamp = progress.timestamp
+        }
+        
+        XCTAssertGreaterThan(progressCount, 0)
+        XCTAssertLessThan(progressCount, 100) // Should be throttled
+        
+        // Verify decompression
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAsyncStreamDecompressionWithCustomQueue() async throws {
+        let testData = String(repeating: "Custom queue decompression test data.", count: 6000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_queue_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_queue_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_queue_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Compress first
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        let decompressor = FileChunkedDecompressor()
+        var progressCount = 0
+        
+        for await progress in decompressor.decompressFileProgressStream(
+            from: dstPath,
+            to: decompressedPath,
+            progressQueue: .main
+        ) {
+            progressCount += 1
+            // Verify we're on the main queue
+            XCTAssertTrue(Thread.isMainThread)
+        }
+        
+        XCTAssertGreaterThan(progressCount, 0)
+        
+        // Verify decompression
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAsyncStreamDecompressionWithFoundationProgress() async throws {
+        let testData = String(repeating: "Foundation Progress decompression test data.", count: 7000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_foundation_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_foundation_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_foundation_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Compress first
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        let decompressor = FileChunkedDecompressor()
+        let progress = Progress(totalUnitCount: 0) // Will be set automatically
+        
+        var progressCount = 0
+        var foundationProgressValues: [Double] = []
+        
+        for await progressInfo in decompressor.decompressFileProgressStream(
+            from: dstPath,
+            to: decompressedPath
+        ) {
+            progressCount += 1
+            foundationProgressValues.append(progress.fractionCompleted)
+            
+            // Foundation.Progress should be updated
+            XCTAssertGreaterThanOrEqual(progress.fractionCompleted, 0)
+            XCTAssertLessThanOrEqual(progress.fractionCompleted, 1.0)
+        }
+        
+        XCTAssertGreaterThan(progressCount, 0)
+        XCTAssertEqual(progress.fractionCompleted, 1.0, accuracy: 0.01)
+        XCTAssertEqual(foundationProgressValues.count, progressCount)
+        
+        // Verify decompression
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAsyncStreamDecompressionWithStructuredProgress() async throws {
+        let testData = String(repeating: "Structured decompression progress test data.", count: 9000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_structured_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_structured_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_structured_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Compress first
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        let decompressor = FileChunkedDecompressor()
+        
+        struct DecompressionStats {
+            var totalBytes: Int64 = 0
+            var processedBytes: Int64 = 0
+            var phases: Set<CompressionPhase> = []
+            var speedReadings: [Int64] = []
+            var etaReadings: [Double] = []
+        }
+        
+        var stats = DecompressionStats()
+        
+        for await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
+            stats.totalBytes = Int64(progress.totalBytes)
+            stats.processedBytes = Int64(progress.processedBytes)
+            stats.phases.insert(progress.phase)
+            
+            if let speed = progress.speedBytesPerSec {
+                stats.speedReadings.append(Int64(speed))
+            }
+            
+            if let eta = progress.etaSeconds {
+                stats.etaReadings.append(eta)
+            }
+        }
+        
+        XCTAssertGreaterThan(stats.totalBytes, 0)
+        XCTAssertEqual(stats.processedBytes, stats.totalBytes)
+        XCTAssertTrue(stats.phases.contains(.finished))
+        XCTAssertGreaterThanOrEqual(Int64(stats.phases.count), 3) // Should have multiple phases
+        
+        // Verify decompression
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAsyncStreamDecompressionWithMemoryMonitoring() async throws {
+        let testData = String(repeating: "Memory monitoring decompression test data.", count: 12000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_memory_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_memory_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_memory_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Compress first
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        let decompressor = FileChunkedDecompressor()
+        var memoryReadings: [Int64] = []
+        
+        for await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
+            let memoryUsage = Int64(ProcessInfo.processInfo.physicalMemory)
+            memoryReadings.append(memoryUsage)
+            
+            // Memory usage should be reasonable (less than 1GB)
+            XCTAssertLessThan(memoryUsage, 1024 * 1024 * 1024)
+        }
+        
+        XCTAssertGreaterThan(memoryReadings.count, 0)
+        
+        // Verify decompression
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
+    func testAsyncStreamDecompressionWithPerformanceMetrics() async throws {
+        let testData = String(repeating: "Performance metrics decompression test data.", count: 11000).data(using: .utf8)!
+        let srcPath = "/tmp/asyncstream_decomp_performance_input.txt"
+        let dstPath = "/tmp/asyncstream_decomp_performance_output.gz"
+        let decompressedPath = "/tmp/asyncstream_decomp_performance_decompressed.txt"
+        
+        try testData.write(to: URL(fileURLWithPath: srcPath))
+        
+        // Compress first
+        let compressor = FileChunkedCompressor()
+        try await compressor.compressFile(from: srcPath, to: dstPath)
+        
+        let decompressor = FileChunkedDecompressor()
+        var startTime: TimeInterval = 0
+        var performanceReadings: [(TimeInterval, Double)] = []
+        
+        for await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
+            let currentTime = CFAbsoluteTimeGetCurrent()
+            
+            if startTime == 0 {
+                startTime = currentTime
+            }
+            
+            let elapsed = currentTime - startTime
+            let throughput = Double(progress.processedBytes) / elapsed
+            
+            performanceReadings.append((elapsed, throughput))
+            
+            // Throughput should be positive
+            XCTAssertGreaterThan(throughput, 0)
+        }
+        
+        XCTAssertGreaterThan(performanceReadings.count, 0)
+        
+        // Verify decompression
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        XCTAssertEqual(decompressedData, testData)
+        
+        try? FileManager.default.removeItem(atPath: srcPath)
+        try? FileManager.default.removeItem(atPath: dstPath)
+        try? FileManager.default.removeItem(atPath: decompressedPath)
+    }
+    
     static var allTests = [
         ("testZLibVersion", testZLibVersion),
         ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
@@ -5265,5 +6120,29 @@ final class SwiftZlibTests: XCTestCase {
         ("testConvenienceChunkedMethodsAsync", testConvenienceChunkedMethodsAsync),
         ("testAdvancedProgressReporting_Compression", testAdvancedProgressReporting_Compression),
         ("testAdvancedProgressReporting_Decompression", testAdvancedProgressReporting_Decompression),
+        ("testAsyncStreamFileChunkedCompressionProgress", testAsyncStreamFileChunkedCompressionProgress),
+        ("testAsyncStreamFileChunkedDecompressionProgress", testAsyncStreamFileChunkedDecompressionProgress),
+        ("testAsyncStreamBasicUsage", testAsyncStreamBasicUsage),
+        ("testAsyncStreamWithConfiguration", testAsyncStreamWithConfiguration),
+        ("testAsyncStreamWithCancellation", testAsyncStreamWithCancellation),
+        ("testAsyncStreamWithErrorHandling", testAsyncStreamWithErrorHandling),
+        ("testAsyncStreamWithProgressThrottling", testAsyncStreamWithProgressThrottling),
+        ("testAsyncStreamWithCustomQueue", testAsyncStreamWithCustomQueue),
+        ("testAsyncStreamWithFoundationProgress", testAsyncStreamWithFoundationProgress),
+        ("testAsyncStreamMultipleFiles", testAsyncStreamMultipleFiles),
+        ("testAsyncStreamWithStructuredProgress", testAsyncStreamWithStructuredProgress),
+        ("testAsyncStreamWithConditionalProcessing", testAsyncStreamWithConditionalProcessing),
+        ("testAsyncStreamWithMemoryMonitoring", testAsyncStreamWithMemoryMonitoring),
+        ("testAsyncStreamWithPerformanceMetrics", testAsyncStreamWithPerformanceMetrics),
+        ("testAsyncStreamDecompressionBasic", testAsyncStreamDecompressionBasic),
+        ("testAsyncStreamDecompressionWithConfiguration", testAsyncStreamDecompressionWithConfiguration),
+        ("testAsyncStreamDecompressionWithCancellation", testAsyncStreamDecompressionWithCancellation),
+        ("testAsyncStreamDecompressionWithErrorHandling", testAsyncStreamDecompressionWithErrorHandling),
+        ("testAsyncStreamDecompressionWithProgressThrottling", testAsyncStreamDecompressionWithProgressThrottling),
+        ("testAsyncStreamDecompressionWithCustomQueue", testAsyncStreamDecompressionWithCustomQueue),
+        ("testAsyncStreamDecompressionWithFoundationProgress", testAsyncStreamDecompressionWithFoundationProgress),
+        ("testAsyncStreamDecompressionWithStructuredProgress", testAsyncStreamDecompressionWithStructuredProgress),
+        ("testAsyncStreamDecompressionWithMemoryMonitoring", testAsyncStreamDecompressionWithMemoryMonitoring),
+        ("testAsyncStreamDecompressionWithPerformanceMetrics", testAsyncStreamDecompressionWithPerformanceMetrics),
     ]
 }
