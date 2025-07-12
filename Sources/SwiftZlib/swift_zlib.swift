@@ -1038,8 +1038,7 @@ public struct ZLib {
             
             // Set gzip header if provided and format is gzip
             if options.format == .gzip, let header = options.gzipHeader {
-                // Note: gzip header setting would need to be implemented in Compressor
-                zlibWarning("Gzip header setting not yet implemented")
+                try compressor.setGzipHeader(header)
             }
             
             // Compress with finish flush
@@ -3895,7 +3894,7 @@ public class FileChunkedCompressor {
         try compressor.initializeAdvanced(level: compressionLevel, windowBits: windowBits)
 
         var processedBytes = 0
-        let totalBytes = try input.seekToEnd() ?? 0
+        let totalBytes = try input.seekToEnd()
         try input.seek(toOffset: 0)
 
         var isFinished = false
@@ -4053,7 +4052,7 @@ public class FileChunkedCompressor {
                     var processedBytes = 0
                     var lastReport = Date()
                     let startTime = Date()
-                    var shouldContinue = true
+                    let shouldContinue = true
                     var phase: CompressionPhase = .reading
                     var isFinished = false
                     var firstIteration = true
@@ -4160,7 +4159,7 @@ public class FileChunkedDecompressor {
         try decompressor.initializeAdvanced(windowBits: windowBits)
 
         var processedBytes = 0
-        let totalBytes = try input.seekToEnd() ?? 0
+        let totalBytes = try input.seekToEnd()
         try input.seek(toOffset: 0)
 
         var isFinished = false
@@ -4318,7 +4317,7 @@ public class FileChunkedDecompressor {
                     var processedBytes = 0
                     var lastReport = Date()
                     let startTime = Date()
-                    var shouldContinue = true
+                    let shouldContinue = true
                     var phase: CompressionPhase = .reading
                     var isFinished = false
                     var firstIteration = true
