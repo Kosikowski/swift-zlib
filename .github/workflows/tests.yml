@@ -7,52 +7,6 @@ on:
     branches: [main, develop]
 
 jobs:
-  # Reusable Swift installation job
-  install-swift-linux:
-    name: Install Swift (Linux)
-    runs-on: ubuntu-22.04
-    outputs:
-      swift-path: ${{ steps.install-swift.outputs.path }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Swift
-        id: install-swift
-        run: |
-          # Download and install Swift 5.9 manually (stable and available)
-          echo "Downloading Swift 5.9..."
-
-          # Try wget first, then curl as fallback
-          if ! wget -q --show-progress https://download.swift.org/swift-5.9.2-release/ubuntu2204/swift-5.9.2-RELEASE-ubuntu22.04.tar.gz; then
-            echo "wget failed, trying curl..."
-            curl -L -o swift-5.9.2-RELEASE-ubuntu22.04.tar.gz https://download.swift.org/swift-5.9.2-release/ubuntu2204/swift-5.9.2-RELEASE-ubuntu22.04.tar.gz
-          fi
-
-          if [ ! -f swift-5.9.2-RELEASE-ubuntu22.04.tar.gz ]; then
-            echo "Error: Swift download failed with both wget and curl"
-            echo "Available Swift versions can be found at: https://download.swift.org/"
-            exit 1
-          fi
-
-          echo "Extracting Swift..."
-          tar xzf swift-5.9.2-RELEASE-ubuntu22.04.tar.gz
-
-          if [ ! -d swift-5.9.2-RELEASE-ubuntu22.04 ]; then
-            echo "Error: Swift extraction failed"
-            exit 1
-          fi
-
-          echo "Installing Swift to /opt/swift..."
-          sudo mv swift-5.9.2-RELEASE-ubuntu22.04 /opt/swift
-
-          echo "Setting up environment..."
-          echo "path=/opt/swift/usr/bin" >> $GITHUB_OUTPUT
-          echo "/opt/swift/usr/bin" >> $GITHUB_PATH
-          echo "SWIFT_HOME=/opt/swift" >> $GITHUB_ENV
-
-          echo "Swift installation completed successfully"
-
   # Test on macOS with latest Xcode (newest runner)
   test-macos-latest:
     name: macOS (Xcode 15.2)
@@ -91,16 +45,15 @@ jobs:
   test-linux:
     name: Linux (Ubuntu 22.04)
     runs-on: ubuntu-22.04
-    needs: install-swift-linux
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Swift environment
-        run: |
-          echo "${{ needs.install-swift-linux.outputs.swift-path }}" >> $GITHUB_PATH
-          echo "SWIFT_HOME=/opt/swift" >> $GITHUB_ENV
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2.1.0
+        with:
+          swift-version: "5.9"
 
       - name: Show Swift version
         run: swift --version
@@ -128,16 +81,15 @@ jobs:
   test-linux-latest:
     name: Linux (Ubuntu 22.04, Swift 5.9)
     runs-on: ubuntu-22.04
-    needs: install-swift-linux
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Swift environment
-        run: |
-          echo "${{ needs.install-swift-linux.outputs.swift-path }}" >> $GITHUB_PATH
-          echo "SWIFT_HOME=/opt/swift" >> $GITHUB_ENV
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2.1.0
+        with:
+          swift-version: "5.9"
 
       - name: Show Swift version
         run: swift --version
@@ -334,15 +286,14 @@ jobs:
       matrix:
         configuration: [debug, release]
     runs-on: ubuntu-22.04
-    needs: install-swift-linux
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Swift environment (Linux)
-        run: |
-          echo "${{ needs.install-swift-linux.outputs.swift-path }}" >> $GITHUB_PATH
-          echo "SWIFT_HOME=/opt/swift" >> $GITHUB_ENV
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2.1.0
+        with:
+          swift-version: "5.9"
 
       - name: Install zlib (Linux)
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
@@ -359,16 +310,15 @@ jobs:
   memory-leak-linux:
     name: Linux Memory Leak Test (MemoryLeakTests only)
     runs-on: ubuntu-22.04
-    needs: install-swift-linux
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Swift environment
-        run: |
-          echo "${{ needs.install-swift-linux.outputs.swift-path }}" >> $GITHUB_PATH
-          echo "SWIFT_HOME=/opt/swift" >> $GITHUB_ENV
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2.1.0
+        with:
+          swift-version: "5.9"
 
       - name: Show Swift version
         run: swift --version
