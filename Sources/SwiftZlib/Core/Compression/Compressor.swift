@@ -324,7 +324,9 @@ public final class Compressor {
         var iteration = 0
         repeat {
             iteration += 1
-            // zlibDebug("Compression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
+            if ZLibVerboseConfig.logProgress {
+                zlibDebug("Compression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
+            }
 
             try outputBuffer.withUnsafeMutableBufferPointer { buffer in
                 stream.next_out = buffer.baseAddress
