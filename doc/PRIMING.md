@@ -25,3 +25,16 @@ Priming in zlib refers to the ability to insert a specific number of bits into t
 - **Do not use priming unless you have a very specific bit-level protocol need.**
 - For most applications, priming should be avoided.
 - If you need to use priming, use raw deflate streams and be aware of the limitations above. 
+
+## Test Coverage Summary
+
+| Area                | Coverage | Comments |
+|---------------------|----------|----------|
+| Basic Compression   | ✅        | Round-trip, all levels, small/large/binary/empty data |
+| Streaming/Chunked   | ✅        | Multiple chunk sizes, streaming APIs, output handler aborts |
+| Dictionary          | ✅        | All edge cases: correct, wrong, missing, large, empty, timing |
+| Priming             | ✅        | All edge cases: before/after, invalid, round-trip, raw/zlib/gzip |
+| WindowBits          | ✅        | All variants, mismatches, auto-detect, empty/corrupted input |
+| Error Handling      | ✅        | All major zlib errors, custom error codes, recovery suggestions |
+| Edge Cases          | ✅        | Empty, single-byte, large, binary, corrupted, concurrent |
+| Gzip Header         | ✅        | Metadata, corruption, round-trip, streaming, auto-detect | 

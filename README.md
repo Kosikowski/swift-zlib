@@ -1839,3 +1839,16 @@ enum CompressionPhase: String {
 ## Documentation
 
 - **[Dictionary Compression Guide](doc/DICTIONARY_COMPRESSION.md)** — Comprehensive guide to dictionary compression requirements, zlib behavior, and best practices for using dictionaries with SwiftZlib.
+
+## Test Coverage Summary
+
+| Area                | Coverage | Comments |
+|---------------------|----------|----------|
+| Basic Compression   | ✅        | Round-trip, all levels, small/large/binary/empty data |
+| Streaming/Chunked   | ✅        | Multiple chunk sizes, streaming APIs, output handler aborts |
+| Dictionary          | ✅        | All edge cases: correct, wrong, missing, large, empty, timing |
+| Priming             | ✅        | All edge cases: before/after, invalid, round-trip, raw/zlib/gzip |
+| WindowBits          | ✅        | All variants, mismatches, auto-detect, empty/corrupted input |
+| Error Handling      | ✅        | All major zlib errors, custom error codes, recovery suggestions |
+| Edge Cases          | ✅        | Empty, single-byte, large, binary, corrupted, concurrent |
+| Gzip Header         | ✅        | Metadata, corruption, round-trip, streaming, auto-detect |
