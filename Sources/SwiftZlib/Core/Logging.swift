@@ -8,7 +8,7 @@ import CZLib
 import Foundation
 
 #if canImport(CoreFoundation)
-import CoreFoundation
+    import CoreFoundation
 #endif
 
 // MARK: - ZLibVerboseConfig
@@ -127,9 +127,9 @@ class ZLibTimer {
     // MARK: Properties
 
     #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    private let startTime: CFAbsoluteTime
+        private let startTime: CFAbsoluteTime
     #else
-    private let startTime: Date
+        private let startTime: Date
     #endif
     private let operation: String
 
@@ -138,9 +138,9 @@ class ZLibTimer {
     init(_ operation: String) {
         self.operation = operation
         #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-        startTime = CFAbsoluteTimeGetCurrent()
+            startTime = CFAbsoluteTimeGetCurrent()
         #else
-        startTime = Date()
+            startTime = Date()
         #endif
         zlibDebug("Starting \(operation)")
     }
@@ -149,9 +149,9 @@ class ZLibTimer {
 
     func finish() -> TimeInterval {
         #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-        let duration = CFAbsoluteTimeGetCurrent() - startTime
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
         #else
-        let duration = Date().timeIntervalSince(startTime)
+            let duration = Date().timeIntervalSince(startTime)
         #endif
         zlibDebug("Finished \(operation) in \(String(format: "%.4f", duration))s")
         return duration
