@@ -3,11 +3,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-// Define ZLIB_DEBUG to enable debug printf statements
-// This can be controlled via compiler flags: -DZLIB_DEBUG
-#ifndef ZLIB_DEBUG
+// Force ZLIB_DEBUG to always be 0 to prevent debug output in tests
 #define ZLIB_DEBUG 0
-#endif
 
 #if ZLIB_DEBUG
 #include <stdio.h>

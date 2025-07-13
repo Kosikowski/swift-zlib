@@ -56,6 +56,22 @@ final class FileOperationsTests: XCTestCase {
         ]
     #endif
 
+    // MARK: Overridden Functions
+
+    // MARK: Setup and Teardown
+
+    override func setUp() {
+        super.setUp()
+        // Disable verbose logging to prevent debug output interference in tests
+        ZLibVerboseConfig.disableAll()
+    }
+
+    override func tearDown() {
+        // Re-enable verbose logging after tests if needed
+        ZLibVerboseConfig.disableAll()
+        super.tearDown()
+    }
+
     // MARK: Functions
 
     func testGzipFileAPI() throws {
