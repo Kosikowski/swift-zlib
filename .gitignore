@@ -6,3 +6,18 @@ DerivedData/
 /.swiftpm
 .netrc
 /.index-build
+
+# Pre-commit
+.pre-commit-config.yaml.bak
+.secrets.baseline
+
+# Development tools
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp

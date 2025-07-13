@@ -189,6 +189,23 @@ jobs:
     - name: Select Xcode
       run: sudo xcode-select -switch /Applications/Xcode_15.2.app
       
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install pre-commit
+      run: |
+        pip install pre-commit
+        
+    - name: Install SwiftFormat
+      run: |
+        brew install swiftformat
+        
+    - name: Run pre-commit hooks
+      run: |
+        pre-commit run --all-files
+        
     - name: Check Swift formatting
       run: |
         if command -v swiftformat &> /dev/null; then
