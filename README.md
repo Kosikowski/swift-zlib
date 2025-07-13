@@ -15,6 +15,35 @@ A comprehensive Swift library for zlib compression and decompression with suppor
 - **Error Handling**: Comprehensive error types and recovery
 - **Performance Optimized**: Multiple compression levels and strategies
 
+## 📚 Documentation
+
+### Getting Started
+- **[Quick Start Guide](doc/README.md)** - Complete getting started tutorial
+- **[API Reference](doc/API_REFERENCE.md)** - Complete API documentation
+- **[Examples](doc/README.md#examples)** - Code examples and use cases
+
+### Core Topics
+- **[Error Handling](doc/ERROR_HANDLING.md)** - Comprehensive error handling guide
+- **[Streaming Operations](doc/STREAMING.md)** - Memory-efficient large file processing
+- **[File Operations](doc/README.md#file-operations)** - Direct file compression/decompression
+- **[Async & Combine](doc/README.md#async--combine)** - Modern Swift concurrency
+
+### Advanced Features
+- **[Dictionary Compression](doc/DICTIONARY_COMPRESSION.md)** - Custom dictionary support
+- **[Gzip Support](doc/GZIP_SUPPORT.md)** - Gzip header and metadata handling
+- **[Advanced Features](doc/ADVANCED_FEATURES.md)** - Advanced usage patterns
+- **[Priming Support](doc/PRIMING.md)** - Low-level bit manipulation
+
+### Development
+- **[Architecture](doc/ARCHITECTURE.md)** - Technical architecture overview
+- **[Testing](doc/TESTING.md)** - Testing guide and best practices
+- **[CI/CD](doc/CI_CD.md)** - Continuous integration setup
+- **[API Coverage](doc/API_COVERAGE.md)** - Complete zlib API mapping
+
+### Tools
+- **[CLI Tool](README_CLI.md)** - Command-line interface documentation
+- **[Performance](doc/README.md#performance)** - Performance optimization guide
+
 ## Installation
 
 ### Swift Package Manager
@@ -211,10 +240,11 @@ try await ZLib.compressFile(
 
 ### Getting Help
 
-1. Check the [documentation](doc/) for detailed guides
-2. Review [error handling guide](doc/ERROR_HANDLING.md)
-3. See [testing guide](doc/TESTING.md) for debugging
-4. Open an issue with reproduction steps
+1. **📖 Documentation**: Check the [documentation index](doc/README.md) for comprehensive guides
+2. **🔧 Error Handling**: Review [error handling guide](doc/ERROR_HANDLING.md) for troubleshooting
+3. **🧪 Testing**: See [testing guide](doc/TESTING.md) for debugging and test examples
+4. **🏗️ Architecture**: Review [architecture docs](doc/ARCHITECTURE.md) for technical details
+5. **🐛 Issues**: Open an issue with reproduction steps using our [bug report template](.github/ISSUE_TEMPLATE/bug_report.md)
 
 ## Command Line Tool
 

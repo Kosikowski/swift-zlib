@@ -503,35 +503,6 @@ func testEdgeCases() throws {
 
 ## Continuous Integration
 
-### GitHub Actions Example
-
-```yaml
-name: Tests
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_13.0.app
-    
-    - name: Run Tests
-      run: swift test --verbose
-    
-    - name: Run Performance Tests
-      run: swift test --filter PerformanceTests
-    
-    - name: Run All Test Groups
-      run: |
-        swift test --filter CoreTests
-        swift test --filter ExtensionsTests
-        swift test --filter FileOperationsTests
-        swift test --filter CombineTests
-```
+See the GitHub Actions workflow in `.github/workflows/tests.yml` for comprehensive CI configuration.
 
 This testing guide provides comprehensive coverage of testing practices, debugging techniques, and best practices for the SwiftZlib test suite. 

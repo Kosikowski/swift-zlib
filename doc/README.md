@@ -1,65 +1,132 @@
 # SwiftZlib Documentation
 
-This directory contains comprehensive documentation for SwiftZlib, a Swift wrapper for the zlib compression library.
+Welcome to the SwiftZlib documentation! This guide will help you navigate through all available documentation and find the information you need.
 
-## Documentation Index
+## 🚀 Quick Navigation
 
-### User Guides
+### For New Users
+- **[Main README](../README.md)** - Project overview and quick start
+- **[API Reference](API_REFERENCE.md)** - Complete API documentation
+- **[Error Handling](ERROR_HANDLING.md)** - How to handle errors properly
 
-- **[STREAMING.md](STREAMING.md)** - Streaming compression and decompression with configuration, usage patterns, and best practices
-- **[ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)** - Async/await, Combine integration, dictionary compression, and performance optimization
-- **[GZIP_SUPPORT.md](GZIP_SUPPORT.md)** - Gzip header handling, metadata management, and file operations
-- **[ERROR_HANDLING.md](ERROR_HANDLING.md)** - Error types, recovery strategies, debugging techniques, and best practices
+### For Developers
+- **[Architecture](ARCHITECTURE.md)** - Technical architecture overview
+- **[Testing](TESTING.md)** - Testing guide and best practices
+- **[CI/CD](CI_CD.md)** - Continuous integration setup
 
-### Technical Documentation
+### For Advanced Users
+- **[Advanced Features](ADVANCED_FEATURES.md)** - Advanced usage patterns
+- **[Streaming Operations](STREAMING.md)** - Memory-efficient processing
+- **[Dictionary Compression](DICTIONARY_COMPRESSION.md)** - Custom dictionary support
+- **[Gzip Support](GZIP_SUPPORT.md)** - Gzip header and metadata
+- **[Priming Support](PRIMING.md)** - Low-level bit manipulation
 
-- **[API_COVERAGE.md](API_COVERAGE.md)** - Complete mapping from C zlib functions to Swift methods (~98% coverage)
-- **[API_REFERENCE.md](API_REFERENCE.md)** - Comprehensive API reference with all public types, methods, and examples
-- **[TESTING.md](TESTING.md)** - Test structure, running tests, writing tests, debugging, and best practices
-- **[ARCHITECTURE.md](../ARCHITECTURE.md)** - System architecture, design patterns, and component relationships
+### For Contributors
+- **[API Coverage](API_COVERAGE.md)** - Complete zlib API mapping
+- **[Contributing Guide](../CONTRIBUTING.md)** - Development guidelines
+- **[CLI Tool](../README_CLI.md)** - Command-line interface
 
-### Specialized Topics
-
-- **[DICTIONARY_COMPRESSION.md](DICTIONARY_COMPRESSION.md)** - Dictionary compression requirements and usage patterns
-- **[PRIMING.md](PRIMING.md)** - Advanced priming functionality and limitations
-
-## Quick Navigation
+## 📖 Documentation Structure
 
 ### Getting Started
-1. **[Main README](../README.md)** - Installation, quick start, and basic usage
-2. **[STREAMING.md](STREAMING.md)** - For large file processing
-3. **[ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)** - For modern Swift features
+| Document | Description |
+|----------|-------------|
+| [Main README](../README.md) | Project overview, installation, quick examples |
+| [API Reference](API_REFERENCE.md) | Complete API documentation with examples |
+| [Error Handling](ERROR_HANDLING.md) | Comprehensive error handling guide |
 
-### Technical Reference
-1. **[API_COVERAGE.md](API_COVERAGE.md)** - C to Swift function mapping
-2. **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API documentation
-3. **[ARCHITECTURE.md](../ARCHITECTURE.md)** - System design and architecture
+### Core Features
+| Document | Description |
+|----------|-------------|
+| [Streaming Operations](STREAMING.md) | Memory-efficient large file processing |
+| [File Operations](README.md#file-operations) | Direct file compression/decompression |
+| [Async & Combine](README.md#async--combine) | Modern Swift concurrency support |
 
-### Troubleshooting
-1. **[ERROR_HANDLING.md](ERROR_HANDLING.md)** - Error handling and recovery
-2. **[TESTING.md](TESTING.md)** - Testing and debugging
-3. **[Main README Troubleshooting](../README.md#troubleshooting)** - Common issues
+### Advanced Topics
+| Document | Description |
+|----------|-------------|
+| [Advanced Features](ADVANCED_FEATURES.md) | Advanced usage patterns and optimizations |
+| [Dictionary Compression](DICTIONARY_COMPRESSION.md) | Custom dictionary support for better compression |
+| [Gzip Support](GZIP_SUPPORT.md) | Gzip header and metadata handling |
+| [Priming Support](PRIMING.md) | Low-level bit manipulation (advanced) |
 
-## Documentation Philosophy
+### Development & Architecture
+| Document | Description |
+|----------|-------------|
+| [Architecture](ARCHITECTURE.md) | Technical architecture and design patterns |
+| [Testing](TESTING.md) | Testing guide, debugging, and best practices |
+| [CI/CD](CI_CD.md) | Continuous integration and deployment setup |
+| [API Coverage](API_COVERAGE.md) | Complete zlib C API to Swift mapping |
 
-- **User-Focused**: Guides prioritize practical usage over technical details
-- **Progressive Disclosure**: Start simple, add complexity as needed
-- **Complete Coverage**: All features documented with examples
-- **Error Handling**: Comprehensive error scenarios and recovery
-- **Performance**: Optimization tips and best practices throughout
+### Tools & Utilities
+| Document | Description |
+|----------|-------------|
+| [CLI Tool](../README_CLI.md) | Command-line interface documentation |
+| [Performance Guide](README.md#performance) | Performance optimization tips |
 
-## Contributing to Documentation
+## 🎯 Common Use Cases
 
-When adding new features or making changes:
+### I want to...
+- **Compress data quickly**: See [Main README](../README.md#quick-start)
+- **Handle large files**: See [Streaming Operations](STREAMING.md)
+- **Use async/await**: See [Async & Combine](README.md#async--combine)
+- **Handle errors properly**: See [Error Handling](ERROR_HANDLING.md)
+- **Use gzip format**: See [Gzip Support](GZIP_SUPPORT.md)
+- **Optimize performance**: See [Advanced Features](ADVANCED_FEATURES.md)
+- **Contribute to the project**: See [Contributing Guide](../CONTRIBUTING.md)
+- **Understand the architecture**: See [Architecture](ARCHITECTURE.md)
+- **Run tests**: See [Testing](TESTING.md)
+- **Use the CLI tool**: See [CLI Tool](../README_CLI.md)
 
-1. Update the relevant documentation file
-2. Add examples and usage patterns
-3. Include error handling scenarios
-4. Update this index if adding new files
-5. Ensure cross-references are accurate
+## 🔍 Search by Topic
 
-## External Resources
+### Compression
+- Basic compression: [Main README](../README.md#basic-compression)
+- File compression: [File Operations](README.md#file-operations)
+- Streaming compression: [Streaming Operations](STREAMING.md)
+- Dictionary compression: [Dictionary Compression](DICTIONARY_COMPRESSION.md)
+
+### Error Handling
+- Error types: [Error Handling](ERROR_HANDLING.md#error-types)
+- Recovery strategies: [Error Handling](ERROR_HANDLING.md#error-recovery)
+- Debugging: [Testing](TESTING.md#debugging-tests)
+
+### Performance
+- Optimization tips: [Advanced Features](ADVANCED_FEATURES.md#performance-optimization)
+- Memory management: [Streaming Operations](STREAMING.md#memory-management)
+- Benchmarking: [CLI Tool](../README_CLI.md#benchmarking)
+
+### Development
+- Architecture: [Architecture](ARCHITECTURE.md)
+- Testing: [Testing](TESTING.md)
+- CI/CD: [CI/CD](CI_CD.md)
+- Contributing: [Contributing Guide](../CONTRIBUTING.md)
+
+## 📚 External Resources
 
 - **[zlib Manual](https://zlib.net/manual.html)** - Official zlib documentation
-- **[Swift Package Manager](https://swift.org/package-manager/)** - Package management
-- **[Swift Concurrency](https://docs.swift.org/swift-book/LanguageGuide/Concurrency.html)** - Async/await guide 
+- **[Swift Package Manager](https://swift.org/package-manager/)** - Swift package management
+- **[Combine Framework](https://developer.apple.com/documentation/combine)** - Apple's reactive programming framework
+- **[Swift Concurrency](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/)** - Swift async/await documentation
+
+## 🤝 Getting Help
+
+If you can't find what you're looking for:
+
+1. **Search the documentation** using your browser's search function
+2. **Check the [Main README](../README.md)** for quick examples
+3. **Review [Error Handling](ERROR_HANDLING.md)** for troubleshooting
+4. **Open an issue** using our [bug report template](../.github/ISSUE_TEMPLATE/bug_report.md)
+5. **Request a feature** using our [feature request template](../.github/ISSUE_TEMPLATE/feature_request.md)
+
+## 📝 Documentation Updates
+
+This documentation is maintained alongside the code. If you find any issues or have suggestions for improvements:
+
+1. Open an issue describing the problem
+2. Submit a pull request with the fix
+3. Follow the [contributing guidelines](../CONTRIBUTING.md)
+
+---
+
+*Last updated: January 2025* 
