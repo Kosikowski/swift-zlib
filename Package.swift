@@ -3,7 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftZlib",
-    platforms: [.macOS(.v12)],
+    platforms: [
+        .macOS(.v12),
+        .iOS(.v13),
+        .tvOS(.v13),
+        .watchOS(.v6),
+    ],
     products: [
         .library(name: "SwiftZlib", targets: ["SwiftZlib"]),
         .executable(name: "SwiftZlibCLI", targets: ["SwiftZlibCLI"]),
@@ -17,7 +22,7 @@ let package = Package(
                 .headerSearchPath("include"),
             ],
             linkerSettings: [
-                .unsafeFlags(["-L/usr/lib", "-lz.1.2.12"]),
+                .linkedLibrary("z"),
             ]
         ),
 
