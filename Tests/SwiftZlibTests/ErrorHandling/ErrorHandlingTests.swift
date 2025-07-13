@@ -3,10 +3,39 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class ErrorHandlingTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testCompressionWithInvalidLevel", testCompressionWithInvalidLevel),
+        ("testDecompressionWithInvalidData", testDecompressionWithInvalidData),
+        ("testCompressionWithNullData", testCompressionWithNullData),
+        ("testDecompressionWithTruncatedData", testDecompressionWithTruncatedData),
+        ("testCompressionWithUninitializedStream", testCompressionWithUninitializedStream),
+        ("testDecompressionWithUninitializedStream", testDecompressionWithUninitializedStream),
+        ("testCompressionWithInvalidFlushMode", testCompressionWithInvalidFlushMode),
+        ("testDecompressionWithInvalidFlushMode", testDecompressionWithInvalidFlushMode),
+        ("testCompressionWithLargeInput", testCompressionWithLargeInput),
+        ("testDecompressionWithCorruptedData", testDecompressionWithCorruptedData),
+        ("testCompressionWithZeroSizedBuffer", testCompressionWithZeroSizedBuffer),
+        ("testDecompressionWithZeroSizedBuffer", testDecompressionWithZeroSizedBuffer),
+        ("testCompressionWithInvalidWindowBits", testCompressionWithInvalidWindowBits),
+        ("testDecompressionWithInvalidWindowBits", testDecompressionWithInvalidWindowBits),
+        ("testCompressionWithReusedStream", testCompressionWithReusedStream),
+        ("testDecompressionWithReusedStream", testDecompressionWithReusedStream),
+        ("testCompressionWithInvalidDictionary", testCompressionWithInvalidDictionary),
+        ("testDecompressionWithInvalidDictionary", testDecompressionWithInvalidDictionary),
+        ("testCompressionWithMemoryPressure", testCompressionWithMemoryPressure),
+        ("testDecompressionWithMemoryPressure", testDecompressionWithMemoryPressure),
+        ("testCompressionWithInvalidState", testCompressionWithInvalidState),
+        ("testDecompressionWithInvalidState", testDecompressionWithInvalidState),
+    ]
+
+    // MARK: Functions
+
     func testCompressionWithInvalidLevel() throws {
         let data = "test data".data(using: .utf8)!
         let compressor = Compressor()
@@ -308,29 +337,4 @@ final class ErrorHandlingTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-
-    static var allTests = [
-        ("testCompressionWithInvalidLevel", testCompressionWithInvalidLevel),
-        ("testDecompressionWithInvalidData", testDecompressionWithInvalidData),
-        ("testCompressionWithNullData", testCompressionWithNullData),
-        ("testDecompressionWithTruncatedData", testDecompressionWithTruncatedData),
-        ("testCompressionWithUninitializedStream", testCompressionWithUninitializedStream),
-        ("testDecompressionWithUninitializedStream", testDecompressionWithUninitializedStream),
-        ("testCompressionWithInvalidFlushMode", testCompressionWithInvalidFlushMode),
-        ("testDecompressionWithInvalidFlushMode", testDecompressionWithInvalidFlushMode),
-        ("testCompressionWithLargeInput", testCompressionWithLargeInput),
-        ("testDecompressionWithCorruptedData", testDecompressionWithCorruptedData),
-        ("testCompressionWithZeroSizedBuffer", testCompressionWithZeroSizedBuffer),
-        ("testDecompressionWithZeroSizedBuffer", testDecompressionWithZeroSizedBuffer),
-        ("testCompressionWithInvalidWindowBits", testCompressionWithInvalidWindowBits),
-        ("testDecompressionWithInvalidWindowBits", testDecompressionWithInvalidWindowBits),
-        ("testCompressionWithReusedStream", testCompressionWithReusedStream),
-        ("testDecompressionWithReusedStream", testDecompressionWithReusedStream),
-        ("testCompressionWithInvalidDictionary", testCompressionWithInvalidDictionary),
-        ("testDecompressionWithInvalidDictionary", testDecompressionWithInvalidDictionary),
-        ("testCompressionWithMemoryPressure", testCompressionWithMemoryPressure),
-        ("testDecompressionWithMemoryPressure", testDecompressionWithMemoryPressure),
-        ("testCompressionWithInvalidState", testCompressionWithInvalidState),
-        ("testDecompressionWithInvalidState", testDecompressionWithInvalidState),
-    ]
 }

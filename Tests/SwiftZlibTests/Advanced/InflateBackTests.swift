@@ -3,10 +3,23 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class InflateBackTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testInflateBackDecompressor", testInflateBackDecompressor),
+        ("testInflateBackWithChunks", testInflateBackWithChunks),
+        ("testInflateBackStreamInfo", testInflateBackStreamInfo),
+        ("testStreamingDecompressor", testStreamingDecompressor),
+        ("testStreamingDecompressorWithCallbacks", testStreamingDecompressorWithCallbacks),
+        ("testStreamingDecompressorChunkHandling", testStreamingDecompressorChunkHandling),
+    ]
+
+    // MARK: Functions
+
     func testInflateBackDecompressor() throws {
         let inflateBack = InflateBackDecompressor()
         try inflateBack.initialize()
@@ -134,13 +147,4 @@ final class InflateBackTests: XCTestCase {
         let combined = chunks.reduce(Data(), +)
         XCTAssertEqual(combined, originalData)
     }
-
-    static var allTests = [
-        ("testInflateBackDecompressor", testInflateBackDecompressor),
-        ("testInflateBackWithChunks", testInflateBackWithChunks),
-        ("testInflateBackStreamInfo", testInflateBackStreamInfo),
-        ("testStreamingDecompressor", testStreamingDecompressor),
-        ("testStreamingDecompressorWithCallbacks", testStreamingDecompressorWithCallbacks),
-        ("testStreamingDecompressorChunkHandling", testStreamingDecompressorChunkHandling),
-    ]
 }

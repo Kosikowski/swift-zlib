@@ -7,10 +7,33 @@
 import CZLib
 import Foundation
 
-// MARK: - Verbose Logging System
+// MARK: - ZLibVerboseConfig
 
 /// Verbose logging configuration for ZLib operations
 public enum ZLibVerboseConfig {
+    // MARK: Nested Types
+
+    /// Log level for filtering messages
+    public enum LogLevel: Int, CaseIterable {
+        case debug = 0
+        case info = 1
+        case warning = 2
+        case error = 3
+
+        // MARK: Computed Properties
+
+        public var description: String {
+            switch self {
+                case .debug: return "DEBUG"
+                case .info: return "INFO"
+                case .warning: return "WARNING"
+                case .error: return "ERROR"
+            }
+        }
+    }
+
+    // MARK: Static Properties
+
     /// Enable verbose logging
     public static var enabled: Bool = false
 
@@ -29,28 +52,13 @@ public enum ZLibVerboseConfig {
     /// Enable performance timing
     public static var logTiming: Bool = false
 
-    /// Log level for filtering messages
-    public enum LogLevel: Int, CaseIterable {
-        case debug = 0
-        case info = 1
-        case warning = 2
-        case error = 3
-
-        public var description: String {
-            switch self {
-            case .debug: return "DEBUG"
-            case .info: return "INFO"
-            case .warning: return "WARNING"
-            case .error: return "ERROR"
-            }
-        }
-    }
-
     /// Current minimum log level
     public static var minLogLevel: LogLevel = .info
 
     /// Custom log handler
     public static var logHandler: ((LogLevel, String) -> Void)?
+
+    // MARK: Static Functions
 
     /// Enable all verbose logging
     public static func enableAll() {
@@ -108,16 +116,24 @@ func zlibError(_ message: String, file: String = #file, function: String = #func
     zlibLog(.error, message, file: file, function: function, line: line)
 }
 
+// MARK: - ZLibTimer
+
 /// Performance timing utilities
 class ZLibTimer {
+    // MARK: Properties
+
     private let startTime: CFAbsoluteTime
     private let operation: String
+
+    // MARK: Lifecycle
 
     init(_ operation: String) {
         self.operation = operation
         startTime = CFAbsoluteTimeGetCurrent()
         zlibDebug("Starting \(operation)")
     }
+
+    // MARK: Functions
 
     func finish() -> TimeInterval {
         let duration = CFAbsoluteTimeGetCurrent() - startTime

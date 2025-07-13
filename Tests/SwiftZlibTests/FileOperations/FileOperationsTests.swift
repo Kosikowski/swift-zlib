@@ -3,10 +3,31 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class FileOperationsTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testGzipFileAPI", testGzipFileAPI),
+        ("testGzipFileFlushModes", testGzipFileFlushModes),
+        ("testFileCompression", testFileCompression),
+        ("testFileDecompression", testFileDecompression),
+        ("testFileProcessor", testFileProcessor),
+        ("testFileCompressionWithProgress", testFileCompressionWithProgress),
+        ("testChunkedProcessor", testChunkedProcessor),
+        ("testStreamingProcessor", testStreamingProcessor),
+        ("testConvenienceFileMethods", testConvenienceFileMethods),
+        ("testFileCompressionToMemory", testFileCompressionToMemory),
+        ("testFileDecompressionToMemory", testFileDecompressionToMemory),
+        ("testStreamingConfig", testStreamingConfig),
+        ("testFileChunkedCompression", testFileChunkedCompression),
+        ("testFileChunkedCompressionWithDifferentBufferSizes", testFileChunkedCompressionWithDifferentBufferSizes),
+    ]
+
+    // MARK: Functions
+
     func testGzipFileAPI() throws {
         // Test gzip file operations
         let testData = "test data for gzip file".data(using: .utf8)!
@@ -353,21 +374,4 @@ final class FileOperationsTests: XCTestCase {
         // Clean up
         try? FileManager.default.removeItem(atPath: sourcePath)
     }
-
-    static var allTests = [
-        ("testGzipFileAPI", testGzipFileAPI),
-        ("testGzipFileFlushModes", testGzipFileFlushModes),
-        ("testFileCompression", testFileCompression),
-        ("testFileDecompression", testFileDecompression),
-        ("testFileProcessor", testFileProcessor),
-        ("testFileCompressionWithProgress", testFileCompressionWithProgress),
-        ("testChunkedProcessor", testChunkedProcessor),
-        ("testStreamingProcessor", testStreamingProcessor),
-        ("testConvenienceFileMethods", testConvenienceFileMethods),
-        ("testFileCompressionToMemory", testFileCompressionToMemory),
-        ("testFileDecompressionToMemory", testFileDecompressionToMemory),
-        ("testStreamingConfig", testStreamingConfig),
-        ("testFileChunkedCompression", testFileChunkedCompression),
-        ("testFileChunkedCompressionWithDifferentBufferSizes", testFileChunkedCompressionWithDifferentBufferSizes),
-    ]
 }

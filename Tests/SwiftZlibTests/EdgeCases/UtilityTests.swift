@@ -3,10 +3,23 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class UtilityTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testErrorInfo", testErrorInfo),
+        ("testSuccessErrorChecks", testSuccessErrorChecks),
+        ("testErrorMessage", testErrorMessage),
+        ("testRecoverableError", testRecoverableError),
+        ("testErrorRecoverySuggestions", testErrorRecoverySuggestions),
+        ("testParameterValidation", testParameterValidation),
+    ]
+
+    // MARK: Functions
+
     func testErrorInfo() throws {
         let errorInfo = ZLib.getErrorInfo(0) // Z_OK
         XCTAssertEqual(errorInfo.code, .ok)
@@ -78,13 +91,4 @@ final class UtilityTests: XCTestCase {
         XCTAssertNotNil(warnings)
         // Warnings might be empty for valid parameters, so just check it's a valid array
     }
-
-    static var allTests = [
-        ("testErrorInfo", testErrorInfo),
-        ("testSuccessErrorChecks", testSuccessErrorChecks),
-        ("testErrorMessage", testErrorMessage),
-        ("testRecoverableError", testRecoverableError),
-        ("testErrorRecoverySuggestions", testErrorRecoverySuggestions),
-        ("testParameterValidation", testParameterValidation),
-    ]
 }

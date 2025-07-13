@@ -3,25 +3,37 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class StringExtensionsTests: XCTestCase {
+    // MARK: Static Properties
+
+    // MARK: - Test Discovery
+
+    static var allTests = [
+        ("testStringExtensions", testStringExtensions),
+        ("testStringExtensionsAdvanced", testStringExtensionsAdvanced),
+        ("testConcurrentStringOperations", testConcurrentStringOperations),
+    ]
+
+    // MARK: Functions
+
     // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
-            case let .fileError(underlyingError):
-                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
-            case let .compressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .decompressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .streamError(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            default:
-                break
+                case let .fileError(underlyingError):
+                    XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
+                case let .compressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .decompressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .streamError(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                default:
+                    break
             }
         }
     }
@@ -83,12 +95,4 @@ final class StringExtensionsTests: XCTestCase {
             XCTAssertEqual(decompressedString, testString)
         }
     }
-
-    // MARK: - Test Discovery
-
-    static var allTests = [
-        ("testStringExtensions", testStringExtensions),
-        ("testStringExtensionsAdvanced", testStringExtensionsAdvanced),
-        ("testConcurrentStringOperations", testConcurrentStringOperations),
-    ]
 }

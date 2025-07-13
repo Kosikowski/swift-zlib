@@ -3,25 +3,48 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class CompressorTests: XCTestCase {
+    // MARK: Static Properties
+
+    // MARK: - Test Discovery
+
+    static var allTests = [
+        ("testAdvancedCompressorInitialization", testAdvancedCompressorInitialization),
+        ("testCompressorResetAndCopy", testCompressorResetAndCopy),
+        ("testCompressorAdvancedFeatures", testCompressorAdvancedFeatures),
+        ("testCompressionWithInvalidLevel", testCompressionWithInvalidLevel),
+        ("testCompressionWithNullData", testCompressionWithNullData),
+        ("testCompressionWithUninitializedStream", testCompressionWithUninitializedStream),
+        ("testCompressionWithInvalidFlushMode", testCompressionWithInvalidFlushMode),
+        ("testCompressionWithLargeInput", testCompressionWithLargeInput),
+        ("testCompressionWithZeroSizedBuffer", testCompressionWithZeroSizedBuffer),
+        ("testCompressionWithInvalidWindowBits", testCompressionWithInvalidWindowBits),
+        ("testCompressionWithReusedStream", testCompressionWithReusedStream),
+        ("testCompressionWithInvalidDictionary", testCompressionWithInvalidDictionary),
+        ("testCompressionWithMemoryPressure", testCompressionWithMemoryPressure),
+        ("testCompressionWithInvalidState", testCompressionWithInvalidState),
+    ]
+
+    // MARK: Functions
+
     // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
-            case let .fileError(underlyingError):
-                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
-            case let .compressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .decompressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .streamError(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            default:
-                break
+                case let .fileError(underlyingError):
+                    XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
+                case let .compressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .decompressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .streamError(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                default:
+                    break
             }
         }
     }
@@ -227,23 +250,4 @@ final class CompressorTests: XCTestCase {
         try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
         XCTAssertNoThrow(try compressor.setDictionary(data))
     }
-
-    // MARK: - Test Discovery
-
-    static var allTests = [
-        ("testAdvancedCompressorInitialization", testAdvancedCompressorInitialization),
-        ("testCompressorResetAndCopy", testCompressorResetAndCopy),
-        ("testCompressorAdvancedFeatures", testCompressorAdvancedFeatures),
-        ("testCompressionWithInvalidLevel", testCompressionWithInvalidLevel),
-        ("testCompressionWithNullData", testCompressionWithNullData),
-        ("testCompressionWithUninitializedStream", testCompressionWithUninitializedStream),
-        ("testCompressionWithInvalidFlushMode", testCompressionWithInvalidFlushMode),
-        ("testCompressionWithLargeInput", testCompressionWithLargeInput),
-        ("testCompressionWithZeroSizedBuffer", testCompressionWithZeroSizedBuffer),
-        ("testCompressionWithInvalidWindowBits", testCompressionWithInvalidWindowBits),
-        ("testCompressionWithReusedStream", testCompressionWithReusedStream),
-        ("testCompressionWithInvalidDictionary", testCompressionWithInvalidDictionary),
-        ("testCompressionWithMemoryPressure", testCompressionWithMemoryPressure),
-        ("testCompressionWithInvalidState", testCompressionWithInvalidState),
-    ]
 }

@@ -3,25 +3,39 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class FileChunkedCompressorTests: XCTestCase {
+    // MARK: Static Properties
+
+    // MARK: - Test Discovery
+
+    static var allTests = [
+        ("testFileChunkedCompressor", testFileChunkedCompressor),
+        ("testFileChunkedCompressorWithLargeData", testFileChunkedCompressorWithLargeData),
+        ("testFileChunkedCompressorProgressStream", testFileChunkedCompressorProgressStream),
+        ("testFileChunkedCompressorErrorHandling", testFileChunkedCompressorErrorHandling),
+        ("testFileChunkedCompressorAsyncErrorHandling", testFileChunkedCompressorAsyncErrorHandling),
+    ]
+
+    // MARK: Functions
+
     // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
-            case let .fileError(underlyingError):
-                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
-            case let .compressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .decompressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .streamError(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            default:
-                break
+                case let .fileError(underlyingError):
+                    XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
+                case let .compressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .decompressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .streamError(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                default:
+                    break
             }
         }
     }
@@ -172,14 +186,4 @@ final class FileChunkedCompressorTests: XCTestCase {
             assertNoDoubleWrappedZLibError(error)
         }
     }
-
-    // MARK: - Test Discovery
-
-    static var allTests = [
-        ("testFileChunkedCompressor", testFileChunkedCompressor),
-        ("testFileChunkedCompressorWithLargeData", testFileChunkedCompressorWithLargeData),
-        ("testFileChunkedCompressorProgressStream", testFileChunkedCompressorProgressStream),
-        ("testFileChunkedCompressorErrorHandling", testFileChunkedCompressorErrorHandling),
-        ("testFileChunkedCompressorAsyncErrorHandling", testFileChunkedCompressorAsyncErrorHandling),
-    ]
 }

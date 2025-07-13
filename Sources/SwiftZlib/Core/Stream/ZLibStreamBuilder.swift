@@ -12,8 +12,12 @@ import Foundation
 
 /// Builder for creating ZLib streams with fluent API
 public class ZLibStreamBuilder {
+    // MARK: Properties
+
     private var mode: ZLibStream.StreamMode = .compress
     private var options = ZLibStream.StreamOptions()
+
+    // MARK: Functions
 
     /// Set stream mode to compression
     /// - Returns: Self for chaining
@@ -66,6 +70,6 @@ public class ZLibStreamBuilder {
     /// Build the stream
     /// - Returns: Configured ZLibStream
     public func build() -> ZLibStream {
-        return ZLibStream(mode: mode, options: options)
+        ZLibStream(mode: mode, options: options)
     }
 }

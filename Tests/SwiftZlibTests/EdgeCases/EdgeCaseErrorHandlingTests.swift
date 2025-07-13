@@ -3,17 +3,22 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class EdgeCaseErrorHandlingTests: XCTestCase {
-    /// Helper function to check that ZLibErrors are not double-wrapped
-    /// This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
-    private func assertNoDoubleWrappedZLibError(_ error: Error) {
-        if case let .fileError(underlyingError) = error as? ZLibError {
-            XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
-        }
-    }
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testErrorHandling", testErrorHandling),
+        ("testNoDoubleWrappedZLibErrors", testNoDoubleWrappedZLibErrors),
+        ("testAsyncStreamNoDoubleWrappedZLibErrors", testAsyncStreamNoDoubleWrappedZLibErrors),
+        ("testEmptyData", testEmptyData),
+        ("testSingleByteData", testSingleByteData),
+        ("testBinaryData", testBinaryData),
+    ]
+
+    // MARK: Functions
 
     func testErrorHandling() {
         // Test invalid data
@@ -134,12 +139,11 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
         XCTAssertEqual(decompressedData, binaryData)
     }
 
-    static var allTests = [
-        ("testErrorHandling", testErrorHandling),
-        ("testNoDoubleWrappedZLibErrors", testNoDoubleWrappedZLibErrors),
-        ("testAsyncStreamNoDoubleWrappedZLibErrors", testAsyncStreamNoDoubleWrappedZLibErrors),
-        ("testEmptyData", testEmptyData),
-        ("testSingleByteData", testSingleByteData),
-        ("testBinaryData", testBinaryData),
-    ]
+    /// Helper function to check that ZLibErrors are not double-wrapped
+    /// This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
+    private func assertNoDoubleWrappedZLibError(_ error: Error) {
+        if case let .fileError(underlyingError) = error as? ZLibError {
+            XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
+        }
+    }
 }

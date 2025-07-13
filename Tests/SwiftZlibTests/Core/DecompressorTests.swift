@@ -3,25 +3,47 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class DecompressorTests: XCTestCase {
+    // MARK: Static Properties
+
+    // MARK: - Test Discovery
+
+    static var allTests = [
+        ("testDecompressorResetAndCopy", testDecompressorResetAndCopy),
+        ("testDecompressorAdvancedFeatures", testDecompressorAdvancedFeatures),
+        ("testDecompressionWithInvalidData", testDecompressionWithInvalidData),
+        ("testDecompressionWithTruncatedData", testDecompressionWithTruncatedData),
+        ("testDecompressionWithUninitializedStream", testDecompressionWithUninitializedStream),
+        ("testDecompressionWithInvalidFlushMode", testDecompressionWithInvalidFlushMode),
+        ("testDecompressionWithCorruptedData", testDecompressionWithCorruptedData),
+        ("testDecompressionWithZeroSizedBuffer", testDecompressionWithZeroSizedBuffer),
+        ("testDecompressionWithInvalidWindowBits", testDecompressionWithInvalidWindowBits),
+        ("testDecompressionWithReusedStream", testDecompressionWithReusedStream),
+        ("testDecompressionWithInvalidDictionary", testDecompressionWithInvalidDictionary),
+        ("testDecompressionWithMemoryPressure", testDecompressionWithMemoryPressure),
+        ("testDecompressionWithInvalidState", testDecompressionWithInvalidState),
+    ]
+
+    // MARK: Functions
+
     // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
-            case let .fileError(underlyingError):
-                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
-            case let .compressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .decompressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .streamError(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            default:
-                break
+                case let .fileError(underlyingError):
+                    XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
+                case let .compressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .decompressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .streamError(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                default:
+                    break
             }
         }
     }
@@ -237,22 +259,4 @@ final class DecompressorTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-
-    // MARK: - Test Discovery
-
-    static var allTests = [
-        ("testDecompressorResetAndCopy", testDecompressorResetAndCopy),
-        ("testDecompressorAdvancedFeatures", testDecompressorAdvancedFeatures),
-        ("testDecompressionWithInvalidData", testDecompressionWithInvalidData),
-        ("testDecompressionWithTruncatedData", testDecompressionWithTruncatedData),
-        ("testDecompressionWithUninitializedStream", testDecompressionWithUninitializedStream),
-        ("testDecompressionWithInvalidFlushMode", testDecompressionWithInvalidFlushMode),
-        ("testDecompressionWithCorruptedData", testDecompressionWithCorruptedData),
-        ("testDecompressionWithZeroSizedBuffer", testDecompressionWithZeroSizedBuffer),
-        ("testDecompressionWithInvalidWindowBits", testDecompressionWithInvalidWindowBits),
-        ("testDecompressionWithReusedStream", testDecompressionWithReusedStream),
-        ("testDecompressionWithInvalidDictionary", testDecompressionWithInvalidDictionary),
-        ("testDecompressionWithMemoryPressure", testDecompressionWithMemoryPressure),
-        ("testDecompressionWithInvalidState", testDecompressionWithInvalidState),
-    ]
 }

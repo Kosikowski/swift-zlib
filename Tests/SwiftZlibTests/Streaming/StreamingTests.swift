@@ -3,10 +3,34 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class StreamingTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testStreamingCompressionWithSmallChunks", testStreamingCompressionWithSmallChunks),
+        ("testStreamingDecompressionWithSmallChunks", testStreamingDecompressionWithSmallChunks),
+        ("testStreamingWithEmptyChunks", testStreamingWithEmptyChunks),
+        ("testStreamingWithPartialFlush", testStreamingWithPartialFlush),
+        ("testStreamingWithBlockFlush", testStreamingWithBlockFlush),
+        ("testStreamingWithDictionaryAdvanced", testStreamingWithDictionaryAdvanced),
+        ("testStreamingWithMixedFlushModes", testStreamingWithMixedFlushModes),
+        ("testStreamingWithReusedCompressor", testStreamingWithReusedCompressor),
+        ("testStreamingWithReusedDecompressor", testStreamingWithReusedDecompressor),
+        ("testStreamingWithPartialDecompression", testStreamingWithPartialDecompression),
+        ("testStreamingWithCorruptedChunk", testStreamingWithCorruptedChunk),
+        ("testStreamingWithIncompleteData", testStreamingWithIncompleteData),
+        ("testStreamingWithDictionary", testStreamingWithDictionary),
+        ("testStreamingWithDifferentCompressionLevels", testStreamingWithDifferentCompressionLevels),
+        ("testStreamingWithWindowBitsVariants", testStreamingWithWindowBitsVariants),
+        ("testStreamingWithMemoryPressure", testStreamingWithMemoryPressure),
+        ("testStreamingWithStateTransitions", testStreamingWithStateTransitions),
+    ]
+
+    // MARK: Functions
+
     func testStreamingCompressionWithSmallChunks() throws {
         let data = "streaming test data with small chunks".data(using: .utf8)!
         let compressor = Compressor()
@@ -137,12 +161,12 @@ final class StreamingTests: XCTestCase {
                 XCTFail("Expected decompression to fail without dictionary")
             } catch let error as ZLibError {
                 switch error {
-                case .needDictionary:
-                    break // Expected
-                case let .decompressionFailed(code):
-                    XCTAssertTrue(code == 2 || code == -3, "Expected Z_NEED_DICT (2) or Z_DATA_ERROR (-3), got: \(code)")
-                default:
-                    XCTFail("Unexpected error: \(error)")
+                    case .needDictionary:
+                        break // Expected
+                    case let .decompressionFailed(code):
+                        XCTAssertTrue(code == 2 || code == -3, "Expected Z_NEED_DICT (2) or Z_DATA_ERROR (-3), got: \(code)")
+                    default:
+                        XCTFail("Unexpected error: \(error)")
                 }
             } catch {
                 XCTFail("Unexpected error type: \(error)")
@@ -411,24 +435,4 @@ final class StreamingTests: XCTestCase {
         let decompressed = try decompressor.decompress(compressed)
         XCTAssertEqual(decompressed, data)
     }
-
-    static var allTests = [
-        ("testStreamingCompressionWithSmallChunks", testStreamingCompressionWithSmallChunks),
-        ("testStreamingDecompressionWithSmallChunks", testStreamingDecompressionWithSmallChunks),
-        ("testStreamingWithEmptyChunks", testStreamingWithEmptyChunks),
-        ("testStreamingWithPartialFlush", testStreamingWithPartialFlush),
-        ("testStreamingWithBlockFlush", testStreamingWithBlockFlush),
-        ("testStreamingWithDictionaryAdvanced", testStreamingWithDictionaryAdvanced),
-        ("testStreamingWithMixedFlushModes", testStreamingWithMixedFlushModes),
-        ("testStreamingWithReusedCompressor", testStreamingWithReusedCompressor),
-        ("testStreamingWithReusedDecompressor", testStreamingWithReusedDecompressor),
-        ("testStreamingWithPartialDecompression", testStreamingWithPartialDecompression),
-        ("testStreamingWithCorruptedChunk", testStreamingWithCorruptedChunk),
-        ("testStreamingWithIncompleteData", testStreamingWithIncompleteData),
-        ("testStreamingWithDictionary", testStreamingWithDictionary),
-        ("testStreamingWithDifferentCompressionLevels", testStreamingWithDifferentCompressionLevels),
-        ("testStreamingWithWindowBitsVariants", testStreamingWithWindowBitsVariants),
-        ("testStreamingWithMemoryPressure", testStreamingWithMemoryPressure),
-        ("testStreamingWithStateTransitions", testStreamingWithStateTransitions),
-    ]
 }

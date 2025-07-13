@@ -12,11 +12,15 @@ import Foundation
 /// Note: This is a simplified implementation that provides InflateBack-like functionality
 /// using the regular inflate API with Swift-friendly callbacks.
 public class InflateBackDecompressor {
+    // MARK: Properties
+
     private var stream = z_stream()
     private var isInitialized = false
     private var window: [Bytef]
     private let windowSize: Int
     private let windowBits: WindowBits
+
+    // MARK: Lifecycle
 
     public init(windowBits: WindowBits = .deflate) {
         self.windowBits = windowBits
@@ -29,6 +33,8 @@ public class InflateBackDecompressor {
             swift_inflateEnd(&stream)
         }
     }
+
+    // MARK: Functions
 
     /// Initialize the InflateBack-style decompressor
     /// - Throws: ZLibError if initialization fails

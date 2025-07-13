@@ -3,10 +3,20 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class StreamTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testStreamCompression", testStreamCompression),
+        ("testStreamDecompression", testStreamDecompression),
+        ("testLargeDataCompression", testLargeDataCompression),
+    ]
+
+    // MARK: Functions
+
     func testStreamCompression() throws {
         let originalString = "Stream compression test with multiple chunks. " +
             "This should be processed in chunks to test the streaming functionality. " +
@@ -87,10 +97,4 @@ final class StreamTests: XCTestCase {
         XCTAssertEqual(decompressedData, originalData)
         XCTAssertLessThan(compressedData.count, originalData.count)
     }
-
-    static var allTests = [
-        ("testStreamCompression", testStreamCompression),
-        ("testStreamDecompression", testStreamDecompression),
-        ("testLargeDataCompression", testLargeDataCompression),
-    ]
 }

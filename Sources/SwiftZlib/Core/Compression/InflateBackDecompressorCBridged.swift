@@ -10,10 +10,14 @@ import Foundation
 
 /// True InflateBack decompressor using C callback bridging
 public final class InflateBackDecompressorCBridged {
+    // MARK: Properties
+
     private var stream = z_stream()
     private var isInitialized = false
     private var window: [UInt8]
     private let windowSize: Int
+
+    // MARK: Lifecycle
 
     public init(windowBits: WindowBits = .deflate) {
         windowSize = 1 << windowBits.zlibWindowBits
@@ -25,6 +29,8 @@ public final class InflateBackDecompressorCBridged {
             swift_inflateBackEnd(&stream)
         }
     }
+
+    // MARK: Functions
 
     /// Initialize the InflateBack decompressor
     public func initialize() throws {
@@ -65,7 +71,7 @@ public final class InflateBackDecompressorCBridged {
         // C input callback
         let cInput: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutablePointer<UInt8>?>?, UnsafeMutablePointer<Int32>?) -> Int32 = {
             ctxPtr, bufPtr, availPtr in
-            guard let ctxPtr = ctxPtr else { return 0 }
+            guard let ctxPtr else { return 0 }
             let ctx = Unmanaged<CallbackContext>.fromOpaque(ctxPtr).takeUnretainedValue()
             guard let data = ctx.inputProvider() else {
                 availPtr?.pointee = 0
@@ -73,7 +79,7 @@ public final class InflateBackDecompressorCBridged {
             }
             ctx.inputBuffer = data // Hold reference so pointer stays valid
             availPtr?.pointee = Int32(data.count)
-            if let bufPtr = bufPtr {
+            if let bufPtr {
                 bufPtr.pointee = UnsafeMutablePointer<UInt8>(mutating: data.withUnsafeBytes { $0.baseAddress!.assumingMemoryBound(to: UInt8.self) })
             }
             return Int32(data.count)
@@ -81,7 +87,7 @@ public final class InflateBackDecompressorCBridged {
         // C output callback
         let cOutput: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UInt8>?, Int32) -> Int32 = {
             ctxPtr, buf, len in
-            guard let ctxPtr = ctxPtr, let buf = buf else { return Z_STREAM_ERROR }
+            guard let ctxPtr, let buf else { return Z_STREAM_ERROR }
             let ctx = Unmanaged<CallbackContext>.fromOpaque(ctxPtr).takeUnretainedValue()
             let data = Data(bytes: buf, count: Int(len))
             return ctx.outputHandler(data) ? Z_OK : Z_STREAM_ERROR

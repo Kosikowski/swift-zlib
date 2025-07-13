@@ -10,11 +10,17 @@ import Foundation
 
 /// Memory-efficient unified file processor
 public class FileProcessor {
+    // MARK: Properties
+
     private let config: StreamingConfig
+
+    // MARK: Lifecycle
 
     public init(config: StreamingConfig = StreamingConfig()) {
         self.config = config
     }
+
+    // MARK: Functions
 
     /// Process a file (compress or decompress based on file extension)
     public func processFile(from sourcePath: String, to destinationPath: String) throws {

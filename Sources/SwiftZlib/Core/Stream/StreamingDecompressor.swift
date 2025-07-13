@@ -10,11 +10,15 @@ import Foundation
 
 /// Advanced streaming decompression with callback support
 public class StreamingDecompressor {
+    // MARK: Properties
+
     private var stream = z_stream()
     private var isInitialized = false
     private var window: [Bytef]
     private let windowSize: Int
     private let windowBits: WindowBits
+
+    // MARK: Lifecycle
 
     public init(windowBits: WindowBits = .deflate) {
         self.windowBits = windowBits
@@ -27,6 +31,8 @@ public class StreamingDecompressor {
             swift_inflateEnd(&stream)
         }
     }
+
+    // MARK: Functions
 
     /// Initialize the streaming decompressor
     /// - Throws: ZLibError if initialization fails

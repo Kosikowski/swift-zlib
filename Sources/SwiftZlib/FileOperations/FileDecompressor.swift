@@ -10,11 +10,17 @@ import Foundation
 
 /// Memory-efficient file decompressor
 public class FileDecompressor {
+    // MARK: Properties
+
     private let config: StreamingConfig
+
+    // MARK: Lifecycle
 
     public init(config: StreamingConfig = StreamingConfig()) {
         self.config = config
     }
+
+    // MARK: Functions
 
     /// Decompress a file to another file
     public func decompressFile(from sourcePath: String, to destinationPath: String) throws {

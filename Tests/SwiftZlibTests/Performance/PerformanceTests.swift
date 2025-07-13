@@ -3,10 +3,32 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class PerformanceTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testPerformanceAndMemoryUsage", testPerformanceAndMemoryUsage),
+        ("testAPIMisuse_NilAndEmpty", testAPIMisuse_NilAndEmpty),
+        ("testAPIMisuse_InvalidParameters", testAPIMisuse_InvalidParameters),
+        ("testAPIMisuse_DictionaryMisuse", testAPIMisuse_DictionaryMisuse),
+        ("testBufferOverflowScenarios", testBufferOverflowScenarios),
+        ("testMemoryExhaustionScenarios", testMemoryExhaustionScenarios),
+        ("testStreamCorruptionDuringOperation", testStreamCorruptionDuringOperation),
+        ("testInvalidPointerHandling", testInvalidPointerHandling),
+        ("testGzipFileAPI", testGzipFileAPI),
+        ("testStreamingDecompressorCallbacks", testStreamingDecompressorCallbacks),
+        ("testInflateBackAdvancedFeatures", testInflateBackAdvancedFeatures),
+        ("testAdvancedTuningParameters", testAdvancedTuningParameters),
+        ("testPlatformSpecificBehavior", testPlatformSpecificBehavior),
+        ("testSpecificErrorTypes", testSpecificErrorTypes),
+        ("testPlatformAgnosticValidation", testPlatformAgnosticValidation),
+    ]
+
+    // MARK: Functions
+
     func testPerformanceAndMemoryUsage() throws {
         let largeData = Data(repeating: 0xAB, count: 10_000_000) // 10MB - realistic large file size
         let startCompress = CFAbsoluteTimeGetCurrent()
@@ -338,10 +360,10 @@ final class PerformanceTests: XCTestCase {
         XCTAssertThrowsError(try compressor.compress(Data([0x42]))) { error in
             if let zlibError = error as? ZLibError {
                 switch zlibError {
-                case let .streamError(code):
-                    XCTAssertEqual(code, -2, "Expected Z_STREAM_ERROR for uninitialized stream")
-                default:
-                    XCTFail("Expected streamError, got \(zlibError)")
+                    case let .streamError(code):
+                        XCTAssertEqual(code, -2, "Expected Z_STREAM_ERROR for uninitialized stream")
+                    default:
+                        XCTFail("Expected streamError, got \(zlibError)")
                 }
             } else {
                 XCTFail("Expected ZLibError, got \(error)")
@@ -355,10 +377,10 @@ final class PerformanceTests: XCTestCase {
         XCTAssertThrowsError(try decompressor.decompress(invalidData)) { error in
             if let zlibError = error as? ZLibError {
                 switch zlibError {
-                case let .decompressionFailed(code):
-                    XCTAssertEqual(code, -3, "Expected Z_DATA_ERROR for invalid data")
-                default:
-                    XCTFail("Expected decompressionFailed, got \(zlibError)")
+                    case let .decompressionFailed(code):
+                        XCTAssertEqual(code, -3, "Expected Z_DATA_ERROR for invalid data")
+                    default:
+                        XCTFail("Expected decompressionFailed, got \(zlibError)")
                 }
             } else {
                 XCTFail("Expected ZLibError, got \(error)")
@@ -394,22 +416,4 @@ final class PerformanceTests: XCTestCase {
         let singleDecompressed = try ZLib.decompress(singleCompressed)
         XCTAssertEqual(singleDecompressed, singleByte)
     }
-
-    static var allTests = [
-        ("testPerformanceAndMemoryUsage", testPerformanceAndMemoryUsage),
-        ("testAPIMisuse_NilAndEmpty", testAPIMisuse_NilAndEmpty),
-        ("testAPIMisuse_InvalidParameters", testAPIMisuse_InvalidParameters),
-        ("testAPIMisuse_DictionaryMisuse", testAPIMisuse_DictionaryMisuse),
-        ("testBufferOverflowScenarios", testBufferOverflowScenarios),
-        ("testMemoryExhaustionScenarios", testMemoryExhaustionScenarios),
-        ("testStreamCorruptionDuringOperation", testStreamCorruptionDuringOperation),
-        ("testInvalidPointerHandling", testInvalidPointerHandling),
-        ("testGzipFileAPI", testGzipFileAPI),
-        ("testStreamingDecompressorCallbacks", testStreamingDecompressorCallbacks),
-        ("testInflateBackAdvancedFeatures", testInflateBackAdvancedFeatures),
-        ("testAdvancedTuningParameters", testAdvancedTuningParameters),
-        ("testPlatformSpecificBehavior", testPlatformSpecificBehavior),
-        ("testSpecificErrorTypes", testSpecificErrorTypes),
-        ("testPlatformAgnosticValidation", testPlatformAgnosticValidation),
-    ]
 }

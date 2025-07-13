@@ -17,7 +17,7 @@ public extension ZLib {
     /// - Returns: Compressed data
     /// - Throws: ZLibError if compression fails
     static func compressAsync(_ data: Data, options: CompressionOptions = CompressionOptions()) async throws -> Data {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             Task.detached {
                 do {
                     let result = try compress(data, options: options)
@@ -36,7 +36,7 @@ public extension ZLib {
     /// - Returns: Decompressed data
     /// - Throws: ZLibError if decompression fails
     static func decompressAsync(_ data: Data, options: DecompressionOptions = DecompressionOptions()) async throws -> Data {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             Task.detached {
                 do {
                     let result = try decompress(data, options: options)

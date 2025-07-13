@@ -11,10 +11,14 @@ import Foundation
 /// Async streaming decompressor for non-blocking decompression
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public class AsyncDecompressor: @unchecked Sendable {
+    // MARK: Properties
+
     private let decompressor: Decompressor
     private let queue: DispatchQueue
     private let bufferSize: Int
     private let options: DecompressionOptions
+
+    // MARK: Lifecycle
 
     /// Initialize async decompressor
     /// - Parameters:
@@ -28,10 +32,12 @@ public class AsyncDecompressor: @unchecked Sendable {
         self.options = options
     }
 
+    // MARK: Functions
+
     /// Initialize the async decompressor
     /// - Throws: ZLibError if initialization fails
     public func initialize() async throws {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             let options = self.options
             queue.async {
                 do {
@@ -49,7 +55,7 @@ public class AsyncDecompressor: @unchecked Sendable {
     /// - Returns: Decompressed data chunk
     /// - Throws: ZLibError if decompression fails
     public func decompress(_ data: Data) async throws -> Data {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 do {
                     let result = try self.decompressor.decompress(data)
@@ -64,7 +70,7 @@ public class AsyncDecompressor: @unchecked Sendable {
     /// Reset the decompressor for reuse
     /// - Throws: ZLibError if reset fails
     public func reset() async throws {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 do {
                     try self.decompressor.reset()
@@ -80,7 +86,7 @@ public class AsyncDecompressor: @unchecked Sendable {
     /// - Returns: Stream information
     /// - Throws: ZLibError if operation fails
     public func getStreamInfo() async throws -> (totalIn: uLong, totalOut: uLong, isActive: Bool) {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 do {
                     let result = try self.decompressor.getStreamInfo()

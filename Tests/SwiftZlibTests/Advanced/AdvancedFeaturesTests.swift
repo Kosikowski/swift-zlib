@@ -3,10 +3,22 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class AdvancedFeaturesTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testChecksums", testChecksums),
+        ("testPartialDecompression", testPartialDecompression),
+        ("testChecksumCombination", testChecksumCombination),
+        ("testCompressionWithGzipHeader", testCompressionWithGzipHeader),
+        ("testStringCompressionWithGzipHeader", testStringCompressionWithGzipHeader),
+    ]
+
+    // MARK: Functions
+
     func testChecksums() throws {
         let data = "checksum test data".data(using: .utf8)!
 
@@ -97,12 +109,4 @@ final class AdvancedFeaturesTests: XCTestCase {
 
         XCTAssertEqual(decompressedString, originalString)
     }
-
-    static var allTests = [
-        ("testChecksums", testChecksums),
-        ("testPartialDecompression", testPartialDecompression),
-        ("testChecksumCombination", testChecksumCombination),
-        ("testCompressionWithGzipHeader", testCompressionWithGzipHeader),
-        ("testStringCompressionWithGzipHeader", testStringCompressionWithGzipHeader),
-    ]
 }

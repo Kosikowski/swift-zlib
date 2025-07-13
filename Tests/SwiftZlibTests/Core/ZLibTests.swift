@@ -3,25 +3,42 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class ZLibTests: XCTestCase {
+    // MARK: Static Properties
+
+    // MARK: - Test Discovery
+
+    static var allTests = [
+        ("testZLibVersion", testZLibVersion),
+        ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
+        ("testCompressionLevels", testCompressionLevels),
+        ("testCorruptedData", testCorruptedData),
+        ("testMemoryPressure", testMemoryPressure),
+        ("testConcurrentAccess", testConcurrentAccess),
+        ("testMinimalSmallStringCompression", testMinimalSmallStringCompression),
+        ("testMinimalSmallStringStreamingCompression", testMinimalSmallStringStreamingCompression),
+    ]
+
+    // MARK: Functions
+
     // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
-            case let .fileError(underlyingError):
-                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
-            case let .compressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .decompressionFailed(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            case let .streamError(code):
-                XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
-            default:
-                break
+                case let .fileError(underlyingError):
+                    XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped inside another ZLibError")
+                case let .compressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .decompressionFailed(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                case let .streamError(code):
+                    XCTAssertNotEqual(code, -999, "Unexpected cancellation error code")
+                default:
+                    break
             }
         }
     }
@@ -178,17 +195,4 @@ final class ZLibTests: XCTestCase {
         XCTAssertNotNil(decompressedString)
         XCTAssertEqual(decompressedString, original)
     }
-
-    // MARK: - Test Discovery
-
-    static var allTests = [
-        ("testZLibVersion", testZLibVersion),
-        ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
-        ("testCompressionLevels", testCompressionLevels),
-        ("testCorruptedData", testCorruptedData),
-        ("testMemoryPressure", testMemoryPressure),
-        ("testConcurrentAccess", testConcurrentAccess),
-        ("testMinimalSmallStringCompression", testMinimalSmallStringCompression),
-        ("testMinimalSmallStringStreamingCompression", testMinimalSmallStringStreamingCompression),
-    ]
 }

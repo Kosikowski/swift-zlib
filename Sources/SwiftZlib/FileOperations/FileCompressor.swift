@@ -10,11 +10,17 @@ import Foundation
 
 /// Memory-efficient file compressor
 public class FileCompressor {
+    // MARK: Properties
+
     private let config: StreamingConfig
+
+    // MARK: Lifecycle
 
     public init(config: StreamingConfig = StreamingConfig()) {
         self.config = config
     }
+
+    // MARK: Functions
 
     /// Compress a file to another file
     public func compressFile(from sourcePath: String, to destinationPath: String) throws {

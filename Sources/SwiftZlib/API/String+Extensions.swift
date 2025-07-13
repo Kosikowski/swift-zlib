@@ -49,13 +49,13 @@ public extension String {
     /// - Parameter initialValue: Initial Adler-32 value (default: 1)
     /// - Returns: Adler-32 checksum
     func adler32(initialValue: uLong = 1) -> uLong? {
-        return ZLib.adler32(self, initialValue: initialValue)
+        ZLib.adler32(self, initialValue: initialValue)
     }
 
     /// Calculate CRC-32 checksum
     /// - Parameter initialValue: Initial CRC-32 value (default: 0)
     /// - Returns: CRC-32 checksum
     func crc32(initialValue: uLong = 0) -> uLong? {
-        return ZLib.crc32(self, initialValue: initialValue)
+        ZLib.crc32(self, initialValue: initialValue)
     }
 }

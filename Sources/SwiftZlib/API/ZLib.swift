@@ -10,20 +10,86 @@ import Foundation
 
 /// High-level ZLib compression and decompression
 public enum ZLib {
+    // MARK: Nested Types
+
+    /// ZLib compile flags breakdown
+    public struct ZLibCompileFlags {
+        // MARK: Properties
+
+        public let flags: UInt
+
+        // MARK: Computed Properties
+
+        /// ZLib version
+        public var version: String {
+            ZLib.version
+        }
+
+        /// Size of unsigned int
+        public var sizeOfUInt: Int {
+            Int((flags >> 0) & 0xFF)
+        }
+
+        /// Size of unsigned long
+        public var sizeOfULong: Int {
+            Int((flags >> 8) & 0xFF)
+        }
+
+        /// Size of pointer
+        public var sizeOfPointer: Int {
+            Int((flags >> 16) & 0xFF)
+        }
+
+        /// Size of z_off_t
+        public var sizeOfZOffT: Int {
+            Int((flags >> 24) & 0xFF)
+        }
+
+        /// Compiler flags
+        public var compilerFlags: UInt {
+            (flags >> 32) & 0xFFFF
+        }
+
+        /// Library flags
+        public var libraryFlags: UInt {
+            (flags >> 48) & 0xFFFF
+        }
+
+        /// Is debug build
+        public var isDebug: Bool {
+            (flags & 0x1000_0000_0000_0000) != 0
+        }
+
+        /// Is optimized build
+        public var isOptimized: Bool {
+            (flags & 0x2000_0000_0000_0000) != 0
+        }
+
+        // MARK: Lifecycle
+
+        public init(flags: UInt) {
+            self.flags = flags
+        }
+    }
+
+    // MARK: Static Computed Properties
+
     /// Get the ZLib version string
     public static var version: String {
-        return String(cString: swift_zlibVersion())
+        String(cString: swift_zlibVersion())
     }
 
     /// Get ZLib compile flags
     public static var compileFlags: UInt {
-        return swift_zlibCompileFlags()
+        swift_zlibCompileFlags()
     }
 
     /// Get detailed ZLib compile flags information
     public static var compileFlagsInfo: ZLibCompileFlags {
-        return ZLibCompileFlags(flags: compileFlags)
+        ZLibCompileFlags(flags: compileFlags)
     }
+
+    // MARK: Static Functions
 
     /// Get detailed error information for a zlib error code
     /// - Parameter errorCode: The zlib error code
@@ -37,21 +103,21 @@ public enum ZLib {
     /// - Parameter code: The zlib return code
     /// - Returns: True if the code indicates success
     public static func isSuccess(_ code: Int32) -> Bool {
-        return code >= 0
+        code >= 0
     }
 
     /// Check if a zlib return code indicates an error
     /// - Parameter code: The zlib return code
     /// - Returns: True if the code indicates an error
     public static func isError(_ code: Int32) -> Bool {
-        return code < 0
+        code < 0
     }
 
     /// Get a human-readable error message for a zlib error code
     /// - Parameter code: The zlib error code
     /// - Returns: Human-readable error message
     public static func getErrorMessage(_ code: Int32) -> String {
-        return String(cString: swift_zError(code))
+        String(cString: swift_zError(code))
     }
 
     /// Check if an error is recoverable
@@ -59,12 +125,16 @@ public enum ZLib {
     /// - Returns: True if the error is recoverable
     public static func isRecoverableError(_ errorCode: Int32) -> Bool {
         switch errorCode {
-        case Z_BUF_ERROR, Z_NEED_DICT:
-            return true
-        case Z_STREAM_ERROR, Z_DATA_ERROR, Z_MEM_ERROR, Z_VERSION_ERROR:
-            return false
-        default:
-            return false
+            case Z_BUF_ERROR,
+                 Z_NEED_DICT:
+                return true
+            case Z_STREAM_ERROR,
+                 Z_DATA_ERROR,
+                 Z_MEM_ERROR,
+                 Z_VERSION_ERROR:
+                return false
+            default:
+                return false
         }
     }
 
@@ -73,44 +143,50 @@ public enum ZLib {
     /// - Returns: Array of recovery suggestions
     public static func getErrorRecoverySuggestions(_ errorCode: Int32) -> [String] {
         switch errorCode {
-        case Z_BUF_ERROR:
-            return [
-                "Increase output buffer size",
-                "Check if input data is complete",
-                "Ensure sufficient memory is available",
-            ]
-        case Z_NEED_DICT:
-            return [
-                "Provide a dictionary for decompression",
-                "Use setDictionary() method",
-                "Check if compressed data requires a dictionary",
-            ]
-        case Z_STREAM_ERROR:
-            return [
-                "Reinitialize the stream",
-                "Check stream parameters",
-                "Ensure proper initialization order",
-            ]
-        case Z_DATA_ERROR:
-            return [
-                "Check input data integrity",
-                "Verify compression format",
-                "Ensure data is not corrupted",
-            ]
-        case Z_MEM_ERROR:
-            return [
-                "Free up system memory",
-                "Reduce compression level",
-                "Use smaller buffer sizes",
-            ]
-        case Z_VERSION_ERROR:
-            return [
-                "Update zlib library",
-                "Check version compatibility",
-                "Recompile with compatible zlib version",
-            ]
-        default:
-            return ["Unknown error - check zlib documentation"]
+            case Z_BUF_ERROR:
+                return [
+                    "Increase output buffer size",
+                    "Check if input data is complete",
+                    "Ensure sufficient memory is available",
+                ]
+
+            case Z_NEED_DICT:
+                return [
+                    "Provide a dictionary for decompression",
+                    "Use setDictionary() method",
+                    "Check if compressed data requires a dictionary",
+                ]
+
+            case Z_STREAM_ERROR:
+                return [
+                    "Reinitialize the stream",
+                    "Check stream parameters",
+                    "Ensure proper initialization order",
+                ]
+
+            case Z_DATA_ERROR:
+                return [
+                    "Check input data integrity",
+                    "Verify compression format",
+                    "Ensure data is not corrupted",
+                ]
+
+            case Z_MEM_ERROR:
+                return [
+                    "Free up system memory",
+                    "Reduce compression level",
+                    "Use smaller buffer sizes",
+                ]
+
+            case Z_VERSION_ERROR:
+                return [
+                    "Update zlib library",
+                    "Check version compatibility",
+                    "Recompile with compatible zlib version",
+                ]
+
+            default:
+                return ["Unknown error - check zlib documentation"]
         }
     }
 
@@ -126,7 +202,9 @@ public enum ZLib {
         windowBits: WindowBits,
         memoryLevel: MemoryLevel,
         strategy: CompressionStrategy
-    ) -> [String] {
+    )
+        -> [String]
+    {
         var warnings: [String] = []
 
         if level == .bestCompression, memoryLevel == .minimum {
@@ -154,10 +232,10 @@ public enum ZLib {
         // Apply a rough estimation based on compression level
         let factor: Double
         switch level {
-        case .noCompression: factor = 1.0
-        case .bestSpeed: factor = 0.8
-        case .defaultCompression: factor = 0.7
-        case .bestCompression: factor = 0.6
+            case .noCompression: factor = 1.0
+            case .bestSpeed: factor = 0.8
+            case .defaultCompression: factor = 0.7
+            case .bestCompression: factor = 0.6
         }
         return Int(Double(bound) * factor)
     }
@@ -250,60 +328,6 @@ public enum ZLib {
         return results
     }
 
-    /// ZLib compile flags breakdown
-    public struct ZLibCompileFlags {
-        public let flags: UInt
-
-        public init(flags: UInt) {
-            self.flags = flags
-        }
-
-        /// ZLib version
-        public var version: String {
-            return ZLib.version
-        }
-
-        /// Size of unsigned int
-        public var sizeOfUInt: Int {
-            return Int((flags >> 0) & 0xFF)
-        }
-
-        /// Size of unsigned long
-        public var sizeOfULong: Int {
-            return Int((flags >> 8) & 0xFF)
-        }
-
-        /// Size of pointer
-        public var sizeOfPointer: Int {
-            return Int((flags >> 16) & 0xFF)
-        }
-
-        /// Size of z_off_t
-        public var sizeOfZOffT: Int {
-            return Int((flags >> 24) & 0xFF)
-        }
-
-        /// Compiler flags
-        public var compilerFlags: UInt {
-            return (flags >> 32) & 0xFFFF
-        }
-
-        /// Library flags
-        public var libraryFlags: UInt {
-            return (flags >> 48) & 0xFFFF
-        }
-
-        /// Is debug build
-        public var isDebug: Bool {
-            return (flags & 0x1000_0000_0000_0000) != 0
-        }
-
-        /// Is optimized build
-        public var isOptimized: Bool {
-            return (flags & 0x2000_0000_0000_0000) != 0
-        }
-    }
-
     /// Compress data with the specified compression level
     /// - Parameters:
     ///   - data: The data to compress
@@ -387,7 +411,7 @@ public enum ZLib {
                 // For very large data, use more reasonable limits
                 let maxMultiplier = data.count > 1_000_000 ? 64 : 512
 
-                while retryResult == Z_BUF_ERROR && bufferMultiplier <= maxMultiplier {
+                while retryResult == Z_BUF_ERROR, bufferMultiplier <= maxMultiplier {
                     destLen = uLong(data.count * bufferMultiplier)
                     logMemoryUsage("Decompression retry buffer (multiplier: \(bufferMultiplier))", bytes: Int(destLen))
                     decompressedData = Data(count: Int(destLen))
@@ -451,7 +475,7 @@ public enum ZLib {
             var bufferMultiplier = 2
             var retryResult = result
 
-            while retryResult == Z_BUF_ERROR && bufferMultiplier <= 16 {
+            while retryResult == Z_BUF_ERROR, bufferMultiplier <= 16 {
                 destLen = uLong(maxOutputSize * bufferMultiplier)
                 decompressedData = Data(count: Int(destLen))
 
@@ -543,7 +567,7 @@ public enum ZLib {
     ///   - len2: Length of the second data block
     /// - Returns: Combined Adler-32 checksum
     public static func adler32Combine(_ adler1: uLong, _ adler2: uLong, len2: Int) -> uLong {
-        return swift_adler32_combine(adler1, adler2, len2)
+        swift_adler32_combine(adler1, adler2, len2)
     }
 
     /// Combine two CRC-32 checksums
@@ -553,7 +577,7 @@ public enum ZLib {
     ///   - len2: Length of the second data block
     /// - Returns: Combined CRC-32 checksum
     public static func crc32Combine(_ crc1: uLong, _ crc2: uLong, len2: Int) -> uLong {
-        return swift_crc32_combine(crc1, crc2, len2)
+        swift_crc32_combine(crc1, crc2, len2)
     }
 
     /// Compress data with advanced options

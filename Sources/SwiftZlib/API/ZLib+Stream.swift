@@ -12,18 +12,18 @@ public extension ZLib {
     /// Create a stream builder for fluent configuration
     /// - Returns: Stream builder
     static func stream() -> ZLibStreamBuilder {
-        return ZLibStreamBuilder()
+        ZLibStreamBuilder()
     }
 
     /// Create a compression stream with default options
     /// - Returns: Configured compression stream
     static func compressionStream() -> ZLibStream {
-        return ZLibStream(mode: .compress)
+        ZLibStream(mode: .compress)
     }
 
     /// Create a decompression stream with default options
     /// - Returns: Configured decompression stream
     static func decompressionStream() -> ZLibStream {
-        return ZLibStream(mode: .decompress)
+        ZLibStream(mode: .decompress)
     }
 }

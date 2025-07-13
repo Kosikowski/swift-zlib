@@ -3,10 +3,33 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class ConcurrencyTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testConcurrentCompression", testConcurrentCompression),
+        ("testConcurrentDecompression", testConcurrentDecompression),
+        ("testConcurrentMixedOperations", testConcurrentMixedOperations),
+        ("testConcurrentStreamingCompression", testConcurrentStreamingCompression),
+        ("testConcurrentStreamingDecompression", testConcurrentStreamingDecompression),
+        ("testConcurrentCompressorInstances", testConcurrentCompressorInstances),
+        ("testConcurrentDecompressorInstances", testConcurrentDecompressorInstances),
+        ("testConcurrentDifferentCompressionLevels", testConcurrentDifferentCompressionLevels),
+        ("testThreadSafetyOfAPI", testThreadSafetyOfAPI),
+        ("testConcurrentDifferentWindowBits", testConcurrentDifferentWindowBits),
+        ("testConcurrentDictionaryOperations", testConcurrentDictionaryOperations),
+        ("testConcurrentStringOperations", testConcurrentStringOperations),
+        ("testConcurrentDataExtensions", testConcurrentDataExtensions),
+        ("testConcurrentErrorHandling", testConcurrentErrorHandling),
+        ("testConcurrentMemoryPressure", testConcurrentMemoryPressure),
+        ("testConcurrentStressTest", testConcurrentStressTest),
+    ]
+
+    // MARK: Functions
+
     //
     // Only per-instance concurrency is valid for zlib and this wrapper.
     // Each thread must use its own Compressor/Decompressor instance.
@@ -661,23 +684,4 @@ final class ConcurrencyTests: XCTestCase {
             XCTAssertEqual(decompressed, testData)
         }
     }
-
-    static var allTests = [
-        ("testConcurrentCompression", testConcurrentCompression),
-        ("testConcurrentDecompression", testConcurrentDecompression),
-        ("testConcurrentMixedOperations", testConcurrentMixedOperations),
-        ("testConcurrentStreamingCompression", testConcurrentStreamingCompression),
-        ("testConcurrentStreamingDecompression", testConcurrentStreamingDecompression),
-        ("testConcurrentCompressorInstances", testConcurrentCompressorInstances),
-        ("testConcurrentDecompressorInstances", testConcurrentDecompressorInstances),
-        ("testConcurrentDifferentCompressionLevels", testConcurrentDifferentCompressionLevels),
-        ("testThreadSafetyOfAPI", testThreadSafetyOfAPI),
-        ("testConcurrentDifferentWindowBits", testConcurrentDifferentWindowBits),
-        ("testConcurrentDictionaryOperations", testConcurrentDictionaryOperations),
-        ("testConcurrentStringOperations", testConcurrentStringOperations),
-        ("testConcurrentDataExtensions", testConcurrentDataExtensions),
-        ("testConcurrentErrorHandling", testConcurrentErrorHandling),
-        ("testConcurrentMemoryPressure", testConcurrentMemoryPressure),
-        ("testConcurrentStressTest", testConcurrentStressTest),
-    ]
 }

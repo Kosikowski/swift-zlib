@@ -3,10 +3,18 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class AsyncStreamTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testAsyncAwaitSupport", testAsyncAwaitSupport),
+    ]
+
+    // MARK: Functions
+
     // MARK: - Async/Await and AsyncStream Tests (verbatim from monolithic file)
 
     func testAsyncAwaitSupport() async throws {
@@ -108,8 +116,4 @@ final class AsyncStreamTests: XCTestCase {
         let resetCompressed = try await asyncStream.process(original, flush: FlushMode.finish)
         XCTAssertNotEqual(resetCompressed.count, 0)
     }
-
-    static var allTests = [
-        ("testAsyncAwaitSupport", testAsyncAwaitSupport),
-    ]
 }

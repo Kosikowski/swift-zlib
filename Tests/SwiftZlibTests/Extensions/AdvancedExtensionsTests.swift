@@ -3,10 +3,19 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class AdvancedExtensionsTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testDataExtensionsAdvanced", testDataExtensionsAdvanced),
+        ("testStringExtensionsAdvanced", testStringExtensionsAdvanced),
+    ]
+
+    // MARK: Functions
+
     func testDataExtensionsAdvanced() throws {
         let data = "Test data for advanced extensions".data(using: .utf8)!
 
@@ -72,9 +81,4 @@ final class AdvancedExtensionsTests: XCTestCase {
         XCTAssertNotEqual(adler32, 0)
         XCTAssertNotEqual(crc32, 0)
     }
-
-    static var allTests = [
-        ("testDataExtensionsAdvanced", testDataExtensionsAdvanced),
-        ("testStringExtensionsAdvanced", testStringExtensionsAdvanced),
-    ]
 }

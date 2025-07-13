@@ -7,8 +7,12 @@
 
 import Foundation
 
+// MARK: - CompressionOptions
+
 /// Compression configuration options
 public struct CompressionOptions: Sendable {
+    // MARK: Properties
+
     /// Compression format (zlib, gzip, or raw deflate)
     public var format: CompressionFormat
     /// Compression level
@@ -22,6 +26,16 @@ public struct CompressionOptions: Sendable {
     /// Gzip header information (optional, only used with gzip format)
     public var gzipHeader: GzipHeader?
 
+    // MARK: Lifecycle
+
+    /// Initialize compression options
+    /// - Parameters:
+    ///   - format: Compression format
+    ///   - level: Compression level
+    ///   - strategy: Compression strategy
+    ///   - memoryLevel: Memory level
+    ///   - dictionary: Dictionary for compression
+    ///   - gzipHeader: Gzip header information
     public init(
         format: CompressionFormat = .zlib,
         level: CompressionLevel = .defaultCompression,
@@ -39,8 +53,12 @@ public struct CompressionOptions: Sendable {
     }
 }
 
+// MARK: - DecompressionOptions
+
 /// Decompression configuration options
 public struct DecompressionOptions: Sendable {
+    // MARK: Properties
+
     /// Decompression format (zlib, gzip, raw deflate, or auto-detect)
     public var format: CompressionFormat
     /// Dictionary for decompression (optional)
@@ -48,6 +66,13 @@ public struct DecompressionOptions: Sendable {
     /// Whether to auto-detect format (only used when format is .auto)
     public var autoDetect: Bool
 
+    // MARK: Lifecycle
+
+    /// Initialize decompression options
+    /// - Parameters:
+    ///   - format: Decompression format
+    ///   - dictionary: Dictionary for decompression
+    ///   - autoDetect: Whether to auto-detect format
     public init(
         format: CompressionFormat = .auto,
         dictionary: Data? = nil,
@@ -59,19 +84,28 @@ public struct DecompressionOptions: Sendable {
     }
 }
 
+// MARK: - CompressionFormat
+
 /// Compression format enum for better API
 public enum CompressionFormat: Sendable {
+    /// ZLib format (default)
     case zlib
+    /// Gzip format
     case gzip
+    /// Raw deflate format (no header/trailer)
     case raw
+    /// Auto-detect format
     case auto
 
+    // MARK: Computed Properties
+
+    /// The corresponding window bits for this format
     var windowBits: WindowBits {
         switch self {
-        case .zlib: return .deflate
-        case .gzip: return .gzip
-        case .raw: return .raw
-        case .auto: return .auto
+            case .zlib: return .deflate
+            case .gzip: return .gzip
+            case .raw: return .raw
+            case .auto: return .auto
         }
     }
 }

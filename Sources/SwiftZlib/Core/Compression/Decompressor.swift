@@ -12,8 +12,12 @@ import Foundation
 
 /// Stream-based decompression for large data or streaming scenarios
 public class Decompressor {
+    // MARK: Properties
+
     private var stream = z_stream()
     private var isInitialized = false
+
+    // MARK: Lifecycle
 
     public init() {
         // Zero the z_stream struct
@@ -25,6 +29,8 @@ public class Decompressor {
             swift_inflateEnd(&stream)
         }
     }
+
+    // MARK: Functions
 
     /// Initialize the decompressor with basic settings
     /// - Throws: ZLibError if initialization fails
@@ -302,7 +308,7 @@ public class Decompressor {
                             throw ZLibError.decompressionFailed(Z_NEED_DICT)
                         }
                     }
-                    if inflateResult != Z_OK && inflateResult != Z_STREAM_END && inflateResult != Z_BUF_ERROR {
+                    if inflateResult != Z_OK, inflateResult != Z_STREAM_END, inflateResult != Z_BUF_ERROR {
                         zlibError("[Decompressor.decompress] Decompression failed with error code: \(inflateResult)")
                         zlibError("Decompression failed with error code: \(inflateResult)")
                         throw ZLibError.decompressionFailed(inflateResult)
@@ -332,7 +338,7 @@ public class Decompressor {
     /// - Returns: Final decompressed data
     /// - Throws: ZLibError if decompression fails
     public func finish() throws -> Data {
-        return try decompress(Data(), flush: .finish)
+        try decompress(Data(), flush: .finish)
     }
 
     /// Get the gzip header from the stream (must be called after initializeAdvanced)

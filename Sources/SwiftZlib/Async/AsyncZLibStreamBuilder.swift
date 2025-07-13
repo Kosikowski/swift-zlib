@@ -11,8 +11,12 @@ import Foundation
 /// Builder for creating async ZLib streams with fluent API
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public class AsyncZLibStreamBuilder: @unchecked Sendable {
+    // MARK: Properties
+
     private var mode: ZLibStream.StreamMode = .compress
     private var options = ZLibStream.StreamOptions()
+
+    // MARK: Functions
 
     /// Set stream mode to compression
     /// - Returns: Self for chaining
@@ -65,6 +69,6 @@ public class AsyncZLibStreamBuilder: @unchecked Sendable {
     /// Build the async stream
     /// - Returns: Configured AsyncZLibStream
     public func build() -> AsyncZLibStream {
-        return AsyncZLibStream(mode: mode, options: options)
+        AsyncZLibStream(mode: mode, options: options)
     }
 }

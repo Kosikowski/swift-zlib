@@ -12,18 +12,18 @@ public extension ZLib {
     /// Create an async stream builder for fluent configuration
     /// - Returns: Async stream builder
     static func asyncStream() -> AsyncZLibStreamBuilder {
-        return AsyncZLibStreamBuilder()
+        AsyncZLibStreamBuilder()
     }
 
     /// Create an async compression stream with default options
     /// - Returns: Configured async compression stream
     static func asyncCompressionStream() -> AsyncZLibStream {
-        return AsyncZLibStream(mode: .compress)
+        AsyncZLibStream(mode: .compress)
     }
 
     /// Create an async decompression stream with default options
     /// - Returns: Configured async decompression stream
     static func asyncDecompressionStream() -> AsyncZLibStream {
-        return AsyncZLibStream(mode: .decompress)
+        AsyncZLibStream(mode: .decompress)
     }
 }

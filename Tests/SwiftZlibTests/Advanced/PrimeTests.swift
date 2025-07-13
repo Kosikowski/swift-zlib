@@ -3,18 +3,10 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class PrimeTests: XCTestCase {
-    /// Helper function to check that ZLibErrors are not double-wrapped
-    /// This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
-    private func assertNoDoubleWrappedZLibError(_ error: Error) {
-        if case let .fileError(underlyingError) = error as? ZLibError {
-            XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
-        }
-    }
-
     func testDeflatePrimeBasic() throws {
         let compressor = Compressor()
         try compressor.initialize(level: .noCompression)
@@ -380,6 +372,14 @@ final class PrimeTests: XCTestCase {
         // Try to prime with maximum bits (32) - this should fail due to zlib's internal buffer limits
         XCTAssertThrowsError(try compressor.prime(bits: 32, value: 0x7FFF_FFFF)) { error in
             XCTAssertTrue(error is ZLibError)
+        }
+    }
+
+    /// Helper function to check that ZLibErrors are not double-wrapped
+    /// This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
+    private func assertNoDoubleWrappedZLibError(_ error: Error) {
+        if case let .fileError(underlyingError) = error as? ZLibError {
+            XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
         }
     }
 }

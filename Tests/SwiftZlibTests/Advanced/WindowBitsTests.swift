@@ -3,15 +3,29 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class WindowBitsTests: XCTestCase {
-    private func assertNoDoubleWrappedZLibError(_ error: Error) {
-        if case let .fileError(underlyingError) = error as? ZLibError {
-            XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
-        }
-    }
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testWindowBitsRawRoundTrip", testWindowBitsRawRoundTrip),
+        ("testWindowBitsZlibRoundTrip", testWindowBitsZlibRoundTrip),
+        ("testWindowBitsGzipRoundTrip", testWindowBitsGzipRoundTrip),
+        ("testWindowBitsAutoDetectGzip", testWindowBitsAutoDetectGzip),
+        ("testWindowBitsAutoDetectZlib", testWindowBitsAutoDetectZlib),
+        ("testWindowBitsMismatchedRawAsZlib", testWindowBitsMismatchedRawAsZlib),
+        ("testWindowBitsMismatchedZlibAsRaw", testWindowBitsMismatchedZlibAsRaw),
+        ("testWindowBitsMismatchedGzipAsZlib", testWindowBitsMismatchedGzipAsZlib),
+        ("testWindowBitsMismatchedZlibAsGzip", testWindowBitsMismatchedZlibAsGzip),
+        ("testWindowBitsEmptyInput", testWindowBitsEmptyInput),
+        ("testWindowBitsCorruptedHeader", testWindowBitsCorruptedHeader),
+        ("testWindowBitsEmptyInputRawDeflate", testWindowBitsEmptyInputRawDeflate),
+        ("testWindowBitsEmptyInputZlibGzipAuto", testWindowBitsEmptyInputZlibGzipAuto),
+    ]
+
+    // MARK: Functions
 
     func testWindowBitsRawRoundTrip() throws {
         let data = "windowBits raw round trip".data(using: .utf8)!
@@ -211,19 +225,9 @@ final class WindowBitsTests: XCTestCase {
         }
     }
 
-    static var allTests = [
-        ("testWindowBitsRawRoundTrip", testWindowBitsRawRoundTrip),
-        ("testWindowBitsZlibRoundTrip", testWindowBitsZlibRoundTrip),
-        ("testWindowBitsGzipRoundTrip", testWindowBitsGzipRoundTrip),
-        ("testWindowBitsAutoDetectGzip", testWindowBitsAutoDetectGzip),
-        ("testWindowBitsAutoDetectZlib", testWindowBitsAutoDetectZlib),
-        ("testWindowBitsMismatchedRawAsZlib", testWindowBitsMismatchedRawAsZlib),
-        ("testWindowBitsMismatchedZlibAsRaw", testWindowBitsMismatchedZlibAsRaw),
-        ("testWindowBitsMismatchedGzipAsZlib", testWindowBitsMismatchedGzipAsZlib),
-        ("testWindowBitsMismatchedZlibAsGzip", testWindowBitsMismatchedZlibAsGzip),
-        ("testWindowBitsEmptyInput", testWindowBitsEmptyInput),
-        ("testWindowBitsCorruptedHeader", testWindowBitsCorruptedHeader),
-        ("testWindowBitsEmptyInputRawDeflate", testWindowBitsEmptyInputRawDeflate),
-        ("testWindowBitsEmptyInputZlibGzipAuto", testWindowBitsEmptyInputZlibGzipAuto),
-    ]
+    private func assertNoDoubleWrappedZLibError(_ error: Error) {
+        if case let .fileError(underlyingError) = error as? ZLibError {
+            XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
+        }
+    }
 }

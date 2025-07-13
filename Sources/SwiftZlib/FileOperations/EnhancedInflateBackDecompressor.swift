@@ -11,11 +11,15 @@ import Foundation
 /// Enhanced InflateBack decompression with improved C callback support
 /// This provides better integration with the actual zlib inflateBack functions
 public class EnhancedInflateBackDecompressor {
+    // MARK: Properties
+
     private var stream = z_stream()
     private var isInitialized = false
     private var window: [Bytef]
     private let windowSize: Int
     private let windowBits: WindowBits
+
+    // MARK: Lifecycle
 
     public init(windowBits: WindowBits = .deflate) {
         self.windowBits = windowBits
@@ -28,6 +32,8 @@ public class EnhancedInflateBackDecompressor {
             swift_inflateBackEnd(&stream)
         }
     }
+
+    // MARK: Functions
 
     /// Initialize the enhanced InflateBack decompressor
     /// - Throws: ZLibError if initialization fails

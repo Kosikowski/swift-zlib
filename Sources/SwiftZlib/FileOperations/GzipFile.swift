@@ -9,11 +9,35 @@ import CZLib
 import Foundation
 
 public final class GzipFile {
-    private var filePtr: UnsafeMutableRawPointer?
-    private var lastError: String?
+    // MARK: Properties
 
     public let path: String
     public let mode: String
+
+    private var filePtr: UnsafeMutableRawPointer?
+    private var lastError: String?
+
+    // MARK: Computed Properties
+
+    /// Check if file is open
+    /// - Returns: True if file is open
+    public var isOpen: Bool {
+        filePtr != nil
+    }
+
+    /// Get file path
+    /// - Returns: File path
+    public var filePath: String {
+        path
+    }
+
+    /// Get file mode
+    /// - Returns: File mode
+    public var fileMode: String {
+        mode
+    }
+
+    // MARK: Lifecycle
 
     public init(path: String, mode: String) throws {
         self.path = path
@@ -27,6 +51,8 @@ public final class GzipFile {
     deinit {
         try? close()
     }
+
+    // MARK: Functions
 
     public func close() throws {
         guard let ptr = filePtr else { return }
@@ -296,7 +322,7 @@ public final class GzipFile {
     /// - Returns: Current position in file
     /// - Throws: GzipFileError if operation fails
     public func position() throws -> Int {
-        return try tell()
+        try tell()
     }
 
     /// Set file position
@@ -346,23 +372,5 @@ public final class GzipFile {
     /// Clear error state
     public func clearErrorState() {
         clearError()
-    }
-
-    /// Check if file is open
-    /// - Returns: True if file is open
-    public var isOpen: Bool {
-        return filePtr != nil
-    }
-
-    /// Get file path
-    /// - Returns: File path
-    public var filePath: String {
-        return path
-    }
-
-    /// Get file mode
-    /// - Returns: File mode
-    public var fileMode: String {
-        return mode
     }
 }

@@ -10,8 +10,12 @@ import Foundation
 
 /// Stream-based compression for large data or streaming scenarios
 public class Compressor {
+    // MARK: Properties
+
     private var stream = z_stream()
     private var isInitialized = false
+
+    // MARK: Lifecycle
 
     public init() {
         // Zero the z_stream struct
@@ -23,6 +27,8 @@ public class Compressor {
             swift_deflateEnd(&stream)
         }
     }
+
+    // MARK: Functions
 
     /// Initialize the compressor with basic settings
     /// - Parameter level: Compression level

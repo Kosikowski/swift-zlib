@@ -10,17 +10,25 @@ import Foundation
 
 /// Chunked data processor for memory-efficient operations
 public class ChunkedProcessor {
+    // MARK: Properties
+
     private let config: StreamingConfig
+
+    // MARK: Lifecycle
 
     public init(config: StreamingConfig = StreamingConfig()) {
         self.config = config
     }
 
+    // MARK: Functions
+
     /// Process data in chunks with callback
     public func processChunks<T>(
         data: Data,
         processor: @escaping (Data) throws -> T
-    ) throws -> [T] {
+    ) throws
+        -> [T]
+    {
         var results: [T] = []
         var offset = 0
 
@@ -39,7 +47,9 @@ public class ChunkedProcessor {
     public func processStreaming<T>(
         data: Data,
         processor: @escaping (Data, Bool) throws -> T
-    ) throws -> [T] {
+    ) throws
+        -> [T]
+    {
         var results: [T] = []
         var offset = 0
 

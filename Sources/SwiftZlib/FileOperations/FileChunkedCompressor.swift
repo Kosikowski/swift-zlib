@@ -10,24 +10,21 @@ import Foundation
 
 /// File-based chunked compressor for huge files (constant memory)
 public class FileChunkedCompressor {
+    // MARK: Properties
+
     public let bufferSize: Int
     public let compressionLevel: CompressionLevel
     public let windowBits: WindowBits
 
-    @discardableResult
-    private func wrapFileError<T>(_ operation: () throws -> T) throws -> T {
-        do {
-            return try operation()
-        } catch {
-            throw ZLibError.fileError(error)
-        }
-    }
+    // MARK: Lifecycle
 
     public init(bufferSize: Int = 64 * 1024, compressionLevel: CompressionLevel = .defaultCompression, windowBits: WindowBits = .deflate) {
         self.bufferSize = bufferSize
         self.compressionLevel = compressionLevel
         self.windowBits = windowBits
     }
+
+    // MARK: Functions
 
     /// Compress a file to another file using true streaming (constant memory)
     public func compressFile(from sourcePath: String, to destinationPath: String) throws {
@@ -96,7 +93,7 @@ public class FileChunkedCompressor {
 
     /// Async version: Compress a file to another file using true streaming (constant memory)
     public func compressFile(from sourcePath: String, to destinationPath: String) async throws {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             do {
                 try compressFile(from: sourcePath, to: destinationPath)
                 continuation.resume()
@@ -113,7 +110,7 @@ public class FileChunkedCompressor {
         to destinationPath: String,
         progress: @escaping (Int, Int) -> Void
     ) async throws {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             do {
                 try compressFile(from: sourcePath, to: destinationPath, progress: progress)
                 continuation.resume()
@@ -167,7 +164,7 @@ public class FileChunkedCompressor {
                 phase: phase,
                 timestamp: now
             )
-            if let progressObject = progressObject {
+            if let progressObject {
                 progressObject.completedUnitCount = Int64(processedBytes)
             }
             if let cb = progressCallback {
@@ -204,7 +201,7 @@ public class FileChunkedCompressor {
         }
         phase = .flushing
         reportProgress(phase: .finished)
-        if let progressObject = progressObject {
+        if let progressObject {
             progressObject.completedUnitCount = Int64(totalBytes)
         }
         if !shouldContinue {
@@ -218,7 +215,9 @@ public class FileChunkedCompressor {
         to destinationPath: String,
         progressInterval: TimeInterval = 0.1,
         progressQueue _: DispatchQueue = .main
-    ) -> AsyncThrowingStream<ProgressInfo, Error> {
+    )
+        -> AsyncThrowingStream<ProgressInfo, Error>
+    {
         AsyncThrowingStream { continuation in
             Task {
                 do {
@@ -259,7 +258,7 @@ public class FileChunkedCompressor {
                         continuation.yield(info)
                     }
 
-                    while !isFinished && shouldContinue {
+                    while !isFinished, shouldContinue {
                         phase = .reading
                         let now = Date()
                         if firstIteration || now.timeIntervalSince(lastReport) >= progressInterval {
@@ -290,6 +289,15 @@ public class FileChunkedCompressor {
                     continuation.finish(throwing: zlibError)
                 }
             }
+        }
+    }
+
+    @discardableResult
+    private func wrapFileError<T>(_ operation: () throws -> T) throws -> T {
+        do {
+            return try operation()
+        } catch {
+            throw ZLibError.fileError(error)
         }
     }
 }

@@ -3,10 +3,25 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class AdvancedUtilityTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testCompressedSizeEstimation", testCompressedSizeEstimation),
+        ("testRecommendedBufferSizes", testRecommendedBufferSizes),
+        ("testMemoryUsageEstimation", testMemoryUsageEstimation),
+        ("testOptimalParameters", testOptimalParameters),
+        ("testPerformanceProfiles", testPerformanceProfiles),
+        ("testBufferSizeCalculation", testBufferSizeCalculation),
+        ("testCompressionStatistics", testCompressionStatistics),
+        ("testCompileFlags", testCompileFlags),
+    ]
+
+    // MARK: Functions
+
     func testCompressedSizeEstimation() throws {
         let estimatedSize = ZLib.estimateCompressedSize(1000, level: .bestCompression)
         XCTAssertGreaterThan(estimatedSize, 0)
@@ -85,15 +100,4 @@ final class AdvancedUtilityTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(flagsInfo.sizeOfPointer, 0)
         XCTAssertGreaterThanOrEqual(flagsInfo.sizeOfZOffT, 0)
     }
-
-    static var allTests = [
-        ("testCompressedSizeEstimation", testCompressedSizeEstimation),
-        ("testRecommendedBufferSizes", testRecommendedBufferSizes),
-        ("testMemoryUsageEstimation", testMemoryUsageEstimation),
-        ("testOptimalParameters", testOptimalParameters),
-        ("testPerformanceProfiles", testPerformanceProfiles),
-        ("testBufferSizeCalculation", testBufferSizeCalculation),
-        ("testCompressionStatistics", testCompressionStatistics),
-        ("testCompileFlags", testCompileFlags),
-    ]
 }

@@ -7,6 +7,8 @@
 
 /// Configuration for memory-efficient streaming operations
 public struct StreamingConfig {
+    // MARK: Properties
+
     /// Buffer size for reading/writing chunks
     public let bufferSize: Int
     /// Whether to use temporary files for intermediate results
@@ -15,6 +17,8 @@ public struct StreamingConfig {
     public let compressionLevel: Int
     /// Window bits for streaming operations
     public let windowBits: Int
+
+    // MARK: Lifecycle
 
     public init(
         bufferSize: Int = 64 * 1024, // 64KB default

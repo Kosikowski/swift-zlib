@@ -7,21 +7,41 @@
 import CZLib
 import Foundation
 
+// MARK: - GzipHeader
+
 /// Swifty representation of a gzip header (gz_header)
 public struct GzipHeader: Sendable {
+    // MARK: Properties
+
+    /// Text flag (1 if file is ASCII text)
     public var text: Int32 = 0
+    /// Modification time (Unix timestamp)
     public var time: UInt32 = 0
+    /// Extra flags
     public var xflags: Int32 = 0
+    /// Operating system (0 = FAT, 3 = Unix, etc.)
     public var os: Int32 = 255
+    /// Extra field data
     public var extra: Data? = nil
+    /// Original filename
     public var name: String? = nil
+    /// File comment
     public var comment: String? = nil
+    /// Header CRC flag
     public var hcrc: Int32 = 0
+    /// Header completion flag
     public var done: Int32 = 0
 
+    // MARK: Lifecycle
+
+    /// Initialize a new gzip header with default values
     public init() {}
 }
 
+/// Convert Swift GzipHeader to C gz_header
+/// - Parameters:
+///   - swift: Swift gzip header
+///   - cHeader: C gzip header pointer
 func to_c_gz_header(_ swift: GzipHeader, cHeader: UnsafeMutablePointer<gz_header>) {
     cHeader.pointee.text = swift.text
     cHeader.pointee.time = uLong(swift.time)
@@ -55,6 +75,9 @@ func to_c_gz_header(_ swift: GzipHeader, cHeader: UnsafeMutablePointer<gz_header
     }
 }
 
+/// Convert C gz_header to Swift GzipHeader
+/// - Parameter cHeader: C gzip header pointer
+/// - Returns: Swift gzip header
 func from_c_gz_header(_ cHeader: UnsafePointer<gz_header>) -> GzipHeader {
     var swift = GzipHeader()
     swift.text = cHeader.pointee.text

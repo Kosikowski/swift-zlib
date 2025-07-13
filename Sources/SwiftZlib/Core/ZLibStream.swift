@@ -10,12 +10,7 @@ import Foundation
 
 /// Unified streaming interface for compression and decompression
 public class ZLibStream {
-    private var compressor: Compressor?
-    private var decompressor: Decompressor?
-    private let mode: StreamMode
-    private let options: StreamOptions
-    private var isInitialized = false
-    private var isFinished = false
+    // MARK: Nested Types
 
     /// Stream operation mode
     public enum StreamMode: Sendable {
@@ -25,12 +20,16 @@ public class ZLibStream {
 
     /// Stream configuration options
     public struct StreamOptions: Sendable {
+        // MARK: Properties
+
         /// Compression options (used for compress mode)
         public var compression: CompressionOptions
         /// Decompression options (used for decompress mode)
         public var decompression: DecompressionOptions
         /// Buffer size for processing chunks
         public var bufferSize: Int
+
+        // MARK: Lifecycle
 
         public init(
             compression: CompressionOptions = CompressionOptions(),
@@ -43,6 +42,17 @@ public class ZLibStream {
         }
     }
 
+    // MARK: Properties
+
+    private var compressor: Compressor?
+    private var decompressor: Decompressor?
+    private let mode: StreamMode
+    private let options: StreamOptions
+    private var isInitialized = false
+    private var isFinished = false
+
+    // MARK: Lifecycle
+
     /// Initialize a new stream
     /// - Parameters:
     ///   - mode: Stream operation mode (compress or decompress)
@@ -52,33 +62,39 @@ public class ZLibStream {
         self.options = options
     }
 
+    deinit {
+        // Cleanup is handled by Compressor/Decompressor deinit
+    }
+
+    // MARK: Functions
+
     /// Initialize the stream for processing
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
         guard !isInitialized else { return }
 
         switch mode {
-        case .compress:
-            compressor = Compressor()
-            try compressor?.initializeAdvanced(
-                level: options.compression.level,
-                method: .deflate,
-                windowBits: options.compression.format.windowBits,
-                memoryLevel: options.compression.memoryLevel,
-                strategy: options.compression.strategy
-            )
+            case .compress:
+                compressor = Compressor()
+                try compressor?.initializeAdvanced(
+                    level: options.compression.level,
+                    method: .deflate,
+                    windowBits: options.compression.format.windowBits,
+                    memoryLevel: options.compression.memoryLevel,
+                    strategy: options.compression.strategy
+                )
 
-            if let dictionary = options.compression.dictionary {
-                try compressor?.setDictionary(dictionary)
-            }
+                if let dictionary = options.compression.dictionary {
+                    try compressor?.setDictionary(dictionary)
+                }
 
-        case .decompress:
-            decompressor = Decompressor()
-            try decompressor?.initializeAdvanced(windowBits: options.decompression.format.windowBits)
+            case .decompress:
+                decompressor = Decompressor()
+                try decompressor?.initializeAdvanced(windowBits: options.decompression.format.windowBits)
 
-            if let dictionary = options.decompression.dictionary {
-                try decompressor?.setDictionary(dictionary)
-            }
+                if let dictionary = options.decompression.dictionary {
+                    try decompressor?.setDictionary(dictionary)
+                }
         }
 
         isInitialized = true
@@ -96,17 +112,17 @@ public class ZLibStream {
         }
 
         switch mode {
-        case .compress:
-            guard let compressor = compressor else {
-                throw ZLibError.streamError(Z_STREAM_ERROR)
-            }
-            return try compressor.compress(data, flush: flush)
+            case .compress:
+                guard let compressor else {
+                    throw ZLibError.streamError(Z_STREAM_ERROR)
+                }
+                return try compressor.compress(data, flush: flush)
 
-        case .decompress:
-            guard let decompressor = decompressor else {
-                throw ZLibError.streamError(Z_STREAM_ERROR)
-            }
-            return try decompressor.decompress(data)
+            case .decompress:
+                guard let decompressor else {
+                    throw ZLibError.streamError(Z_STREAM_ERROR)
+                }
+                return try decompressor.decompress(data)
         }
     }
 
@@ -114,27 +130,27 @@ public class ZLibStream {
     /// - Returns: Final processed data
     /// - Throws: ZLibError if processing fails
     public func finalize() throws -> Data {
-        guard isInitialized && !isFinished else {
+        guard isInitialized, !isFinished else {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
         switch mode {
-        case .compress:
-            guard let compressor = compressor else {
-                throw ZLibError.streamError(Z_STREAM_ERROR)
-            }
-            let result = try compressor.compress(Data(), flush: .finish)
-            isFinished = true
-            return result
+            case .compress:
+                guard let compressor else {
+                    throw ZLibError.streamError(Z_STREAM_ERROR)
+                }
+                let result = try compressor.compress(Data(), flush: .finish)
+                isFinished = true
+                return result
 
-        case .decompress:
-            guard let decompressor = decompressor else {
-                throw ZLibError.streamError(Z_STREAM_ERROR)
-            }
-            // For decompression, we need to process any remaining data
-            let result = try decompressor.decompress(Data(), flush: .finish)
-            isFinished = true
-            return result
+            case .decompress:
+                guard let decompressor else {
+                    throw ZLibError.streamError(Z_STREAM_ERROR)
+                }
+                // For decompression, we need to process any remaining data
+                let result = try decompressor.decompress(Data(), flush: .finish)
+                isFinished = true
+                return result
         }
     }
 
@@ -142,10 +158,10 @@ public class ZLibStream {
     /// - Throws: ZLibError if reset fails
     public func reset() throws {
         switch mode {
-        case .compress:
-            try compressor?.reset()
-        case .decompress:
-            try decompressor?.reset()
+            case .compress:
+                try compressor?.reset()
+            case .decompress:
+                try decompressor?.reset()
         }
         isFinished = false
     }
@@ -159,21 +175,17 @@ public class ZLibStream {
         }
 
         switch mode {
-        case .compress:
-            guard let compressor = compressor else {
-                throw ZLibError.streamError(Z_STREAM_ERROR)
-            }
-            return try compressor.getStreamInfo()
+            case .compress:
+                guard let compressor else {
+                    throw ZLibError.streamError(Z_STREAM_ERROR)
+                }
+                return try compressor.getStreamInfo()
 
-        case .decompress:
-            guard let decompressor = decompressor else {
-                throw ZLibError.streamError(Z_STREAM_ERROR)
-            }
-            return try decompressor.getStreamInfo()
+            case .decompress:
+                guard let decompressor else {
+                    throw ZLibError.streamError(Z_STREAM_ERROR)
+                }
+                return try decompressor.getStreamInfo()
         }
-    }
-
-    deinit {
-        // Cleanup is handled by Compressor/Decompressor deinit
     }
 }

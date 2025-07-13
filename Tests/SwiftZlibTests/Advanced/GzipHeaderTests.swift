@@ -3,10 +3,49 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-@testable import SwiftZlib
 import XCTest
+@testable import SwiftZlib
 
 final class GzipHeaderTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testCompressionWithGzipHeader", testCompressionWithGzipHeader),
+        ("testStringCompressionWithGzipHeader", testStringCompressionWithGzipHeader),
+        ("testGzipHeaderWithMetadata", testGzipHeaderWithMetadata),
+        ("testGzipHeaderWithFilename", testGzipHeaderWithFilename),
+        ("testGzipHeaderWithTimestamp", testGzipHeaderWithTimestamp),
+        ("testGzipHeaderCompressionLevel", testGzipHeaderCompressionLevel),
+        ("testGzipHeaderWithEmptyData", testGzipHeaderWithEmptyData),
+        ("testGzipHeaderWithLargeData", testGzipHeaderWithLargeData),
+        ("testGzipHeaderCorruption", testGzipHeaderCorruption),
+        ("testGzipHeaderWithDifferentOS", testGzipHeaderWithDifferentOS),
+        ("testGzipHeaderRoundTrip", testGzipHeaderRoundTrip),
+        ("testGzipHeaderWithAutoDetection", testGzipHeaderWithAutoDetection),
+        ("testGzipHeaderWithStreaming", testGzipHeaderWithStreaming),
+        ("testGzipHeadersWithExtraFields", testGzipHeadersWithExtraFields),
+        ("testGzipHeadersWithComments", testGzipHeadersWithComments),
+        ("testGzipHeadersWithFilenames", testGzipHeadersWithFilenames),
+        ("testGzipHeaderFieldValidation", testGzipHeaderFieldValidation),
+        ("testGzipHeaderPartialCorruption", testGzipHeaderPartialCorruption),
+        ("testGzipHeaderTrailerMismatch", testGzipHeaderTrailerMismatch),
+        ("testGzipHeaderWithInvalidFlags", testGzipHeaderWithInvalidFlags),
+        ("testGzipHeaderWithInvalidMethod", testGzipHeaderWithInvalidMethod),
+        ("testGzipHeaderWithInvalidOS", testGzipHeaderWithInvalidOS),
+        ("testGzipHeaderWithInvalidTimestamp", testGzipHeaderWithInvalidTimestamp),
+        ("testGzipHeaderWithInvalidExtraLength", testGzipHeaderWithInvalidExtraLength),
+        ("testGzipHeaderWithInvalidCRC", testGzipHeaderWithInvalidCRC),
+        ("testGzipHeaderWithInvalidISize", testGzipHeaderWithInvalidISize),
+        ("testGzipHeaderRoundTripWithCustomFields", testGzipHeaderRoundTripWithCustomFields),
+        ("testGzipHeaderWithMultipleExtraFields", testGzipHeaderWithMultipleExtraFields),
+        ("testGzipHeaderWithLongFilenames", testGzipHeaderWithLongFilenames),
+        ("testGzipHeaderWithLongComments", testGzipHeaderWithLongComments),
+        ("testGzipHeaderWithNullTerminatedStrings", testGzipHeaderWithNullTerminatedStrings),
+        ("testGzipHeaderWithNonAsciiStrings", testGzipHeaderWithNonAsciiStrings),
+    ]
+
+    // MARK: Functions
+
     func testCompressionWithGzipHeader() throws {
         let originalData = "Test data with gzip header".data(using: .utf8)!
         var header = GzipHeader()
@@ -556,39 +595,4 @@ final class GzipHeaderTests: XCTestCase {
         XCTAssertEqual(header[0], 0x1F, "Magic number 1")
         XCTAssertEqual(header[1], 0x8B, "Magic number 2")
     }
-
-    static var allTests = [
-        ("testCompressionWithGzipHeader", testCompressionWithGzipHeader),
-        ("testStringCompressionWithGzipHeader", testStringCompressionWithGzipHeader),
-        ("testGzipHeaderWithMetadata", testGzipHeaderWithMetadata),
-        ("testGzipHeaderWithFilename", testGzipHeaderWithFilename),
-        ("testGzipHeaderWithTimestamp", testGzipHeaderWithTimestamp),
-        ("testGzipHeaderCompressionLevel", testGzipHeaderCompressionLevel),
-        ("testGzipHeaderWithEmptyData", testGzipHeaderWithEmptyData),
-        ("testGzipHeaderWithLargeData", testGzipHeaderWithLargeData),
-        ("testGzipHeaderCorruption", testGzipHeaderCorruption),
-        ("testGzipHeaderWithDifferentOS", testGzipHeaderWithDifferentOS),
-        ("testGzipHeaderRoundTrip", testGzipHeaderRoundTrip),
-        ("testGzipHeaderWithAutoDetection", testGzipHeaderWithAutoDetection),
-        ("testGzipHeaderWithStreaming", testGzipHeaderWithStreaming),
-        ("testGzipHeadersWithExtraFields", testGzipHeadersWithExtraFields),
-        ("testGzipHeadersWithComments", testGzipHeadersWithComments),
-        ("testGzipHeadersWithFilenames", testGzipHeadersWithFilenames),
-        ("testGzipHeaderFieldValidation", testGzipHeaderFieldValidation),
-        ("testGzipHeaderPartialCorruption", testGzipHeaderPartialCorruption),
-        ("testGzipHeaderTrailerMismatch", testGzipHeaderTrailerMismatch),
-        ("testGzipHeaderWithInvalidFlags", testGzipHeaderWithInvalidFlags),
-        ("testGzipHeaderWithInvalidMethod", testGzipHeaderWithInvalidMethod),
-        ("testGzipHeaderWithInvalidOS", testGzipHeaderWithInvalidOS),
-        ("testGzipHeaderWithInvalidTimestamp", testGzipHeaderWithInvalidTimestamp),
-        ("testGzipHeaderWithInvalidExtraLength", testGzipHeaderWithInvalidExtraLength),
-        ("testGzipHeaderWithInvalidCRC", testGzipHeaderWithInvalidCRC),
-        ("testGzipHeaderWithInvalidISize", testGzipHeaderWithInvalidISize),
-        ("testGzipHeaderRoundTripWithCustomFields", testGzipHeaderRoundTripWithCustomFields),
-        ("testGzipHeaderWithMultipleExtraFields", testGzipHeaderWithMultipleExtraFields),
-        ("testGzipHeaderWithLongFilenames", testGzipHeaderWithLongFilenames),
-        ("testGzipHeaderWithLongComments", testGzipHeaderWithLongComments),
-        ("testGzipHeaderWithNullTerminatedStrings", testGzipHeaderWithNullTerminatedStrings),
-        ("testGzipHeaderWithNonAsciiStrings", testGzipHeaderWithNonAsciiStrings),
-    ]
 }
