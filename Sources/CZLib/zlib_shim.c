@@ -16,16 +16,25 @@
 int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
                    int level) {
+    if (!dest || !destLen || !source) {
+        return Z_STREAM_ERROR;
+    }
     return compress2(dest, destLen, source, sourceLen, level);
 }
 
 int swift_uncompress(Bytef *dest, uLongf *destLen,
                      const Bytef *source, uLong sourceLen) {
+    if (!dest || !destLen || !source) {
+        return Z_STREAM_ERROR;
+    }
     return uncompress(dest, destLen, source, sourceLen);
 }
 
 int swift_uncompress2(Bytef *dest, uLongf *destLen,
                       const Bytef *source, uLong *sourceLen) {
+    if (!dest || !destLen || !source || !sourceLen) {
+        return Z_STREAM_ERROR;
+    }
     // uncompress2 might not be available in all zlib versions
     // We'll provide a fallback implementation using uncompress
     uLong sourceLenValue = *sourceLen;
@@ -37,10 +46,16 @@ int swift_uncompress2(Bytef *dest, uLongf *destLen,
 }
 
 int swift_deflateInit(z_streamp strm, int level) {
+    if (!strm) {
+        return Z_STREAM_ERROR;
+    }
     return deflateInit(strm, level);
 }
 
 int swift_deflate(z_streamp strm, int flush) {
+    if (!strm) {
+        return Z_STREAM_ERROR;
+    }
 #if ZLIB_DEBUG
     // Debug: Print stream state before deflate
     printf("[C] deflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
@@ -68,6 +83,9 @@ int swift_deflate(z_streamp strm, int flush) {
 }
 
 int swift_deflateEnd(z_streamp strm) {
+    if (!strm) {
+        return Z_STREAM_ERROR;
+    }
     return deflateEnd(strm);
 }
 
@@ -105,10 +123,16 @@ unsigned long swift_deflateBound(z_streamp strm, unsigned long sourceLen) {
 }
 
 int swift_inflateInit(z_streamp strm) {
+    if (!strm) {
+        return Z_STREAM_ERROR;
+    }
     return inflateInit(strm);
 }
 
 int swift_inflate(z_streamp strm, int flush) {
+    if (!strm) {
+        return Z_STREAM_ERROR;
+    }
 #if ZLIB_DEBUG
     // Debug: Print stream state before inflate
     printf("[C] inflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
@@ -136,6 +160,9 @@ int swift_inflate(z_streamp strm, int flush) {
 }
 
 int swift_inflateEnd(z_streamp strm) {
+    if (!strm) {
+        return Z_STREAM_ERROR;
+    }
     return inflateEnd(strm);
 }
 
@@ -236,10 +263,16 @@ int swift_inflateSetDictionary(z_streamp strm, const Bytef *dictionary, uInt dic
 
 // Checksum functions
 uLong swift_adler32(uLong adler, const Bytef *buf, uInt len) {
+    if (!buf && len > 0) {
+        return adler; // Return initial value if no buffer provided
+    }
     return adler32(adler, buf, len);
 }
 
 uLong swift_crc32(uLong crc, const Bytef *buf, uInt len) {
+    if (!buf && len > 0) {
+        return crc; // Return initial value if no buffer provided
+    }
     return crc32(crc, buf, len);
 }
 
