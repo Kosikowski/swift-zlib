@@ -7,6 +7,10 @@
 import CZLib
 import Foundation
 
+#if canImport(CoreFoundation)
+import CoreFoundation
+#endif
+
 // MARK: - ZLibVerboseConfig
 
 /// Verbose logging configuration for ZLib operations
@@ -122,7 +126,7 @@ func zlibError(_ message: String, file: String = #file, function: String = #func
 class ZLibTimer {
     // MARK: Properties
 
-    #if canImport(CoreFoundation)
+    #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     private let startTime: CFAbsoluteTime
     #else
     private let startTime: Date
@@ -133,7 +137,7 @@ class ZLibTimer {
 
     init(_ operation: String) {
         self.operation = operation
-        #if canImport(CoreFoundation)
+        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
         startTime = CFAbsoluteTimeGetCurrent()
         #else
         startTime = Date()
@@ -144,7 +148,7 @@ class ZLibTimer {
     // MARK: Functions
 
     func finish() -> TimeInterval {
-        #if canImport(CoreFoundation)
+        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
         let duration = CFAbsoluteTimeGetCurrent() - startTime
         #else
         let duration = Date().timeIntervalSince(startTime)
