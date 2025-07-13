@@ -16,28 +16,17 @@
 int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
                    int level) {
-#if ZLIB_DEBUG
-    printf("[C] swift_compress: dest=%p, destLen=%p, source=%p, sourceLen=%lu, level=%d\n",
-           (void*)dest, (void*)destLen, (void*)source, sourceLen, level);
-    if (destLen) printf("[C] *destLen=%lu\n", *destLen);
-    if (source && sourceLen > 0) {
-        printf("[C] source data (first 8 bytes): ");
-        for (int i = 0; i < 8 && i < sourceLen; i++) {
-            printf("%02x ", source[i]);
-        }
-        printf("\n");
-    }
-#endif
-
     if (!dest || !destLen || !source) {
 #if ZLIB_DEBUG
         printf("[C] swift_compress: null pointer detected\n");
+        fflush(stdout);
 #endif
         return Z_STREAM_ERROR;
     }
     if (sourceLen == 0 || *destLen == 0) {
 #if ZLIB_DEBUG
         printf("[C] swift_compress: zero length, returning early\n");
+        fflush(stdout);
 #endif
         *destLen = 0;
         return Z_OK;
@@ -45,35 +34,28 @@ int swift_compress(Bytef *dest, uLongf *destLen,
 
     int result = compress2(dest, destLen, source, sourceLen, level);
 #if ZLIB_DEBUG
-    printf("[C] swift_compress result=%d, final destLen=%lu\n", result, *destLen);
+    if (result != Z_OK) {
+        printf("[C] swift_compress ERROR: result=%d, sourceLen=%lu, destLen=%lu\n",
+               result, sourceLen, *destLen);
+        fflush(stdout);
+    }
 #endif
     return result;
 }
 
 int swift_uncompress(Bytef *dest, uLongf *destLen,
                      const Bytef *source, uLong sourceLen) {
-#if ZLIB_DEBUG
-    printf("[C] swift_uncompress: dest=%p, destLen=%p, source=%p, sourceLen=%lu\n",
-           (void*)dest, (void*)destLen, (void*)source, sourceLen);
-    if (destLen) printf("[C] *destLen=%lu\n", *destLen);
-    if (source && sourceLen > 0) {
-        printf("[C] source data (first 8 bytes): ");
-        for (int i = 0; i < 8 && i < sourceLen; i++) {
-            printf("%02x ", source[i]);
-        }
-        printf("\n");
-    }
-#endif
-
     if (!dest || !destLen || !source) {
 #if ZLIB_DEBUG
         printf("[C] swift_uncompress: null pointer detected\n");
+        fflush(stdout);
 #endif
         return Z_STREAM_ERROR;
     }
     if (sourceLen == 0 || *destLen == 0) {
 #if ZLIB_DEBUG
         printf("[C] swift_uncompress: zero length, returning early\n");
+        fflush(stdout);
 #endif
         *destLen = 0;
         return Z_OK;
@@ -81,36 +63,28 @@ int swift_uncompress(Bytef *dest, uLongf *destLen,
 
     int result = uncompress(dest, destLen, source, sourceLen);
 #if ZLIB_DEBUG
-    printf("[C] swift_uncompress result=%d, final destLen=%lu\n", result, *destLen);
+    if (result != Z_OK) {
+        printf("[C] swift_uncompress ERROR: result=%d, sourceLen=%lu, destLen=%lu\n",
+               result, sourceLen, *destLen);
+        fflush(stdout);
+    }
 #endif
     return result;
 }
 
 int swift_uncompress2(Bytef *dest, uLongf *destLen,
                       const Bytef *source, uLong *sourceLen) {
-#if ZLIB_DEBUG
-    printf("[C] swift_uncompress2: dest=%p, destLen=%p, source=%p, sourceLen=%p\n",
-           (void*)dest, (void*)destLen, (void*)source, (void*)sourceLen);
-    if (destLen) printf("[C] *destLen=%lu\n", *destLen);
-    if (sourceLen) printf("[C] *sourceLen=%lu\n", *sourceLen);
-    if (source && sourceLen && *sourceLen > 0) {
-        printf("[C] source data (first 8 bytes): ");
-        for (int i = 0; i < 8 && i < *sourceLen; i++) {
-            printf("%02x ", source[i]);
-        }
-        printf("\n");
-    }
-#endif
-
     if (!dest || !destLen || !source || !sourceLen) {
 #if ZLIB_DEBUG
         printf("[C] swift_uncompress2: null pointer detected\n");
+        fflush(stdout);
 #endif
         return Z_STREAM_ERROR;
     }
     if (*sourceLen == 0 || *destLen == 0) {
 #if ZLIB_DEBUG
         printf("[C] swift_uncompress2: zero length, returning early\n");
+        fflush(stdout);
 #endif
         *destLen = 0;
         return Z_OK;
@@ -122,8 +96,11 @@ int swift_uncompress2(Bytef *dest, uLongf *destLen,
         *sourceLen = sourceLenValue; // All input consumed
     }
 #if ZLIB_DEBUG
-    printf("[C] swift_uncompress2 result=%d, final destLen=%lu, sourceLen=%lu\n",
-           result, *destLen, *sourceLen);
+    if (result != Z_OK) {
+        printf("[C] swift_uncompress2 ERROR: result=%d, sourceLen=%lu, destLen=%lu\n",
+               result, *sourceLen, *destLen);
+        fflush(stdout);
+    }
 #endif
     return result;
 }
@@ -140,26 +117,21 @@ int swift_deflate(z_streamp strm, int flush) {
         return Z_STREAM_ERROR;
     }
 #if ZLIB_DEBUG
-    // Debug: Print stream state before deflate
-    printf("[C] deflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
-           flush, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
-
-    // Debug: Print first few bytes of input if available
-    if (strm->avail_in > 0 && strm->next_in) {
-        printf("[C] deflate input (first 8 bytes): ");
-        for (int i = 0; i < 8 && i < strm->avail_in; i++) {
-            printf("%02x ", strm->next_in[i]);
-        }
-        printf("\n");
+    // Only debug if there's an unusual condition
+    if (strm->avail_in == 0 && flush != Z_FINISH) {
+        printf("[C] deflate: no input data, flush=%d\n", flush);
+        fflush(stdout);
     }
 #endif
 
     int result = deflate(strm, flush);
 
 #if ZLIB_DEBUG
-    // Debug: Print stream state after deflate
-    printf("[C] deflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
-           result, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
+    if (result != Z_OK && result != Z_STREAM_END) {
+        printf("[C] deflate ERROR: result=%d, avail_in=%u, avail_out=%u\n",
+               result, strm->avail_in, strm->avail_out);
+        fflush(stdout);
+    }
 #endif
 
     return result;
@@ -217,26 +189,21 @@ int swift_inflate(z_streamp strm, int flush) {
         return Z_STREAM_ERROR;
     }
 #if ZLIB_DEBUG
-    // Debug: Print stream state before inflate
-    printf("[C] inflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
-           flush, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
-
-    // Debug: Print first few bytes of input if available
-    if (strm->avail_in > 0 && strm->next_in) {
-        printf("[C] inflate input (first 8 bytes): ");
-        for (int i = 0; i < 8 && i < strm->avail_in; i++) {
-            printf("%02x ", strm->next_in[i]);
-        }
-        printf("\n");
+    // Only debug if there's an unusual condition
+    if (strm->avail_in == 0 && flush != Z_FINISH) {
+        printf("[C] inflate: no input data, flush=%d\n", flush);
+        fflush(stdout);
     }
 #endif
 
     int result = inflate(strm, flush);
 
 #if ZLIB_DEBUG
-    // Debug: Print stream state after inflate
-    printf("[C] inflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
-           result, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
+    if (result != Z_OK && result != Z_STREAM_END) {
+        printf("[C] inflate ERROR: result=%d, avail_in=%u, avail_out=%u\n",
+               result, strm->avail_in, strm->avail_out);
+        fflush(stdout);
+    }
 #endif
 
     return result;
@@ -291,7 +258,12 @@ static unsigned int debug_in_wrapper(void* desc, unsigned char** buf) {
     unsigned int result = 0;
     if (context && context->swift_in_func) {
         result = context->swift_in_func(context->swift_context, buf, NULL);
-        printf("[C shim] input callback called, result: %u\n", result);
+#if ZLIB_DEBUG
+        if (result == 0) {
+            printf("[C shim] input callback returned 0 (no data)\n");
+            fflush(stdout);
+        }
+#endif
     }
     return result;
 }
@@ -300,15 +272,29 @@ static int debug_out_wrapper(void* desc, unsigned char* buf, unsigned len) {
     int result = 0;
     if (context && context->swift_out_func) {
         result = context->swift_out_func(context->swift_context, buf, (int)len);
-        printf("[C shim] output callback called, len: %u, result: %d\n", len, result);
+#if ZLIB_DEBUG
+        if (result != (int)len) {
+            printf("[C shim] output callback error: expected %u, got %d\n", len, result);
+            fflush(stdout);
+        }
+#endif
     }
     return result;
 }
 
 int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *in_desc, swift_out_func out_func, void *out_desc) {
+#if ZLIB_DEBUG
+    printf("[C] swift_inflateBackWithCallbacks called\n");
+    fflush(stdout);
+#endif
+
     // Allocate context structure
     swift_inflateback_context_t* context = malloc(sizeof(swift_inflateback_context_t));
     if (!context) {
+#if ZLIB_DEBUG
+        printf("[C] swift_inflateBackWithCallbacks: memory allocation failed\n");
+        fflush(stdout);
+#endif
         return Z_MEM_ERROR;
     }
 
@@ -319,6 +305,13 @@ int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *
 
     // Call inflateBack with our debug wrapper functions
     int result = inflateBack(strm, debug_in_wrapper, context, debug_out_wrapper, context);
+
+#if ZLIB_DEBUG
+    if (result != Z_OK && result != Z_STREAM_END) {
+        printf("[C] swift_inflateBackWithCallbacks ERROR: result=%d\n", result);
+        fflush(stdout);
+    }
+#endif
 
     // Clean up context
     free(context);
