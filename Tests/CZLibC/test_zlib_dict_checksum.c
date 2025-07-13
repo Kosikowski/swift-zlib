@@ -78,8 +78,7 @@ int main() {
     inflateEnd(&d_stream1);
     free(decompressed1);
 
-    // --- Step 3: Decompress WITH dictionary using Adler-32 checksum ---
-    // Provide the correct dictionary and decompress
+    // --- Step 3: Decompress WITH dictionary using Adler-32 checksum (correct pattern) ---
     z_stream d_stream2;
     memset(&d_stream2, 0, sizeof(z_stream));
     ret = inflateInit(&d_stream2);
@@ -92,35 +91,47 @@ int main() {
     uLong adler = adler32(0L, Z_NULL, 0);
     adler = adler32(adler, (const Bytef*)dict, dict_len);
     printf("Dictionary Adler-32 checksum: %lu\n", adler);
-    // Set dictionary before decompressing
-    ret = inflateSetDictionary(&d_stream2, (const Bytef*)dict, dict_len);
-    if (ret != Z_OK) {
-        printf("inflateSetDictionary failed: %d\n", ret);
-        inflateEnd(&d_stream2);
-        free(compressed);
-        return 1;
-    }
-    printf("Dictionary set successfully\n");
+
     Bytef* decompressed2 = malloc(data_len + 1);
     d_stream2.next_in = compressed;
     d_stream2.avail_in = actual_compressed_size;
     d_stream2.next_out = decompressed2;
     d_stream2.avail_out = data_len + 1;
-    ret = inflate(&d_stream2, Z_FINISH);
-    printf("inflate with dictionary returned: %d\n", ret);
-    if (ret == Z_STREAM_END) {
-        decompressed2[d_stream2.total_out] = '\0';
-        printf("Decompression successful!\n");
-        printf("Original: %s\n", test_data);
-        printf("Decompressed: %s\n", decompressed2);
-        if (strcmp(test_data, (char*)decompressed2) == 0) {
-            printf("Data matches! ✓\n");
+
+    // First call to inflate, expect Z_NEED_DICT
+    ret = inflate(&d_stream2, Z_NO_FLUSH);
+    if (ret == Z_NEED_DICT) {
+        printf("inflate returned Z_NEED_DICT as expected\n");
+        // Now set the dictionary
+        ret = inflateSetDictionary(&d_stream2, (const Bytef*)dict, dict_len);
+        if (ret != Z_OK) {
+            printf("inflateSetDictionary failed: %d\n", ret);
+            inflateEnd(&d_stream2);
+            free(decompressed2);
+            free(compressed);
+            return 1;
+        }
+        printf("Dictionary set successfully\n");
+        // Continue inflation
+        ret = inflate(&d_stream2, Z_FINISH);
+        printf("inflate after setting dictionary returned: %d\n", ret);
+        if (ret == Z_STREAM_END) {
+            decompressed2[d_stream2.total_out] = '\0';
+            printf("Decompression successful!\n");
+            printf("Original: %s\n", test_data);
+            printf("Decompressed: %s\n", decompressed2);
+            if (strcmp(test_data, (char*)decompressed2) == 0) {
+                printf("Data matches! ✓\n");
+            } else {
+                printf("Data mismatch! ✗\n");
+            }
         } else {
-            printf("Data mismatch! ✗\n");
+            printf("Decompression failed: %d\n", ret);
         }
     } else {
-        printf("Decompression failed: %d\n", ret);
+        printf("inflate did not return Z_NEED_DICT as expected, got: %d\n", ret);
     }
+
     inflateEnd(&d_stream2);
     free(decompressed2);
     free(compressed);
