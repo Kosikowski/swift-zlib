@@ -62,6 +62,9 @@ jobs:
       - name: Install zlib development headers
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
 
+      - name: Run tests with Address Sanitizer
+        run: swift test --sanitize=address --verbose
+
       - name: Build package
         run: swift build
 
@@ -98,6 +101,9 @@ jobs:
 
       - name: Install zlib development headers
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Run tests with Address Sanitizer
+        run: swift test --sanitize=address --verbose
 
       - name: Build package
         run: swift build
