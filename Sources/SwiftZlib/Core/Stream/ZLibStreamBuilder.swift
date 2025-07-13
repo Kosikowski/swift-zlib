@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Stream Builder Pattern
 
 /// Builder for creating ZLib streams with fluent API
-public class ZLibStreamBuilder {
+final class ZLibStreamBuilder {
     // MARK: Properties
 
     private var mode: ZLibStream.StreamMode = .compress

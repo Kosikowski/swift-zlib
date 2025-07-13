@@ -8,7 +8,7 @@
 import CZLib
 import Foundation
 
-public extension ZLib {
+extension ZLib {
     /// Create an async stream builder for fluent configuration
     /// - Returns: Async stream builder
     static func asyncStream() -> AsyncZLibStreamBuilder {

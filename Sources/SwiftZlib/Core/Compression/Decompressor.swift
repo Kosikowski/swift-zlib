@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Gzip File API
 
 /// Stream-based decompression for large data or streaming scenarios
-public class Decompressor {
+final class Decompressor {
     // MARK: Properties
 
     private var stream = z_stream()

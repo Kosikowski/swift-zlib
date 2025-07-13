@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// Stream-based compression for large data or streaming scenarios
-public class Compressor {
+final class Compressor {
     // MARK: Properties
 
     private var stream = z_stream()

@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// Memory-efficient unified file processor
-public class FileProcessor {
+final class FileProcessor {
     // MARK: Properties
 
     private let config: StreamingConfig

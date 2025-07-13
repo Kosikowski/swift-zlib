@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// Advanced streaming decompression with callback support
-public class StreamingDecompressor {
+final class StreamingDecompressor {
     // MARK: Properties
 
     private var stream = z_stream()

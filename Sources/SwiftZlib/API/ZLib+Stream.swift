@@ -8,7 +8,7 @@
 import CZLib
 import Foundation
 
-public extension ZLib {
+extension ZLib {
     /// Create a stream builder for fluent configuration
     /// - Returns: Stream builder
     static func stream() -> ZLibStreamBuilder {

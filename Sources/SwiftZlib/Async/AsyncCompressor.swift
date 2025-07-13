@@ -10,7 +10,7 @@ import Foundation
 
 /// Async streaming compressor for non-blocking compression
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public class AsyncCompressor: @unchecked Sendable {
+final class AsyncCompressor: @unchecked Sendable {
     // MARK: Properties
 
     private let compressor: Compressor

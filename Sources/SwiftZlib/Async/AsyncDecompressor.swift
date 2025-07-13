@@ -10,7 +10,7 @@ import Foundation
 
 /// Async streaming decompressor for non-blocking decompression
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public class AsyncDecompressor: @unchecked Sendable {
+final class AsyncDecompressor: @unchecked Sendable {
     // MARK: Properties
 
     private let decompressor: Decompressor
