@@ -20,7 +20,7 @@ public extension ZLib {
         try await withCheckedThrowingContinuation { continuation in
             Task.detached {
                 do {
-                    let result = try compress(data, options: options)
+                    let result = try ZLib.compress(data, options: options)
                     continuation.resume(returning: result)
                 } catch {
                     continuation.resume(throwing: error)
@@ -39,7 +39,7 @@ public extension ZLib {
         try await withCheckedThrowingContinuation { continuation in
             Task.detached {
                 do {
-                    let result = try decompress(data, options: options)
+                    let result = try ZLib.decompress(data, options: options)
                     continuation.resume(returning: result)
                 } catch {
                     continuation.resume(throwing: error)

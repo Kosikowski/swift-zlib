@@ -9,7 +9,8 @@ import CZLib
 import Foundation
 
 public extension ZLib {
-    /// True chunked streaming file compression
+    /// True chunked streaming file compression (synchronous)
+    /// - SeeAlso: compressFileAsync, compressFilePublisher, compressFileProgressPublisher
     static func compressFileChunked(
         from sourcePath: String,
         to destinationPath: String,
@@ -25,7 +26,8 @@ public extension ZLib {
         try compressor.compressFile(from: sourcePath, to: destinationPath)
     }
 
-    /// True chunked streaming file decompression
+    /// True chunked streaming file decompression (synchronous)
+    /// - SeeAlso: decompressFileAsync, decompressFilePublisher, decompressFileProgressPublisher
     static func decompressFileChunked(
         from sourcePath: String,
         to destinationPath: String,
@@ -40,7 +42,8 @@ public extension ZLib {
     }
 
     /// Async true chunked streaming file compression
-    static func compressFileChunked(
+    /// - SeeAlso: compressFileChunked, compressFilePublisher, compressFileProgressPublisher
+    static func compressFileAsync(
         from sourcePath: String,
         to destinationPath: String,
         bufferSize: Int = 64 * 1024,
@@ -56,7 +59,8 @@ public extension ZLib {
     }
 
     /// Async true chunked streaming file decompression
-    static func decompressFileChunked(
+    /// - SeeAlso: decompressFileChunked, decompressFilePublisher, decompressFileProgressPublisher
+    static func decompressFileAsync(
         from sourcePath: String,
         to destinationPath: String,
         bufferSize: Int = 64 * 1024,

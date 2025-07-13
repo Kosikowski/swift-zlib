@@ -1083,6 +1083,58 @@ let config = StreamingConfig(
 let compressor = try FileCompressor(config: config)
 try compressor.compressFile(from: "large_file.txt", to: "large_file.gz")
 
+// ---
+// Naming convention for file operations:
+// - compressFile / decompressFile: synchronous
+// - compressFileAsync / decompressFileAsync: async/await
+// - compressFilePublisher / decompressFilePublisher: Combine publisher
+// - compressFileProgressPublisher / decompressFileProgressPublisher: Combine publisher with progress
+// ---
+
+// Async/await file compression
+try await ZLib.compressFileAsync(from: "large_file.txt", to: "large_file.gz")
+try await ZLib.decompressFileAsync(from: "large_file.gz", to: "large_file_decompressed.txt")
+
+// Combine publisher for file compression
+import Combine
+let cancellable = ZLib.compressFilePublisher(from: "large_file.txt", to: "large_file.gz")
+    .sink(receiveCompletion: { completion in
+        switch completion {
+        case .finished:
+            print("Compression finished")
+        case .failure(let error):
+            print("Compression failed: \(error)")
+        }
+    }, receiveValue: {
+        print("Compression succeeded")
+    })
+
+// Combine publisher for file decompression
+let cancellable2 = ZLib.decompressFilePublisher(from: "large_file.gz", to: "large_file_decompressed.txt")
+    .sink(receiveCompletion: { completion in
+        switch completion {
+        case .finished:
+            print("Decompression finished")
+        case .failure(let error):
+            print("Decompression failed: \(error)")
+        }
+    }, receiveValue: {
+        print("Decompression succeeded")
+    })
+
+// Combine publisher for file compression with progress
+let cancellable3 = ZLib.compressFileProgressPublisher(from: "large_file.txt", to: "large_file.gz")
+    .sink(receiveCompletion: { completion in
+        switch completion {
+        case .finished:
+            print("Compression finished")
+        case .failure(let error):
+            print("Compression failed: \(error)")
+        }
+    }, receiveValue: { progress in
+        print("Progress: \(progress.percent)% (\(progress.processed)/\(progress.total))")
+    })
+
 // File decompression
 let decompressor = try FileDecompressor(config: config)
 try decompressor.decompressFile(from: "large_file.gz", to: "large_file_decompressed.txt")

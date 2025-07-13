@@ -9,7 +9,13 @@ import CZLib
 import Foundation
 
 public extension ZLib {
-    /// Memory-efficient file compression
+    /// Memory-efficient file compression (synchronous)
+    /// - Parameters:
+    ///   - sourcePath: Path to input file
+    ///   - destinationPath: Path to output file
+    ///   - config: Streaming configuration
+    /// - Throws: ZLibError if compression fails
+    /// - SeeAlso: compressFileAsync, compressFilePublisher
     static func compressFile(
         from sourcePath: String,
         to destinationPath: String,
@@ -19,7 +25,13 @@ public extension ZLib {
         try compressor.compressFile(from: sourcePath, to: destinationPath)
     }
 
-    /// Memory-efficient file decompression
+    /// Memory-efficient file decompression (synchronous)
+    /// - Parameters:
+    ///   - sourcePath: Path to input file
+    ///   - destinationPath: Path to output file
+    ///   - config: Streaming configuration
+    /// - Throws: ZLibError if decompression fails
+    /// - SeeAlso: decompressFileAsync, decompressFilePublisher
     static func decompressFile(
         from sourcePath: String,
         to destinationPath: String,
