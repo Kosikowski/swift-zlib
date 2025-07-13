@@ -6,7 +6,7 @@
 // Define ZLIB_DEBUG to enable debug printf statements
 // This can be controlled via compiler flags: -DZLIB_DEBUG
 #ifndef ZLIB_DEBUG
-#define ZLIB_DEBUG 0
+#define ZLIB_DEBUG 1
 #endif
 
 #if ZLIB_DEBUG
@@ -16,44 +16,115 @@
 int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
                    int level) {
+#if ZLIB_DEBUG
+    printf("[C] swift_compress: dest=%p, destLen=%p, source=%p, sourceLen=%lu, level=%d\n",
+           (void*)dest, (void*)destLen, (void*)source, sourceLen, level);
+    if (destLen) printf("[C] *destLen=%lu\n", *destLen);
+    if (source && sourceLen > 0) {
+        printf("[C] source data (first 8 bytes): ");
+        for (int i = 0; i < 8 && i < sourceLen; i++) {
+            printf("%02x ", source[i]);
+        }
+        printf("\n");
+    }
+#endif
+
     if (!dest || !destLen || !source) {
+#if ZLIB_DEBUG
+        printf("[C] swift_compress: null pointer detected\n");
+#endif
         return Z_STREAM_ERROR;
     }
     if (sourceLen == 0 || *destLen == 0) {
+#if ZLIB_DEBUG
+        printf("[C] swift_compress: zero length, returning early\n");
+#endif
         *destLen = 0;
         return Z_OK;
     }
-    return compress2(dest, destLen, source, sourceLen, level);
+
+    int result = compress2(dest, destLen, source, sourceLen, level);
+#if ZLIB_DEBUG
+    printf("[C] swift_compress result=%d, final destLen=%lu\n", result, *destLen);
+#endif
+    return result;
 }
 
 int swift_uncompress(Bytef *dest, uLongf *destLen,
                      const Bytef *source, uLong sourceLen) {
+#if ZLIB_DEBUG
+    printf("[C] swift_uncompress: dest=%p, destLen=%p, source=%p, sourceLen=%lu\n",
+           (void*)dest, (void*)destLen, (void*)source, sourceLen);
+    if (destLen) printf("[C] *destLen=%lu\n", *destLen);
+    if (source && sourceLen > 0) {
+        printf("[C] source data (first 8 bytes): ");
+        for (int i = 0; i < 8 && i < sourceLen; i++) {
+            printf("%02x ", source[i]);
+        }
+        printf("\n");
+    }
+#endif
+
     if (!dest || !destLen || !source) {
+#if ZLIB_DEBUG
+        printf("[C] swift_uncompress: null pointer detected\n");
+#endif
         return Z_STREAM_ERROR;
     }
     if (sourceLen == 0 || *destLen == 0) {
+#if ZLIB_DEBUG
+        printf("[C] swift_uncompress: zero length, returning early\n");
+#endif
         *destLen = 0;
         return Z_OK;
     }
-    return uncompress(dest, destLen, source, sourceLen);
+
+    int result = uncompress(dest, destLen, source, sourceLen);
+#if ZLIB_DEBUG
+    printf("[C] swift_uncompress result=%d, final destLen=%lu\n", result, *destLen);
+#endif
+    return result;
 }
 
 int swift_uncompress2(Bytef *dest, uLongf *destLen,
                       const Bytef *source, uLong *sourceLen) {
+#if ZLIB_DEBUG
+    printf("[C] swift_uncompress2: dest=%p, destLen=%p, source=%p, sourceLen=%p\n",
+           (void*)dest, (void*)destLen, (void*)source, (void*)sourceLen);
+    if (destLen) printf("[C] *destLen=%lu\n", *destLen);
+    if (sourceLen) printf("[C] *sourceLen=%lu\n", *sourceLen);
+    if (source && sourceLen && *sourceLen > 0) {
+        printf("[C] source data (first 8 bytes): ");
+        for (int i = 0; i < 8 && i < *sourceLen; i++) {
+            printf("%02x ", source[i]);
+        }
+        printf("\n");
+    }
+#endif
+
     if (!dest || !destLen || !source || !sourceLen) {
+#if ZLIB_DEBUG
+        printf("[C] swift_uncompress2: null pointer detected\n");
+#endif
         return Z_STREAM_ERROR;
     }
     if (*sourceLen == 0 || *destLen == 0) {
+#if ZLIB_DEBUG
+        printf("[C] swift_uncompress2: zero length, returning early\n");
+#endif
         *destLen = 0;
         return Z_OK;
     }
-    // uncompress2 might not be available in all zlib versions
-    // We'll provide a fallback implementation using uncompress
+
     uLong sourceLenValue = *sourceLen;
     int result = uncompress(dest, destLen, source, sourceLenValue);
     if (result == Z_OK) {
         *sourceLen = sourceLenValue; // All input consumed
     }
+#if ZLIB_DEBUG
+    printf("[C] swift_uncompress2 result=%d, final destLen=%lu, sourceLen=%lu\n",
+           result, *destLen, *sourceLen);
+#endif
     return result;
 }
 
