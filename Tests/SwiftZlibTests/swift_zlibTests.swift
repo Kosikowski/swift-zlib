@@ -4275,11 +4275,11 @@ final class SwiftZlibTests: XCTestCase {
         try testData.write(to: URL(fileURLWithPath: sourcePath))
 
         // Compress file
-        let compressor = try FileCompressor()
+        let compressor = FileChunkedCompressor()
         try compressor.compressFile(from: sourcePath, to: compressedPath)
 
         // Decompress file
-        let decompressor = try FileDecompressor()
+        let decompressor = FileChunkedDecompressor()
         try decompressor.decompressFile(from: compressedPath, to: decompressedPath)
 
         // Verify decompressed data matches original
@@ -4334,7 +4334,7 @@ final class SwiftZlibTests: XCTestCase {
         var lastProgress = 0
 
         // Compress file with progress
-        let compressor = try FileCompressor()
+        let compressor = FileChunkedCompressor()
         try compressor.compressFile(from: sourcePath, to: destPath) { processed, total in
             progressCalls += 1
             lastProgress = processed
@@ -4506,7 +4506,6 @@ final class SwiftZlibTests: XCTestCase {
     func testFileChunkedCompressionWithDifferentBufferSizes() throws {
         let testData = String(repeating: "Hello, World! ", count: 1000).data(using: .utf8)!
         let sourcePath = "/tmp/test_buffer_source.txt"
-        let destPath = "/tmp/test_buffer_compressed.gz"
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -5087,7 +5086,7 @@ final class SwiftZlibTests: XCTestCase {
         }
         XCTAssertTrue(sawFinished)
         XCTAssertGreaterThan(lastPercentage, 0)
-        let compressedData = try await Data(contentsOf: URL(fileURLWithPath: dstPath))
+        let compressedData = try Data(contentsOf: URL(fileURLWithPath: dstPath))
         XCTAssertFalse(compressedData.isEmpty)
         try? FileManager.default.removeItem(atPath: srcPath)
         try? FileManager.default.removeItem(atPath: dstPath)
@@ -5110,7 +5109,7 @@ final class SwiftZlibTests: XCTestCase {
         }
         XCTAssertTrue(sawFinished)
         XCTAssertGreaterThan(lastPercentage, 0)
-        let decompressedData = try await Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
         XCTAssertEqual(decompressedData, testData)
         try? FileManager.default.removeItem(atPath: srcPath)
         try? FileManager.default.removeItem(atPath: dstPath)
@@ -5298,7 +5297,7 @@ final class SwiftZlibTests: XCTestCase {
         let compressor = FileChunkedCompressor()
         var progressCount = 0
 
-        for try await progress in compressor.compressFileProgressStream(
+        for try await _ in compressor.compressFileProgressStream(
             from: srcPath,
             to: dstPath,
             progressQueue: .main
@@ -5326,7 +5325,7 @@ final class SwiftZlibTests: XCTestCase {
         var progressCount = 0
         var foundationProgressValues: [Double] = []
 
-        for try await progressInfo in compressor.compressFileProgressStream(
+        for try await _ in compressor.compressFileProgressStream(
             from: srcPath,
             to: dstPath
         ) {
@@ -5473,7 +5472,7 @@ final class SwiftZlibTests: XCTestCase {
         let compressor = FileChunkedCompressor()
         var memoryReadings: [Int64] = []
 
-        for try await progress in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
+        for try await _ in compressor.compressFileProgressStream(from: srcPath, to: dstPath) {
             let memoryUsage = Int64(ProcessInfo.processInfo.physicalMemory)
             memoryReadings.append(memoryUsage)
 
@@ -5738,7 +5737,7 @@ final class SwiftZlibTests: XCTestCase {
         let decompressor = FileChunkedDecompressor()
         var progressCount = 0
 
-        for try await progress in decompressor.decompressFileProgressStream(
+        for try await _ in decompressor.decompressFileProgressStream(
             from: dstPath,
             to: decompressedPath,
             progressQueue: .main
@@ -5777,7 +5776,7 @@ final class SwiftZlibTests: XCTestCase {
         var progressCount = 0
         var foundationProgressValues: [Double] = []
 
-        for try await progressInfo in decompressor.decompressFileProgressStream(
+        for try await _ in decompressor.decompressFileProgressStream(
             from: dstPath,
             to: decompressedPath
         ) {
@@ -5870,7 +5869,7 @@ final class SwiftZlibTests: XCTestCase {
         let decompressor = FileChunkedDecompressor()
         var memoryReadings: [Int64] = []
 
-        for try await progress in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
+        for try await _ in decompressor.decompressFileProgressStream(from: dstPath, to: decompressedPath) {
             let memoryUsage = Int64(ProcessInfo.processInfo.physicalMemory)
             memoryReadings.append(memoryUsage)
 
@@ -6635,7 +6634,7 @@ final class SwiftZlibTests: XCTestCase {
         let data = "Test memory cleanup scenarios".data(using: .utf8)!
 
         // Test multiple compression/decompression cycles to ensure proper cleanup
-        for i in 1 ... 10 {
+        for _ in 1 ... 10 {
             let compressor = Compressor()
             try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
 
@@ -6656,7 +6655,7 @@ final class SwiftZlibTests: XCTestCase {
         let data = "Test memory leak prevention".data(using: .utf8)!
 
         // Test that resources are properly cleaned up after errors
-        for i in 1 ... 5 {
+        for _ in 1 ... 5 {
             do {
                 let compressor = Compressor()
                 try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
@@ -6689,7 +6688,7 @@ final class SwiftZlibTests: XCTestCase {
         let compressed = try compressor.compress(data, flush: .finish)
         XCTAssertGreaterThan(compressed.count, 0)
 
-        let midMemory = ProcessInfo.processInfo.physicalMemory
+        let _ = ProcessInfo.processInfo.physicalMemory
 
         let decompressor = Decompressor()
         try decompressor.initializeAdvanced(windowBits: .deflate)
@@ -6843,7 +6842,7 @@ final class SwiftZlibTests: XCTestCase {
 
     func testBufferOverflowScenariosAdvanced() throws {
         // Test buffer overflow scenarios
-        let data = "Test buffer overflow scenarios".data(using: .utf8)!
+        let _ = "Test buffer overflow scenarios".data(using: .utf8)!
 
         // Test with extremely large data that might cause buffer overflow
         let largeData = Data(repeating: 0x42, count: 100 * 1024) // 100KB
@@ -6864,7 +6863,7 @@ final class SwiftZlibTests: XCTestCase {
 
     func testBufferUnderflowScenarios() throws {
         // Test buffer underflow scenarios
-        let data = "Test buffer underflow".data(using: .utf8)!
+        let _ = "Test buffer underflow".data(using: .utf8)!
 
         // Test with very small data that might cause buffer underflow
         let smallData = Data([0x01, 0x02, 0x03])
@@ -7331,6 +7330,9 @@ final class SwiftZlibTests: XCTestCase {
         try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
         let compressed = try compressor.compress(data, flush: .finish)
 
+        // Verify compression worked
+        XCTAssertGreaterThan(compressed.count, 0)
+
         // Use completely random data that's definitely not valid gzip
         let invalidData = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F])
 
@@ -7451,7 +7453,7 @@ final class SwiftZlibTests: XCTestCase {
         let data = "Gzip header trailer mismatch test".data(using: .utf8)!
         let compressor = Compressor()
         try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
-        let compressed = try compressor.compress(data, flush: .finish)
+        let _ = try compressor.compress(data, flush: .finish)
 
         // Create completely invalid gzip data instead of just removing trailer
         let invalidGzipData = Data([0x1F, 0x8B, 0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) // Invalid method
