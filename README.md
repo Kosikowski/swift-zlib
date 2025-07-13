@@ -1838,7 +1838,13 @@ enum CompressionPhase: String {
 
 ## Documentation
 
-- **[Dictionary Compression Guide](doc/DICTIONARY_COMPRESSION.md)** — Comprehensive guide to dictionary compression requirements, zlib behavior, and best practices for using dictionaries with SwiftZlib.
+- [Priming Support](doc/PRIMING.md)
+- [Dictionary Compression](doc/DICTIONARY_COMPRESSION.md)
+- [Streaming API](doc/STREAMING.md)
+- [Error Handling](doc/ERROR_HANDLING.md)
+- [Gzip Support](doc/GZIP_SUPPORT.md)
+- [Testing](doc/TESTING.md)
+- [Advanced Features](doc/ADVANCED_FEATURES.md)
 
 ## Test Coverage Summary
 
