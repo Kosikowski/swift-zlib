@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: macos-14
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Select Xcode
+      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+      
+    - name: Build and test
+      run: |
+        swift build
+        swift test
+        swift build -c release --product SwiftZlibCLI
+        
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## What's Changed
+          
+          ### Features
+          - [List new features]
+          
+          ### Bug Fixes
+          - [List bug fixes]
+          
+          ### Performance
+          - [List performance improvements]
+          
+          ### Documentation
+          - [List documentation updates]
+          
+          ## Installation
+          
+          ```swift
+          dependencies: [
+              .package(url: "https://github.com/your-org/swift-zlib.git", from: "${{ github.ref_name }}")
+          ]
+          ```
+          
+          ## Breaking Changes
+          
+          [List any breaking changes or note "No breaking changes"]
+          
+          ## Migration Guide
+          
+          [If needed, provide migration steps]
+          
+        draft: false
+        prerelease: false 
