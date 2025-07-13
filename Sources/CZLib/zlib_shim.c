@@ -6,7 +6,7 @@
 // Define ZLIB_DEBUG to enable debug printf statements
 // This can be controlled via compiler flags: -DZLIB_DEBUG
 #ifndef ZLIB_DEBUG
-#define ZLIB_DEBUG 1
+#define ZLIB_DEBUG 0
 #endif
 
 #if ZLIB_DEBUG
