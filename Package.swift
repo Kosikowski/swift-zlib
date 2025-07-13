@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v12)],
     products: [
         .library(name: "SwiftZlib", targets: ["SwiftZlib"]),
+        .executable(name: "SwiftZlibCLI", targets: ["SwiftZlibCLI"]),
     ],
     targets: [
         // ① thin shim so SwiftPM can find the headers
@@ -31,6 +32,11 @@ let package = Package(
 
         .testTarget(
             name: "SwiftZlibTests",
+            dependencies: ["SwiftZlib"]
+        ),
+
+        .executableTarget(
+            name: "SwiftZlibCLI",
             dependencies: ["SwiftZlib"]
         ),
     ]
