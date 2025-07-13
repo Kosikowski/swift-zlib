@@ -7,18 +7,20 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
 ## Architecture Layers
 
 ### 1. C Bridge Layer (`CZLib`)
+
 - **Purpose**: Direct interface to the zlib C library
-- **Components**: 
+- **Components**:
   - `zlib_shim.c`: C wrapper functions
   - `zlib_shim.h`: Header declarations
   - `module.modulemap`: Swift module interface
-- **Responsibilities**: 
+- **Responsibilities**:
   - Raw C function calls
   - Memory management
   - Error code translation
   - Type bridging between C and Swift
 
 ### 2. Core Compression Layer (`Core/`)
+
 - **Purpose**: Low-level compression and decompression primitives
 - **Components**:
   - `Compressor.swift`: Deflate compression stream
@@ -33,6 +35,7 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
   - Memory-efficient streaming operations
 
 ### 3. Configuration Layer (`Core/`)
+
 - **Purpose**: Parameter management and validation
 - **Components**:
   - `CompressionLevel.swift`: Compression quality settings
@@ -47,6 +50,7 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
   - Performance optimization settings
 
 ### 4. File Operations Layer (`FileOperations/`)
+
 - **Purpose**: File-based compression and decompression
 - **Components**:
   - `FileCompressor.swift`: Simple file compression
@@ -62,6 +66,7 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
   - Format auto-detection
 
 ### 5. Async/Concurrency Layer (`Async/`)
+
 - **Purpose**: Modern Swift concurrency support
 - **Components**:
   - `AsyncCompressor.swift`: Async compression streams
@@ -75,6 +80,7 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
   - Task management
 
 ### 6. Combine Integration Layer (`API/ZLib+Combine.swift`)
+
 - **Purpose**: Reactive programming support
 - **Components**:
   - Publisher implementations for all operations
@@ -87,6 +93,7 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
   - Cancellation support
 
 ### 7. High-Level API Layer (`API/`)
+
 - **Purpose**: Simple, one-line operations
 - **Components**:
   - `ZLib.swift`: Main convenience methods
@@ -373,7 +380,9 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
 ## Design Patterns
 
 ### 1. Builder Pattern
+
 Used in `AsyncZLibStreamBuilder` and `ZLibStreamBuilder` for fluent API design:
+
 ```swift
 let stream = ZLib.asyncStream()
     .compress()
@@ -383,7 +392,9 @@ let stream = ZLib.asyncStream()
 ```
 
 ### 2. Strategy Pattern
+
 Used for compression strategies and memory levels:
+
 ```swift
 let compressor = Compressor()
 try compressor.initializeAdvanced(
@@ -393,14 +404,18 @@ try compressor.initializeAdvanced(
 ```
 
 ### 3. Factory Pattern
+
 Used in `ZLib` convenience methods to create appropriate implementations:
+
 ```swift
 // Automatically selects best implementation
 let compressed = try ZLib.compress(data)
 ```
 
 ### 4. Observer Pattern
+
 Used for progress tracking and Combine publishers:
+
 ```swift
 // Progress callbacks
 try compressor.compressFile(from: source, to: dest) { progress in
@@ -415,7 +430,9 @@ ZLib.compressFileProgressPublisher(from: source, to: dest)
 ```
 
 ### 5. Adapter Pattern
+
 Used in `InflateBackDecompressorCBridged` to bridge C callbacks to Swift:
+
 ```swift
 let inflater = InflateBackDecompressorCBridged(windowBits: .raw)
 try inflater.initialize()
@@ -425,22 +442,26 @@ let result = try inflater.processData(compressedData)
 ## API Design Principles
 
 ### 1. Progressive Disclosure
+
 - **Simple API**: `ZLib.compress(data)` for basic needs
 - **Advanced API**: `Compressor` class for fine-grained control
 - **Expert API**: Direct C bridge for specialized use cases
 
 ### 2. Type Safety
+
 - Strongly typed enums for all parameters
 - Compile-time validation of configurations
 - Clear error types with recovery suggestions
 
 ### 3. Memory Efficiency
+
 - Streaming operations for large data
 - Configurable buffer sizes
 - Automatic memory management
 - Progress tracking for long operations
 
 ### 4. Modern Swift Features
+
 - Async/await support
 - Combine integration
 - Structured concurrency
@@ -476,17 +497,20 @@ let result = try inflater.processData(compressedData)
 ## Error Handling Architecture
 
 ### 1. Error Propagation
+
 - C errors → `ZLibError` with detailed information
 - Recovery suggestions for common errors
 - Structured error types for different scenarios
 
 ### 2. Error Recovery
+
 - Automatic retry mechanisms where appropriate
 - Dictionary handling for decompression
 - Stream reset capabilities
 - Memory pressure handling
 
 ### 3. Error Context
+
 - Detailed error messages
 - Error code explanations
 - Recovery suggestions
@@ -495,18 +519,21 @@ let result = try inflater.processData(compressedData)
 ## Performance Considerations
 
 ### 1. Memory Management
+
 - Streaming operations for large files
 - Configurable buffer sizes
 - Memory pressure monitoring
 - Automatic cleanup
 
 ### 2. Concurrency
+
 - Thread-safe operations where possible
 - Per-instance concurrency model
 - Async/await for non-blocking operations
 - Combine for reactive programming
 
 ### 3. Optimization
+
 - Compression level selection
 - Memory level configuration
 - Strategy optimization
@@ -515,6 +542,7 @@ let result = try inflater.processData(compressedData)
 ## Testing Architecture
 
 ### 1. Test Organization
+
 - **Core Tests**: Basic functionality and edge cases
 - **File Operation Tests**: File I/O and streaming
 - **Async Tests**: Concurrency and async operations
@@ -523,6 +551,7 @@ let result = try inflater.processData(compressedData)
 - **Error Tests**: Error handling and recovery
 
 ### 2. Test Coverage
+
 - Unit tests for individual components
 - Integration tests for API layers
 - Performance tests for optimization
@@ -531,18 +560,21 @@ let result = try inflater.processData(compressedData)
 ## Future Architecture Considerations
 
 ### 1. Extensibility
+
 - Plugin architecture for custom formats
 - Custom compression algorithms
 - Platform-specific optimizations
 - Third-party integration points
 
 ### 2. Scalability
+
 - Distributed processing support
 - Cloud storage integration
 - Batch processing capabilities
 - Real-time streaming
 
 ### 3. Maintainability
+
 - Clear separation of concerns
 - Comprehensive documentation
 - Automated testing
@@ -551,20 +583,23 @@ let result = try inflater.processData(compressedData)
 ## Platform Support
 
 ### 1. macOS
+
 - Native zlib library
 - Full API support
 - Performance optimizations
 - Integration with system frameworks
 
 ### 2. Linux
+
 - System zlib package
 - Cross-platform compatibility
 - Command-line tool support
 - Server-side optimization
 
 ### 3. Future Platforms
+
 - iOS support (if needed)
 - Windows support (if needed)
 - WebAssembly support (if needed)
 
-This architecture provides a solid foundation for compression and decompression operations while maintaining flexibility for future enhancements and platform support. 
+This architecture provides a solid foundation for compression and decompression operations while maintaining flexibility for future enhancements and platform support.

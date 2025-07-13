@@ -18,29 +18,34 @@ A comprehensive Swift library for zlib compression and decompression with suppor
 ## 📚 Documentation
 
 ### Getting Started
+
 - **[Quick Start Guide](doc/README.md)** - Complete getting started tutorial
 - **[API Reference](doc/API_REFERENCE.md)** - Complete API documentation
 - **[Examples](doc/README.md#examples)** - Code examples and use cases
 
 ### Core Topics
+
 - **[Error Handling](doc/ERROR_HANDLING.md)** - Comprehensive error handling guide
 - **[Streaming Operations](doc/STREAMING.md)** - Memory-efficient large file processing
 - **[File Operations](doc/README.md#file-operations)** - Direct file compression/decompression
 - **[Async & Combine](doc/README.md#async--combine)** - Modern Swift concurrency
 
 ### Advanced Features
+
 - **[Dictionary Compression](doc/DICTIONARY_COMPRESSION.md)** - Custom dictionary support
 - **[Gzip Support](doc/GZIP_SUPPORT.md)** - Gzip header and metadata handling
 - **[Advanced Features](doc/ADVANCED_FEATURES.md)** - Advanced usage patterns
 - **[Priming Support](doc/PRIMING.md)** - Low-level bit manipulation
 
 ### Development
+
 - **[Architecture](doc/ARCHITECTURE.md)** - Technical architecture overview
 - **[Testing](doc/TESTING.md)** - Testing guide and best practices
 - **[CI/CD](doc/CI_CD.md)** - Continuous integration setup
 - **[API Coverage](doc/API_COVERAGE.md)** - Complete zlib API mapping
 
 ### Tools
+
 - **[CLI Tool](README_CLI.md)** - Command-line interface documentation
 - **[Performance](doc/README.md#performance)** - Performance optimization guide
 
@@ -57,6 +62,7 @@ dependencies: [
 ```
 
 Or add it directly in Xcode:
+
 1. File → Add Package Dependencies
 2. Enter: `https://github.com/your-username/swift-zlib.git`
 3. Select version and add to your target
@@ -129,18 +135,21 @@ ZLib.compressPublisher(data: data)
 ### Core Methods
 
 #### Data Compression
+
 - `Data.compress(level:strategy:)` - Compress data with specified level and strategy
 - `Data.decompress()` - Decompress data
 - `Data.compressAsync(level:strategy:)` - Async compression
 - `Data.compressPublisher(level:strategy:)` - Combine publisher for compression
 
 #### String Compression
+
 - `String.compress(level:strategy:)` - Compress string data
 - `String.decompress()` - Decompress string data
 - `String.compressAsync(level:strategy:)` - Async string compression
 - `String.compressPublisher(level:strategy:)` - Combine publisher for string compression
 
 #### File Operations
+
 - `ZLib.compressFile(from:to:level:progress:)` - Compress file with progress
 - `ZLib.decompressFile(from:to:progress:)` - Decompress file with progress
 - `ZLib.compressFileAsync(from:to:level:progress:)` - Async file compression
@@ -221,21 +230,25 @@ try await ZLib.compressFile(
 ### Common Issues
 
 **Build Errors**
+
 - Ensure you're using Swift 5.5+ and Xcode 13.0+
 - Check that the package is properly added to your target
 - Clean build folder (Cmd+Shift+K) and rebuild
 
 **Runtime Errors**
+
 - `ZLibError.invalidData`: Input data is corrupted or not compressed
 - `ZLibError.insufficientMemory`: System memory is insufficient
 - `ZLibError.streamError`: Internal zlib stream error
 
 **Performance Issues**
+
 - Use `.bestSpeed` for faster compression
 - Increase chunk size for streaming operations
 - Consider using async operations for large files
 
 **File Operation Errors**
+
 - Ensure source file exists and is readable
 - Check destination directory permissions
 - Verify sufficient disk space

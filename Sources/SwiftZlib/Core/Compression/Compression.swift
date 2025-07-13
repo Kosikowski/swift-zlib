@@ -102,10 +102,10 @@ public enum CompressionFormat: Sendable {
     /// The corresponding window bits for this format
     var windowBits: WindowBits {
         switch self {
-            case .zlib: return .deflate
-            case .gzip: return .gzip
-            case .raw: return .raw
-            case .auto: return .auto
+            case .zlib: .deflate
+            case .gzip: .gzip
+            case .raw: .raw
+            case .auto: .auto
         }
     }
 }

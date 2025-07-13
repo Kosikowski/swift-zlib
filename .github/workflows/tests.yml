@@ -2,258 +2,258 @@ name: Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   # Test on macOS with latest Xcode (newest runner)
   test-macos-latest:
     name: macOS (Xcode 15.2)
     runs-on: macos-14
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
-      
-    - name: Show Xcode version
-      run: xcodebuild -version
-      
-    - name: Show Swift version
-      run: swift --version
-      
-    - name: Build package
-      run: swift build
-      
-    - name: Run all tests
-      run: swift test --verbose
-      
-    - name: Run specific test groups
-      run: |
-        swift test --filter CoreTests
-        swift test --filter ExtensionsTests
-        swift test --filter FileOperationsTests
-        swift test --filter PerformanceTests
-        swift test --filter ErrorHandlingTests
-        swift test --filter StreamingTests
-        swift test --filter ConcurrencyTests
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Build package
+        run: swift build
+
+      - name: Run all tests
+        run: swift test --verbose
+
+      - name: Run specific test groups
+        run: |
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter PerformanceTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
 
   # Test on Linux (Ubuntu)
   test-linux:
     name: Linux (Ubuntu 22.04)
     runs-on: ubuntu-22.04
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Install Swift
-      uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: '5.9'
-        gpg-private-key: ''
-        
-    - name: Show Swift version
-      run: swift --version
-      
-    - name: Install zlib development headers
-      run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
-      
-    - name: Build package
-      run: swift build
-      
-    - name: Run all tests
-      run: swift test --verbose
-      
-    - name: Run specific test groups
-      run: |
-        swift test --filter CoreTests
-        swift test --filter ExtensionsTests
-        swift test --filter FileOperationsTests
-        swift test --filter PerformanceTests
-        swift test --filter ErrorHandlingTests
-        swift test --filter StreamingTests
-        swift test --filter ConcurrencyTests
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+          gpg-private-key: ""
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Install zlib development headers
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Build package
+        run: swift build
+
+      - name: Run all tests
+        run: swift test --verbose
+
+      - name: Run specific test groups
+        run: |
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter PerformanceTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
     name: Linux (Ubuntu 22.04, Swift 5.9)
     runs-on: ubuntu-22.04
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Install Swift
-      uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: '5.9'
-        gpg-private-key: ''
-        
-    - name: Show Swift version
-      run: swift --version
-      
-    - name: Install zlib development headers
-      run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
-      
-    - name: Build package
-      run: swift build
-      
-    - name: Run all tests
-      run: swift test --verbose
-      
-    - name: Run specific test groups
-      run: |
-        swift test --filter CoreTests
-        swift test --filter ExtensionsTests
-        swift test --filter FileOperationsTests
-        swift test --filter PerformanceTests
-        swift test --filter ErrorHandlingTests
-        swift test --filter StreamingTests
-        swift test --filter ConcurrencyTests
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+          gpg-private-key: ""
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Install zlib development headers
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Build package
+        run: swift build
+
+      - name: Run all tests
+        run: swift test --verbose
+
+      - name: Run specific test groups
+        run: |
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter PerformanceTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
 
   # Build and test CLI tool
   test-cli:
     name: CLI Tool Tests
     runs-on: macos-14
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
-      
-    - name: Build CLI tool
-      run: swift build -c release --product SwiftZlibCLI
-      
-    - name: Test CLI functionality
-      run: |
-        # Test help command
-        .build/release/SwiftZlibCLI --help
-        
-        # Test info command
-        .build/release/SwiftZlibCLI info
-        
-        # Create test file in a writable location
-        echo "test data for SwiftZlib CLI testing" > /tmp/test.txt
-        
-        # Test compression
-        .build/release/SwiftZlibCLI compress /tmp/test.txt /tmp/test.txt.gz
-        
-        # Test decompression
-        .build/release/SwiftZlibCLI decompress /tmp/test.txt.gz /tmp/test_decompressed.txt
-        
-        # Verify round-trip
-        diff /tmp/test.txt /tmp/test_decompressed.txt
-        
-        # Show file sizes for debugging
-        echo "File sizes:"
-        ls -la /tmp/test*.txt*
-        
-        # Clean up
-        rm -f /tmp/test.txt /tmp/test.txt.gz /tmp/test_decompressed.txt
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Build CLI tool
+        run: swift build -c release --product SwiftZlibCLI
+
+      - name: Test CLI functionality
+        run: |
+          # Test help command
+          .build/release/SwiftZlibCLI --help
+
+          # Test info command
+          .build/release/SwiftZlibCLI info
+
+          # Create test file in a writable location
+          echo "test data for SwiftZlib CLI testing" > /tmp/test.txt
+
+          # Test compression
+          .build/release/SwiftZlibCLI compress /tmp/test.txt /tmp/test.txt.gz
+
+          # Test decompression
+          .build/release/SwiftZlibCLI decompress /tmp/test.txt.gz /tmp/test_decompressed.txt
+
+          # Verify round-trip
+          diff /tmp/test.txt /tmp/test_decompressed.txt
+
+          # Show file sizes for debugging
+          echo "File sizes:"
+          ls -la /tmp/test*.txt*
+
+          # Clean up
+          rm -f /tmp/test.txt /tmp/test.txt.gz /tmp/test_decompressed.txt
 
   # Performance benchmarks
   benchmark:
     name: Performance Benchmarks
     runs-on: macos-14
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
-      
-    - name: Run performance tests
-      run: |
-        swift test --filter PerformanceTests --verbose
-        swift test --filter "testCompressionPerformance" --verbose
-        swift test --filter "testDecompressionPerformance" --verbose
-        swift test --filter "testMemoryEfficiency" --verbose
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Run performance tests
+        run: |
+          swift test --filter PerformanceTests --verbose
+          swift test --filter "testCompressionPerformance" --verbose
+          swift test --filter "testDecompressionPerformance" --verbose
+          swift test --filter "testMemoryEfficiency" --verbose
 
   # Code quality checks
   code-quality:
     name: Code Quality
     runs-on: macos-14
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
-      
-    - name: Install Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        
-    - name: Install pre-commit
-      run: |
-        pip install pre-commit
-        
-    - name: Install SwiftFormat
-      run: |
-        brew install swiftformat
-        
-    - name: Run pre-commit hooks
-      run: |
-        pre-commit run --all-files
-        
-    - name: Check Swift formatting
-      run: |
-        if command -v swiftformat &> /dev/null; then
-          swiftformat --lint Sources/ Tests/
-        else
-          echo "SwiftFormat not installed, skipping format check"
-        fi
-      
-    - name: Check for TODO/FIXME comments
-      run: |
-        if grep -r "TODO\|FIXME" Sources/ Tests/; then
-          echo "Found TODO/FIXME comments in code"
-          exit 1
-        fi
-      
-    - name: Check documentation coverage
-      run: |
-        # Check that all public APIs have documentation comments
-        find Sources/ -name "*.swift" -exec grep -l "public" {} \; | while read file; do
-          if ! grep -q "///" "$file"; then
-            echo "Warning: $file has public APIs but no documentation comments"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+
+      - name: Install SwiftFormat
+        run: |
+          brew install swiftformat
+
+      - name: Run pre-commit hooks
+        run: |
+          pre-commit run --all-files
+
+      - name: Check Swift formatting
+        run: |
+          if command -v swiftformat &> /dev/null; then
+            swiftformat --lint Sources/ Tests/
+          else
+            echo "SwiftFormat not installed, skipping format check"
           fi
-        done
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          if grep -r "TODO\|FIXME" Sources/ Tests/; then
+            echo "Found TODO/FIXME comments in code"
+            exit 1
+          fi
+
+      - name: Check documentation coverage
+        run: |
+          # Check that all public APIs have documentation comments
+          find Sources/ -name "*.swift" -exec grep -l "public" {} \; | while read file; do
+            if ! grep -q "///" "$file"; then
+              echo "Warning: $file has public APIs but no documentation comments"
+            fi
+          done
 
   # Security and dependency checks
   security:
     name: Security Checks
     runs-on: macos-14
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
-      
-    - name: Check for known vulnerabilities
-      run: |
-        # This would integrate with security scanning tools
-        echo "Security checks would run here"
-        echo "Consider integrating with tools like:"
-        echo "- GitHub CodeQL"
-        echo "- Snyk"
-        echo "- OWASP ZAP"
-      
-    - name: Check package dependencies
-      run: |
-        swift package show-dependencies
-        swift package resolve
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Check for known vulnerabilities
+        run: |
+          # This would integrate with security scanning tools
+          echo "Security checks would run here"
+          echo "Consider integrating with tools like:"
+          echo "- GitHub CodeQL"
+          echo "- Snyk"
+          echo "- OWASP ZAP"
+
+      - name: Check package dependencies
+        run: |
+          swift package show-dependencies
+          swift package resolve
 
   # Build verification
   build-verification:
@@ -275,8 +275,8 @@ jobs:
         if: matrix.platform == 'linux'
         uses: swift-actions/setup-swift@v2
         with:
-          swift-version: '5.9'
-          gpg-private-key: ''
+          swift-version: "5.9"
+          gpg-private-key: ""
 
       - name: Install zlib (Linux)
         if: matrix.platform == 'linux'
@@ -293,4 +293,4 @@ jobs:
         run: swift test -c ${{ matrix.configuration }}
 
       - name: Build CLI tool
-        run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI 
+        run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI

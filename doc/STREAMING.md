@@ -5,6 +5,7 @@ SwiftZlib provides powerful streaming capabilities for processing large data wit
 ## Overview
 
 Streaming compression and decompression allows you to process data in chunks, making it ideal for:
+
 - Large files that don't fit in memory
 - Real-time data processing
 - Network streaming
@@ -76,15 +77,15 @@ compressedData.append(final)
 class CustomStreamProcessor {
     private let stream: ZLibStream
     private var outputBuffer = Data()
-    
+
     init(config: StreamingConfig) {
         self.stream = ZLibStream(config: config)
     }
-    
+
     func processChunk(_ data: Data) throws -> Data? {
         let compressed = try stream.compress(data)
         outputBuffer.append(compressed)
-        
+
         // Return chunks when buffer is large enough
         if outputBuffer.count > 1024 * 1024 {
             let result = outputBuffer
@@ -93,7 +94,7 @@ class CustomStreamProcessor {
         }
         return nil
     }
-    
+
     func finish() throws -> Data {
         let final = try stream.finish()
         outputBuffer.append(final)
@@ -239,7 +240,7 @@ let memoryConfig = StreamingConfig(chunkSize: 16 * 1024)
 ```swift
 func safeCompress(input: String, output: String) throws {
     let stream = ZLibStream(config: .default)
-    
+
     do {
         try stream.compressFile(from: input, to: output)
     } catch {
@@ -288,16 +289,19 @@ let desktopConfig = StreamingConfig(
 ### Common Issues
 
 **Memory Pressure**
+
 - Reduce chunk size
 - Use lower memory level
 - Process smaller files
 
 **Poor Performance**
+
 - Increase chunk size
 - Use higher memory level
 - Choose appropriate compression level
 
 **Stream Errors**
+
 - Check input data validity
 - Verify file permissions
 - Ensure sufficient disk space
@@ -326,9 +330,9 @@ func processLargeFile(input: String, output: String) async throws {
         compressionLevel: .best,
         memoryLevel: .default
     )
-    
+
     let stream = ZLibStream(config: config)
-    
+
     try await withCheckedThrowingContinuation { continuation in
         do {
             try stream.compressFile(
@@ -352,7 +356,7 @@ func processLargeFile(input: String, output: String) async throws {
 class NetworkStreamProcessor {
     private let stream: ZLibStream
     private let networkClient: NetworkClient
-    
+
     init() {
         let config = StreamingConfig(
             chunkSize: 8 * 1024,
@@ -361,17 +365,17 @@ class NetworkStreamProcessor {
         self.stream = ZLibStream(config: config)
         self.networkClient = NetworkClient()
     }
-    
+
     func streamToNetwork(data: Data) async throws {
         for chunk in data.chunked(into: 8 * 1024) {
             let compressed = try stream.compress(chunk)
             try await networkClient.send(compressed)
         }
-        
+
         let final = try stream.finish()
         try await networkClient.send(final)
     }
 }
 ```
 
-This streaming documentation provides comprehensive coverage of streaming capabilities, configuration options, best practices, and real-world usage patterns. 
+This streaming documentation provides comprehensive coverage of streaming capabilities, configuration options, best practices, and real-world usage patterns.

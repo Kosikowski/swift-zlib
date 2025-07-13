@@ -8,30 +8,33 @@ The CI pipeline runs on every push to `main`/`develop` branches and on all pull 
 
 ### Test Matrix
 
-| Platform | Runner | Xcode/Swift | Purpose |
-|----------|--------|-------------|---------|
-| macOS 12 | `macos-12` | Xcode 14.3 | Legacy compatibility |
-| macOS 14 | `macos-14` | Xcode 15.2 | Latest features |
-| Ubuntu 22.04 | `ubuntu-22.04` | Swift 5.9 | Linux compatibility |
-| Ubuntu 22.04 | `ubuntu-22.04` | Swift 5.10 | Latest Swift |
+| Platform     | Runner         | Xcode/Swift | Purpose              |
+| ------------ | -------------- | ----------- | -------------------- |
+| macOS 12     | `macos-12`     | Xcode 14.3  | Legacy compatibility |
+| macOS 14     | `macos-14`     | Xcode 15.2  | Latest features      |
+| Ubuntu 22.04 | `ubuntu-22.04` | Swift 5.9   | Linux compatibility  |
+| Ubuntu 22.04 | `ubuntu-22.04` | Swift 5.10  | Latest Swift         |
 
 ## Jobs Breakdown
 
 ### 1. Platform Testing
 
 #### macOS (Legacy)
+
 - **Runner**: `macos-12`
 - **Xcode**: 14.3
 - **Purpose**: Ensure compatibility with older macOS/Xcode versions
 - **Tests**: All test suites + specific test groups
 
 #### macOS (Latest)
+
 - **Runner**: `macos-14`
 - **Xcode**: 15.2
 - **Purpose**: Test with latest macOS/Xcode features
 - **Tests**: All test suites + specific test groups
 
 #### Linux (Stable)
+
 - **Runner**: `ubuntu-22.04`
 - **Swift**: 5.9
 - **Purpose**: Linux compatibility testing
@@ -39,6 +42,7 @@ The CI pipeline runs on every push to `main`/`develop` branches and on all pull 
 - **Tests**: All test suites + specific test groups
 
 #### Linux (Latest)
+
 - **Runner**: `ubuntu-22.04`
 - **Swift**: 5.10
 - **Purpose**: Latest Swift features on Linux
@@ -189,6 +193,7 @@ done
 ### Common Issues
 
 #### Build Failures
+
 ```bash
 # Clean and rebuild
 swift package clean
@@ -197,6 +202,7 @@ swift test
 ```
 
 #### Test Discovery Issues
+
 ```bash
 # List all tests
 swift test --list-tests
@@ -206,6 +212,7 @@ grep -r "static var allTests" Tests/
 ```
 
 #### Performance Test Failures
+
 ```bash
 # Run performance tests separately
 swift test --filter PerformanceTests --verbose
@@ -215,6 +222,7 @@ top -l 1 | head -10
 ```
 
 #### Linux-Specific Issues
+
 ```bash
 # Ensure zlib headers are installed
 sudo apt-get update && sudo apt-get install -y zlib1g-dev
@@ -227,12 +235,14 @@ which swift
 ### Debugging CI
 
 #### Enable Debug Output
+
 ```yaml
 - name: Run tests with debug
   run: swift test --verbose --debug-info
 ```
 
 #### Check Environment
+
 ```yaml
 - name: Debug environment
   run: |
@@ -243,6 +253,7 @@ which swift
 ```
 
 #### Test Specific Components
+
 ```yaml
 - name: Test specific component
   run: swift test --filter "testSpecificFunction"
@@ -253,21 +264,25 @@ which swift
 ### Planned Improvements
 
 1. **Code Coverage**
+
    - Add code coverage reporting
    - Set minimum coverage thresholds
    - Coverage trend analysis
 
 2. **Performance Monitoring**
+
    - Performance regression detection
    - Benchmark result storage
    - Performance trend analysis
 
 3. **Security Scanning**
+
    - GitHub CodeQL integration
    - Dependency vulnerability scanning
    - SAST/DAST integration
 
 4. **Deployment Automation**
+
    - Automatic releases on tags
    - Documentation deployment
    - Package distribution
@@ -309,4 +324,4 @@ which swift
 - Security vulnerabilities
 - Code quality degradation
 
-This CI/CD setup ensures SwiftZlib maintains high quality, cross-platform compatibility, and reliable performance across all supported environments. 
+This CI/CD setup ensures SwiftZlib maintains high quality, cross-platform compatibility, and reliable performance across all supported environments.

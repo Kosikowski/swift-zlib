@@ -134,23 +134,23 @@ public enum MemoryLevel: Int32, Sendable {
     public var performanceDescription: String {
         switch self {
             case .minimum:
-                return "Slowest (memory-optimized)"
+                "Slowest (memory-optimized)"
             case .level2:
-                return "Very slow"
+                "Very slow"
             case .level3:
-                return "Slow"
+                "Slow"
             case .level4:
-                return "Moderate"
+                "Moderate"
             case .level5:
-                return "Good"
+                "Good"
             case .level6:
-                return "Very good"
+                "Very good"
             case .level7:
-                return "Excellent"
+                "Excellent"
             case .level8:
-                return "Near optimal"
+                "Near optimal"
             case .maximum:
-                return "Fastest (speed-optimized)"
+                "Fastest (speed-optimized)"
         }
     }
 }

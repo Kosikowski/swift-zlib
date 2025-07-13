@@ -206,29 +206,29 @@ func validateGzipHeader(_ header: GzipHeader) -> Bool {
     if let timestamp = header.timestamp {
         let now = Date()
         let timeDifference = now.timeIntervalSince(timestamp)
-        
+
         // Timestamp should not be in the future
         if timeDifference < 0 {
             return false
         }
-        
+
         // Timestamp should not be too old (e.g., > 100 years)
         if timeDifference > 3153600000 { // 100 years in seconds
             return false
         }
     }
-    
+
     // Check operating system
     let validOS: [UInt8] = [0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     if !validOS.contains(header.operatingSystem) {
         return false
     }
-    
+
     // Check compression level
     if header.compressionLevel > 9 {
         return false
     }
-    
+
     return true
 }
 ```
@@ -284,15 +284,15 @@ func processGzipFiles(_ files: [String]) async throws {
     for file in files {
         // Extract header information
         let header = try ZLib.extractGzipHeader(from: file)
-        
+
         print("Processing \(file):")
         print("  Original filename: \(header.filename ?? "Unknown")")
         print("  Comment: \(header.comment ?? "None")")
-        
+
         // Decompress with header preservation
         let outputFile = file.replacingOccurrences(of: ".gz", with: "")
         try ZLib.decompressFileGzip(from: file, to: outputFile)
-        
+
         // Optionally recompress with updated header
         let updatedHeader = GzipHeader(
             filename: header.filename,
@@ -302,7 +302,7 @@ func processGzipFiles(_ files: [String]) async throws {
             extraFlags: header.extraFlags,
             compressionLevel: header.compressionLevel
         )
-        
+
         try ZLib.compressFileGzip(
             from: outputFile,
             to: "processed_\(file)",
@@ -338,15 +338,15 @@ func handleGzipErrors(_ data: Data) {
 func validateGzipFile(_ filePath: String) throws -> Bool {
     do {
         let header = try ZLib.extractGzipHeader(from: filePath)
-        
+
         // Validate header
         guard validateGzipHeader(header) else {
             throw ZLibError.invalidGzipHeader
         }
-        
+
         // Test decompression
         let testData = try ZLib.decompressFileGzip(from: filePath)
-        
+
         return true
     } catch {
         print("Gzip validation failed: \(error)")
@@ -411,14 +411,14 @@ func safeGzipDecompression(_ filePath: String) throws -> Data {
 func compressWithMetadata(_ filePath: String) throws {
     let fileAttributes = try FileManager.default.attributesOfItem(atPath: filePath)
     let creationDate = fileAttributes[.creationDate] as? Date ?? Date()
-    
+
     let header = GzipHeader(
         filename: URL(fileURLWithPath: filePath).lastPathComponent,
         comment: "Original creation: \(creationDate)",
         timestamp: creationDate,
         operatingSystem: 3
     )
-    
+
     let outputPath = "\(filePath).gz"
     try ZLib.compressFileGzip(
         from: filePath,
@@ -438,14 +438,14 @@ func compressLargeFileGzip(_ inputPath: String, _ outputPath: String) throws {
         chunkSize: 256 * 1024, // 256KB chunks
         compressionLevel: .best
     )
-    
+
     let stream = ZLibStream(config: config)
-    
+
     try stream.startGzipCompression(
         filename: URL(fileURLWithPath: inputPath).lastPathComponent,
         comment: "Large file compression"
     )
-    
+
     try stream.compressFile(from: inputPath, to: outputPath)
 }
 ```
@@ -458,13 +458,13 @@ func processGzipFilesEfficiently(_ files: [String]) async throws {
         chunkSize: 64 * 1024,
         memoryLevel: .min
     )
-    
+
     for file in files {
         let stream = ZLibStream(config: config)
-        
+
         // Extract header without full decompression
         let header = try ZLib.extractGzipHeader(from: file)
-        
+
         // Process with minimal memory usage
         try await stream.decompressFileGzip(
             from: file,
@@ -477,4 +477,4 @@ func processGzipFilesEfficiently(_ files: [String]) async throws {
 }
 ```
 
-This gzip support documentation provides comprehensive coverage of gzip header handling, metadata management, file operations, and best practices for working with gzip files in SwiftZlib. 
+This gzip support documentation provides comprehensive coverage of gzip header handling, metadata management, file operations, and best practices for working with gzip files in SwiftZlib.

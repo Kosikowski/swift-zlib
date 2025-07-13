@@ -10,7 +10,7 @@ echo "🚀 Setting up pre-commit hooks for SwiftZlib..."
 # Check if pre-commit is installed
 if ! command -v pre-commit &> /dev/null; then
     echo "📦 Installing pre-commit..."
-    
+
     # Try different installation methods
     if command -v pip3 &> /dev/null; then
         pip3 install pre-commit
@@ -32,7 +32,7 @@ fi
 # Check if SwiftFormat is installed
 if ! command -v swiftformat &> /dev/null; then
     echo "📦 Installing SwiftFormat..."
-    
+
     if command -v brew &> /dev/null; then
         brew install swiftformat
     else
@@ -67,4 +67,4 @@ echo "   pre-commit run                # Run hooks on staged files"
 echo "   pre-commit clean              # Clean pre-commit cache"
 echo "   pre-commit uninstall          # Remove pre-commit hooks"
 echo ""
-echo "💡 The hooks will now run automatically on commit!" 
+echo "💡 The hooks will now run automatically on commit!"

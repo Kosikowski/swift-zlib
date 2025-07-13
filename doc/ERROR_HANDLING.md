@@ -43,7 +43,7 @@ enum ZLibStatus: Int32 {
 ```swift
 func handleInvalidData() {
     let invalidData = "This is not compressed data".data(using: .utf8)!
-    
+
     do {
         let decompressed = try invalidData.decompress()
     } catch ZLibError.invalidData {
@@ -59,7 +59,7 @@ func handleInvalidData() {
 ```swift
 func handleMemoryError() {
     let largeData = generateVeryLargeData() // 1GB+
-    
+
     do {
         let compressed = try largeData.compress(level: .best)
     } catch ZLibError.insufficientMemory {
@@ -76,7 +76,7 @@ func compressWithLowerMemory(_ data: Data) throws -> Data {
         chunkSize: 16 * 1024,  // Smaller chunks
         memoryLevel: .min       // Minimal memory
     )
-    
+
     let stream = ZLibStream(config: config)
     return try stream.compress(data)
 }
@@ -115,12 +115,12 @@ func handleFileErrors() {
         try ZLib.compressFile(from: "nonexistent.txt", to: "output.gz")
     } catch ZLibError.fileError(let message) {
         print("File operation failed: \(message)")
-        
+
         // Check if file exists
         if !FileManager.default.fileExists(atPath: "nonexistent.txt") {
             print("Source file does not exist")
         }
-        
+
         // Check permissions
         if !FileManager.default.isReadableFile(atPath: "nonexistent.txt") {
             print("Cannot read source file")
@@ -160,7 +160,7 @@ func compressWithFallback(_ data: Data) -> Data {
 ```swift
 func compressWithProgressiveFallback(_ data: Data) throws -> Data {
     let memoryLevels: [MemoryLevel] = [.max, .default, .min]
-    
+
     for memoryLevel in memoryLevels {
         do {
             let config = StreamingConfig(
@@ -173,7 +173,7 @@ func compressWithProgressiveFallback(_ data: Data) throws -> Data {
             continue // Try next memory level
         }
     }
-    
+
     throw ZLibError.insufficientMemory
 }
 ```
@@ -184,11 +184,11 @@ func compressWithProgressiveFallback(_ data: Data) throws -> Data {
 func compressLargeData(_ data: Data) throws -> Data {
     let chunkSize = 1024 * 1024 // 1MB chunks
     var compressedData = Data()
-    
+
     for i in stride(from: 0, to: data.count, by: chunkSize) {
         let endIndex = min(i + chunkSize, data.count)
         let chunk = data[i..<endIndex]
-        
+
         do {
             let compressed = try chunk.compress(level: .best)
             compressedData.append(compressed)
@@ -199,7 +199,7 @@ func compressLargeData(_ data: Data) throws -> Data {
             compressedData.append(compressed)
         }
     }
-    
+
     return compressedData
 }
 ```
@@ -209,7 +209,7 @@ func compressLargeData(_ data: Data) throws -> Data {
 ```swift
 func compressWithRetry(_ data: Data, maxRetries: Int = 3) throws -> Data {
     var lastError: Error?
-    
+
     for attempt in 1...maxRetries {
         do {
             return try data.compress(level: .best)
@@ -223,7 +223,7 @@ func compressWithRetry(_ data: Data, maxRetries: Int = 3) throws -> Data {
             break
         }
     }
-    
+
     throw lastError ?? ZLibError.unsupportedOperation("Unknown error")
 }
 ```
@@ -235,30 +235,30 @@ func compressWithRetry(_ data: Data, maxRetries: Int = 3) throws -> Data {
 ```swift
 func debugCompression(_ data: Data) {
     print("Input data size: \(data.count) bytes")
-    
+
     do {
         let compressed = try data.compress(level: .best)
         print("Compression successful")
         print("Compressed size: \(compressed.count) bytes")
         print("Compression ratio: \(Double(compressed.count) / Double(data.count))")
-        
+
         let decompressed = try compressed.decompress()
         print("Decompression successful")
         print("Round-trip verification: \(data == decompressed ? "PASS" : "FAIL")")
-        
+
     } catch ZLibError.invalidData {
         print("ERROR: Invalid input data")
         print("Data preview: \(data.prefix(100))")
-        
+
     } catch ZLibError.insufficientMemory {
         print("ERROR: Insufficient memory")
         print("Available memory: \(ProcessInfo.processInfo.physicalMemory)")
         print("Data size: \(data.count)")
-        
+
     } catch ZLibError.streamError(let status) {
         print("ERROR: Stream error - \(status)")
         print("Status code: \(status.rawValue)")
-        
+
     } catch {
         print("ERROR: \(error)")
         print("Error type: \(type(of: error))")
@@ -272,20 +272,20 @@ func debugCompression(_ data: Data) {
 func monitorMemoryUsage<T>(_ operation: () throws -> T) throws -> T {
     let startMemory = getMemoryUsage()
     print("Memory before operation: \(startMemory) MB")
-    
+
     let result = try operation()
-    
+
     let endMemory = getMemoryUsage()
     print("Memory after operation: \(endMemory) MB")
     print("Memory delta: \(endMemory - startMemory) MB")
-    
+
     return result
 }
 
 func getMemoryUsage() -> Double {
     var info = mach_task_basic_info()
     var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
-    
+
     let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
         $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
             task_info(mach_task_self_,
@@ -294,7 +294,7 @@ func getMemoryUsage() -> Double {
                      &count)
         }
     }
-    
+
     if kerr == KERN_SUCCESS {
         return Double(info.resident_size) / 1024.0 / 1024.0
     } else {
@@ -312,7 +312,7 @@ func debugStreamState(_ stream: ZLibStream) {
     print("  Chunk size: \(stream.config.chunkSize)")
     print("  Memory level: \(stream.config.memoryLevel)")
     print("  Compression level: \(stream.config.compressionLevel)")
-    
+
     // Check stream health
     do {
         let testData = "test".data(using: .utf8)!
@@ -393,7 +393,7 @@ func compressWithDegradation(_ data: Data) -> Data {
         (.default, "Default compression"),
         (.noCompression, "No compression")
     ]
-    
+
     for (level, description) in approaches {
         do {
             let compressed = try data.compress(level: level)
@@ -404,7 +404,7 @@ func compressWithDegradation(_ data: Data) -> Data {
             continue
         }
     }
-    
+
     // If all approaches fail, return original data
     print("All compression approaches failed, returning original data")
     return data
@@ -423,9 +423,9 @@ func logCompressionError(_ error: Error, data: Data, context: String) {
     Error description: \(error.localizedDescription)
     Timestamp: \(Date())
     """
-    
+
     print(errorInfo)
-    
+
     // Optionally save to log file
     if let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
         let logFile = documentsPath.appendingPathComponent("compression_errors.log")
@@ -443,11 +443,11 @@ func validateInput(_ data: Data) throws {
     guard !data.isEmpty else {
         throw ZLibError.invalidData
     }
-    
+
     guard data.count <= 100 * 1024 * 1024 else { // 100MB limit
         throw ZLibError.unsupportedOperation("Data too large: \(data.count) bytes")
     }
-    
+
     // Check for common invalid patterns
     if data.count > 0 && data.allSatisfy({ $0 == 0 }) {
         throw ZLibError.invalidData
@@ -462,11 +462,11 @@ func compressWithResourceManagement(_ data: Data) throws -> Data {
     // Check available memory
     let availableMemory = ProcessInfo.processInfo.physicalMemory
     let requiredMemory = UInt64(data.count * 10) // Estimate 10x for compression
-    
+
     guard availableMemory > requiredMemory else {
         throw ZLibError.insufficientMemory
     }
-    
+
     // Use autorelease pool for memory management
     return try autoreleasepool {
         try data.compress(level: .best)
@@ -481,11 +481,11 @@ func validateStreamConfig(_ config: StreamingConfig) throws {
     guard config.chunkSize > 0 else {
         throw ZLibError.unsupportedOperation("Invalid chunk size: \(config.chunkSize)")
     }
-    
+
     guard config.chunkSize <= 100 * 1024 * 1024 else { // 100MB limit
         throw ZLibError.unsupportedOperation("Chunk size too large: \(config.chunkSize)")
     }
-    
+
     // Validate memory level
     switch config.memoryLevel {
     case .min, .default, .max:
@@ -496,4 +496,4 @@ func validateStreamConfig(_ config: StreamingConfig) throws {
 }
 ```
 
-This error handling guide provides comprehensive coverage of error scenarios, recovery strategies, debugging techniques, and best practices for robust error handling in SwiftZlib applications. 
+This error handling guide provides comprehensive coverage of error scenarios, recovery strategies, debugging techniques, and best practices for robust error handling in SwiftZlib applications.

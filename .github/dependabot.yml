@@ -28,4 +28,4 @@ updates:
     commit-message:
       prefix: "deps"
       prefix-development: "deps"
-      include: "scope" 
+      include: "scope"

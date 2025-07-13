@@ -241,13 +241,13 @@ let compressed = try smallData.compress(level: .best, strategy: .fixed)
 
 ### Strategy Guidelines
 
-| Strategy | Best For | Use Cases |
-|----------|----------|-----------|
-| `.default` | General data | Text, mixed content |
-| `.filtered` | Image data | PNG, JPEG, raw images |
-| `.huffman` | Pre-filtered data | Already processed data |
-| `.rle` | Data with runs | Repeated patterns |
-| `.fixed` | Small data | Headers, metadata |
+| Strategy    | Best For          | Use Cases              |
+| ----------- | ----------------- | ---------------------- |
+| `.default`  | General data      | Text, mixed content    |
+| `.filtered` | Image data        | PNG, JPEG, raw images  |
+| `.huffman`  | Pre-filtered data | Already processed data |
+| `.rle`      | Data with runs    | Repeated patterns      |
+| `.fixed`    | Small data        | Headers, metadata      |
 
 ## Performance Optimization
 
@@ -361,7 +361,7 @@ func compressBatch(_ files: [String]) async throws -> [String] {
         chunkSize: 64 * 1024,
         compressionLevel: .best
     )
-    
+
     return try await withThrowingTaskGroup(of: String.self) { group in
         for file in files {
             group.addTask {
@@ -374,7 +374,7 @@ func compressBatch(_ files: [String]) async throws -> [String] {
                 return output
             }
         }
-        
+
         var results: [String] = []
         for try await result in group {
             results.append(result)
@@ -390,17 +390,17 @@ func compressBatch(_ files: [String]) async throws -> [String] {
 class CustomStreamProcessor {
     private let stream: ZLibStream
     private let processor: (Data) -> Data
-    
+
     init(config: StreamingConfig, processor: @escaping (Data) -> Data) {
         self.stream = ZLibStream(config: config)
         self.processor = processor
     }
-    
+
     func processAndCompress(_ data: Data) throws -> Data {
         let processed = processor(data)
         return try stream.compress(processed)
     }
-    
+
     func finish() throws -> Data {
         return try stream.finish()
     }
@@ -428,22 +428,22 @@ func processLargeFileEfficiently(input: String, output: String) throws {
         memoryLevel: .min,      // Minimal memory
         compressionLevel: .bestSpeed  // Fast compression
     )
-    
+
     let stream = ZLibStream(config: config)
-    
+
     let inputHandle = try FileHandle(forReadingFrom: URL(fileURLWithPath: input))
     let outputHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: output))
-    
+
     defer {
         try? inputHandle.close()
         try? outputHandle.close()
     }
-    
+
     while let chunk = try inputHandle.read(upToCount: 16 * 1024) {
         let compressed = try stream.compress(chunk)
         try outputHandle.write(contentsOf: compressed)
     }
-    
+
     let final = try stream.finish()
     try outputHandle.write(contentsOf: final)
 }
@@ -456,7 +456,7 @@ func processLargeFileEfficiently(input: String, output: String) throws {
 ```swift
 func compressWithProgress(_ data: Data) -> AnyPublisher<Double, Never> {
     let progressSubject = PassthroughSubject<Double, Never>()
-    
+
     Task {
         do {
             let compressed = try await data.compressAsync(level: .best)
@@ -466,7 +466,7 @@ func compressWithProgress(_ data: Data) -> AnyPublisher<Double, Never> {
             progressSubject.send(completion: .finished)
         }
     }
-    
+
     return progressSubject.eraseToAnyPublisher()
 }
 ```
@@ -478,12 +478,12 @@ class ProgressTracker {
     private let totalSize: Int
     private var processedSize: Int = 0
     private let progressCallback: (Double) -> Void
-    
+
     init(totalSize: Int, progressCallback: @escaping (Double) -> Void) {
         self.totalSize = totalSize
         self.progressCallback = progressCallback
     }
-    
+
     func updateProgress(_ additionalSize: Int) {
         processedSize += additionalSize
         let progress = Double(processedSize) / Double(totalSize)
@@ -495,9 +495,9 @@ func compressWithCustomProgress(_ data: Data) async throws -> Data {
     let tracker = ProgressTracker(totalSize: data.count) { progress in
         print("Progress: \(Int(progress * 100))%")
     }
-    
+
     return try await data.compressAsync(level: .best)
 }
 ```
 
-This advanced features documentation covers all the sophisticated capabilities of SwiftZlib, from modern Swift concurrency to performance optimization and custom processing patterns. 
+This advanced features documentation covers all the sophisticated capabilities of SwiftZlib, from modern Swift concurrency to performance optimization and custom processing patterns.

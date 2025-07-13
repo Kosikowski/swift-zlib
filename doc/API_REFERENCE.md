@@ -19,6 +19,7 @@ enum ZLibError: Error, LocalizedError {
 **Description**: Main error type for zlib-related operations.
 
 **Cases**:
+
 - `invalidData`: Input data is corrupted or not compressed
 - `insufficientMemory`: System memory is insufficient for operation
 - `streamError(ZLibStatus)`: Internal zlib stream error with status code
@@ -114,6 +115,7 @@ func compress(
 **Description**: Compresses data using zlib DEFLATE algorithm.
 
 **Parameters**:
+
 - `level`: Compression level (default: `.default`)
 - `strategy`: Compression strategy (default: `.default`)
 - `dictionary`: Optional dictionary for compression (default: `nil`)
@@ -123,6 +125,7 @@ func compress(
 **Throws**: `ZLibError` on compression failure
 
 **Example**:
+
 ```swift
 let data = "Hello, World!".data(using: .utf8)!
 let compressed = try data.compress(level: .best)
@@ -175,6 +178,7 @@ func decompress() throws -> Data
 **Throws**: `ZLibError` on decompression failure
 
 **Example**:
+
 ```swift
 let decompressed = try compressedData.decompress()
 ```
@@ -224,6 +228,7 @@ func compress(
 **Throws**: `ZLibError` on compression failure
 
 **Example**:
+
 ```swift
 let text = "Hello, World!"
 let compressed = try text.compress(level: .best)
@@ -266,6 +271,7 @@ func decompress() throws -> String
 **Throws**: `ZLibError` on decompression failure
 
 **Example**:
+
 ```swift
 let decompressed = try compressedData.decompress()
 ```
@@ -304,6 +310,7 @@ static func compressFile(
 **Description**: Compresses a file with progress reporting.
 
 **Parameters**:
+
 - `inputPath`: Path to input file
 - `outputPath`: Path to output file
 - `level`: Compression level (default: `.default`)
@@ -312,6 +319,7 @@ static func compressFile(
 **Throws**: `ZLibError` on failure
 
 **Example**:
+
 ```swift
 try ZLib.compressFile(
     from: "input.txt",
@@ -361,6 +369,7 @@ static func decompressFile(
 **Description**: Decompresses a file with progress reporting.
 
 **Parameters**:
+
 - `inputPath`: Path to compressed file
 - `outputPath`: Path to output file
 - `progress`: Optional progress callback (default: `nil`)
@@ -368,6 +377,7 @@ static func decompressFile(
 **Throws**: `ZLibError` on failure
 
 **Example**:
+
 ```swift
 try ZLib.decompressFile(
     from: "output.gz",
@@ -412,6 +422,7 @@ var progressPublisher: AnyPublisher<Double, Never>
 **Description**: Publisher that emits progress updates during file operations.
 
 **Example**:
+
 ```swift
 ZLib.compressFilePublisher(from: "input.txt", to: "output.gz")
     .progressPublisher
@@ -438,6 +449,7 @@ struct StreamingConfig {
 **Description**: Configuration for streaming operations.
 
 **Properties**:
+
 - `chunkSize`: Size of data chunks for processing
 - `compressionLevel`: Compression level for operations
 - `compressionStrategy`: Compression strategy
@@ -445,6 +457,7 @@ struct StreamingConfig {
 - `enableLogging`: Whether to enable debug logging
 
 **Example**:
+
 ```swift
 let config = StreamingConfig(
     chunkSize: 64 * 1024,
@@ -460,14 +473,14 @@ let config = StreamingConfig(
 ```swift
 class ZLibStream {
     let config: StreamingConfig
-    
+
     init(config: StreamingConfig)
 }
 ```
 
 **Description**: Main streaming interface for compression and decompression.
 
-#### compress(_:)
+#### compress(\_:)
 
 ```swift
 func compress(_ data: Data) throws -> Data
@@ -476,13 +489,14 @@ func compress(_ data: Data) throws -> Data
 **Description**: Compresses a chunk of data.
 
 **Parameters**:
+
 - `data`: Data chunk to compress
 
 **Returns**: Compressed data
 
 **Throws**: `ZLibError` on compression failure
 
-#### decompress(_:)
+#### decompress(\_:)
 
 ```swift
 func decompress(_ data: Data) throws -> Data
@@ -491,6 +505,7 @@ func decompress(_ data: Data) throws -> Data
 **Description**: Decompresses a chunk of data.
 
 **Parameters**:
+
 - `data`: Compressed data chunk
 
 **Returns**: Decompressed data
@@ -522,6 +537,7 @@ func compressFile(
 **Description**: Compresses a file using streaming.
 
 **Parameters**:
+
 - `inputPath`: Path to input file
 - `outputPath`: Path to output file
 - `progress`: Optional progress callback
@@ -541,6 +557,7 @@ func decompressFile(
 **Description**: Decompresses a file using streaming.
 
 **Parameters**:
+
 - `inputPath`: Path to compressed file
 - `outputPath`: Path to output file
 - `progress`: Optional progress callback
@@ -554,7 +571,7 @@ func decompressFile(
 ```swift
 class AsyncZLibStream {
     let config: StreamingConfig
-    
+
     init(config: StreamingConfig)
 }
 ```
@@ -674,6 +691,7 @@ struct GzipHeader {
 **Description**: Gzip header information.
 
 **Properties**:
+
 - `filename`: Original filename
 - `comment`: Optional comment
 - `timestamp`: File timestamp
@@ -744,4 +762,4 @@ do {
 - `.rle`: Data with runs
 - `.fixed`: Small data
 
-This API reference provides comprehensive coverage of all public SwiftZlib APIs with detailed descriptions, parameters, return values, and usage examples. 
+This API reference provides comprehensive coverage of all public SwiftZlib APIs with detailed descriptions, parameters, return values, and usage examples.

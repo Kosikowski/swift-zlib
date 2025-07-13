@@ -20,7 +20,7 @@ int swift_deflate(z_streamp strm, int flush);
 int swift_deflateEnd(z_streamp strm);
 
 // Advanced stream compression wrappers
-int swift_deflateInit2(z_streamp strm, int level, int method, int windowBits, 
+int swift_deflateInit2(z_streamp strm, int level, int method, int windowBits,
                        int memLevel, int strategy);
 int swift_deflateParams(z_streamp strm, int level, int strategy);
 int swift_deflateReset(z_streamp strm);
@@ -128,4 +128,4 @@ int swift_inflatePending(z_streamp strm, unsigned *pending, int *bits);
 int swift_deflateSetHeader(z_streamp strm, gz_headerp head);
 int swift_inflateGetHeader(z_streamp strm, gz_headerp head);
 
-#endif /* ZLIB_SHIM_H */ 
+#endif /* ZLIB_SHIM_H */

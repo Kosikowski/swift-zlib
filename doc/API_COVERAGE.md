@@ -11,31 +11,37 @@ SwiftZlib provides comprehensive coverage of the zlib C API with modern Swift in
 The following zlib functions are **not currently covered** by SwiftZlib:
 
 ### Advanced Stream Functions (Missing)
+
 - `deflateResetKeep()` - Reset compression stream while keeping dictionary
 - `inflateResetKeep()` - Reset decompression stream while keeping dictionary
 - `inflateUndermine()` - Undermine inflate integrity checks (testing only)
 - `inflateValidate()` - Validate inflate stream integrity
 
 ### Gzip File Functions (Missing)
+
 - `gzoffset()` - Get offset in gzip file
 - `gzvprintf()` - Variable argument printf to gzip file
 - `gzfread()` - Read from gzip file with size/count parameters
 - `gzfwrite()` - Write to gzip file with size/count parameters
 
 ### Utility Functions (Missing)
+
 - `zError()` - Get error string for error code (partially covered via `swift_zError`)
 
 ### Advanced Functions (Missing)
+
 - `inflatePending()` - Get pending input/output data (partially covered via `swift_inflatePending`)
 
 ## Core Compression/Decompression (100%)
 
 ### Basic Functions
+
 - `compress2()` → `ZLib.compress()`
 - `uncompress()` → `ZLib.decompress()`
 - `uncompress2()` → `ZLib.partialDecompress()`
 
 ### Data Extensions
+
 - `compress2()` → `Data.compress()`
 - `uncompress()` → `Data.decompress()`
 - `compress2()` → `Data.compressAsync()`
@@ -44,6 +50,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - `uncompress()` → `Data.decompressPublisher()`
 
 ### String Extensions
+
 - `compress2()` → `String.compress()`
 - `uncompress()` → `String.decompress()`
 - `compress2()` → `String.compressAsync()`
@@ -54,6 +61,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Stream-Based Operations (100%)
 
 ### Compression Stream Functions
+
 - `deflateInit()` → `Compressor.initialize()`
 - `deflateInit2()` → `Compressor.initializeAdvanced()`
 - `deflate()` → `Compressor.compress()`
@@ -70,6 +78,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - `deflateTune()` → `Compressor.tune()`
 
 ### Decompression Stream Functions
+
 - `inflateInit()` → `Decompressor.initialize()`
 - `inflateInit2()` → `Decompressor.initializeAdvanced()`
 - `inflate()` → `Decompressor.decompress()`
@@ -89,11 +98,13 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Advanced InflateBack API (100%)
 
 ### InflateBack Functions
+
 - `inflateBackInit()` → `InflateBackDecompressor.initialize()`
 - `inflateBack()` → `InflateBackDecompressor.processWithCallbacks()`
 - `inflateBackEnd()` → `InflateBackDecompressor` deinit
 
 ### InflateBack with C Callbacks
+
 - `inflateBackInit()` → `InflateBackDecompressorCBridged.initialize()`
 - `inflateBack()` → `InflateBackDecompressorCBridged.processData()`
 - `inflateBackEnd()` → `InflateBackDecompressorCBridged` deinit
@@ -101,6 +112,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Gzip File Operations (100%)
 
 ### Gzip File Functions
+
 - `gzopen()` → `GzipFile.open()`
 - `gzclose()` → `GzipFile.close()`
 - `gzread()` → `GzipFile.readData()`
@@ -119,37 +131,44 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - `gzrewind()` → `GzipFile.rewind()`
 
 ### Gzip Header Functions
+
 - `deflateSetHeader()` → `Compressor.setGzipHeader()`
 - `inflateGetHeader()` → `Decompressor.getGzipHeader()`
 
 ## Checksum Functions (100%)
 
 ### CRC-32 Functions
+
 - `crc32()` → `ZLib.crc32()`
 - `crc32_combine()` → `ZLib.crc32Combine()`
 
 ### Adler-32 Functions
+
 - `adler32()` → `ZLib.adler32()`
 - `adler32_combine()` → `ZLib.adler32Combine()`
 
 ### Data Extensions for Checksums
+
 - `crc32()` → `Data.crc32()`
 - `adler32()` → `Data.adler32()`
 
 ## Utility Functions (100%)
 
 ### Compression Utilities
+
 - `compressBound()` → `ZLib.estimateCompressedSize()`
 - `zlibCompileFlags()` → `ZLib.compileFlags`
 - `zlibVersion()` → `ZLib.version`
 
 ### Performance and Information
+
 - `zlibCompileFlags()` → `ZLib.compileFlagsInfo`
 - `zlibVersion()` → `ZLib.version`
 
 ## File Operations (100%)
 
 ### High-Level File Functions
+
 - `compress2()` → `ZLib.compressFile()`
 - `uncompress()` → `ZLib.decompressFile()`
 - `compress2()` → `ZLib.compressFileAsync()`
@@ -158,6 +177,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - `uncompress()` → `ZLib.decompressFilePublisher()`
 
 ### Streaming File Functions
+
 - `deflate()` → `ZLibStream.compressFile()`
 - `inflate()` → `ZLibStream.decompressFile()`
 - `deflate()` → `AsyncZLibStream.compressFile()`
@@ -166,6 +186,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Advanced Features (100%)
 
 ### Error Handling
+
 - `Z_OK` → `ZLibStatus.ok`
 - `Z_STREAM_END` → `ZLibStatus.streamEnd`
 - `Z_NEED_DICT` → `ZLibStatus.needDict`
@@ -177,6 +198,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - `Z_VERSION_ERROR` → `ZLibStatus.incompatibleVersion`
 
 ### Configuration Types
+
 - `Z_DEFAULT_COMPRESSION` → `CompressionLevel.default`
 - `Z_NO_COMPRESSION` → `CompressionLevel.noCompression`
 - `Z_BEST_SPEED` → `CompressionLevel.bestSpeed`
@@ -200,6 +222,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - `Z_BLOCK` → `FlushMode.block`
 
 ### Window Bits
+
 - `15` → `WindowBits.deflate`
 - `-15` → `WindowBits.raw`
 - `31` → `WindowBits.gzip`
@@ -208,12 +231,14 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Streaming and Async Support
 
 ### Modern Swift Concurrency
+
 - `deflate()` → `Data.compressAsync()`
 - `inflate()` → `Data.decompressAsync()`
 - `deflate()` → `ZLib.compressFileAsync()`
 - `inflate()` → `ZLib.decompressFileAsync()`
 
 ### Combine Publishers
+
 - `deflate()` → `Data.compressPublisher()`
 - `inflate()` → `Data.decompressPublisher()`
 - `deflate()` → `ZLib.compressFilePublisher()`
@@ -222,6 +247,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Convenience Extensions
 
 ### Data Extensions
+
 - `compress2()` → `Data.compressed()`
 - `uncompress()` → `Data.decompressed()`
 - `compress2()` → `Data.compressedWithGzipHeader()`
@@ -229,6 +255,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - `adler32()` → `Data.adler32()`
 
 ### String Extensions
+
 - `compress2()` → `String.compressed()`
 - `uncompress()` → `String.decompressed()`
 - `compress2()` → `String.compressedWithGzipHeader()`
@@ -236,6 +263,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Error Mapping
 
 ### C Error Codes to Swift Errors
+
 - `Z_OK (0)` → Success (no error)
 - `Z_STREAM_END (1)` → `ZLibStatus.streamEnd`
 - `Z_NEED_DICT (2)` → `ZLibStatus.needDict`
@@ -247,6 +275,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - `Z_VERSION_ERROR (-6)` → `ZLibStatus.incompatibleVersion`
 
 ### Swift Error Types
+
 - `ZLibError.invalidData` → Invalid or corrupted input data
 - `ZLibError.insufficientMemory` → Memory allocation failure
 - `ZLibError.streamError(ZLibStatus)` → Stream operation error
@@ -256,12 +285,14 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Memory Management
 
 ### Automatic Memory Management
+
 - All C memory management is handled automatically by Swift
 - `malloc()`/`free()` → Swift's automatic memory management
 - `z_stream` structures → Swift classes with automatic cleanup
 - Buffer management → Swift `Data` types
 
 ### Manual Memory Control (when needed)
+
 - `deflateBound()` → `Compressor.getBound()` for buffer sizing
 - `inflateBound()` → `Decompressor.getBound()` for buffer sizing
 - Custom buffer management → Swift `Data` with capacity hints
@@ -269,12 +300,14 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Performance Optimizations
 
 ### Built-in Optimizations
+
 - `deflateTune()` → `Compressor.tune()` for performance tuning
 - `deflateParams()` → `Compressor.setParameters()` for runtime optimization
 - `inflateSync()` → `Decompressor.sync()` for error recovery
 - `inflateSyncPoint()` → `Decompressor.isSyncPoint()` for synchronization
 
 ### Swift-Specific Optimizations
+
 - Zero-copy operations where possible
 - Efficient buffer management with `Data`
 - Async/await for non-blocking operations
@@ -283,36 +316,39 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 ## Platform Support
 
 ### macOS
+
 - All zlib functions available through system zlib
 - Full API coverage with native performance
 - Integration with macOS frameworks
 
 ### Linux
+
 - All zlib functions available through system zlib
 - Full API coverage with native performance
 - Integration with Linux system libraries
 
 ### Cross-Platform Compatibility
+
 - Consistent API across platforms
 - Platform-specific optimizations where available
 - Unified error handling and memory management
 
 ## Coverage Statistics
 
-| Category | C Functions | Swift Methods | Coverage |
-|----------|-------------|---------------|----------|
-| Core Compression | 3 | 18 | 100% |
-| Stream Compression | 14 | 14 | 100% |
-| Stream Decompression | 15 | 15 | 100% |
-| InflateBack | 3 | 6 | 100% |
-| Gzip File Ops | 16 | 16 | 100% |
-| Checksums | 4 | 6 | 100% |
-| Utilities | 3 | 3 | 100% |
-| File Operations | 6 | 12 | 100% |
-| Error Handling | 9 | 9 | 100% |
-| Configuration | 12 | 12 | 100% |
-| **Missing Functions** | **8** | **0** | **0%** |
-| **Total** | **93** | **111** | **~98%** |
+| Category              | C Functions | Swift Methods | Coverage |
+| --------------------- | ----------- | ------------- | -------- |
+| Core Compression      | 3           | 18            | 100%     |
+| Stream Compression    | 14          | 14            | 100%     |
+| Stream Decompression  | 15          | 15            | 100%     |
+| InflateBack           | 3           | 6             | 100%     |
+| Gzip File Ops         | 16          | 16            | 100%     |
+| Checksums             | 4           | 6             | 100%     |
+| Utilities             | 3           | 3             | 100%     |
+| File Operations       | 6           | 12            | 100%     |
+| Error Handling        | 9           | 9             | 100%     |
+| Configuration         | 12          | 12            | 100%     |
+| **Missing Functions** | **8**       | **0**         | **0%**   |
+| **Total**             | **93**      | **111**       | **~98%** |
 
 ## Notes
 
@@ -323,7 +359,7 @@ The following zlib functions are **not currently covered** by SwiftZlib:
 - **Performance**: Native performance with minimal overhead
 - **Cross-platform**: Consistent behavior on macOS and Linux
 
-This API coverage ensures that any zlib-based application can be easily ported to Swift using SwiftZlib while maintaining full functionality and gaining modern Swift language features. 
+This API coverage ensures that any zlib-based application can be easily ported to Swift using SwiftZlib while maintaining full functionality and gaining modern Swift language features.
 
 ## Notes on Missing Functions
 
@@ -347,7 +383,8 @@ This API coverage ensures that any zlib-based application can be easily ported t
 ### Future Considerations
 
 These missing functions could be added if there's demand:
+
 - Advanced stream reset functions for dictionary preservation
 - More granular gzip file operations
 - Testing utilities for zlib integrity validation
-- Enhanced error reporting utilities 
+- Enhanced error reporting utilities

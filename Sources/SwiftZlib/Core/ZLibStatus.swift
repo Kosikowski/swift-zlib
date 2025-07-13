@@ -33,15 +33,15 @@ public enum ZLibStatus: Int32 {
     /// Human-readable description of the status
     public var description: String {
         switch self {
-            case .ok: return "OK"
-            case .streamEnd: return "Stream end"
-            case .needDict: return "Need dictionary"
-            case .errNo: return "Error number"
-            case .streamError: return "Stream error"
-            case .dataError: return "Data error"
-            case .memoryError: return "Memory error"
-            case .bufferError: return "Buffer error"
-            case .incompatibleVersion: return "Incompatible version"
+            case .ok: "OK"
+            case .streamEnd: "Stream end"
+            case .needDict: "Need dictionary"
+            case .errNo: "Error number"
+            case .streamError: "Stream error"
+            case .dataError: "Data error"
+            case .memoryError: "Memory error"
+            case .bufferError: "Buffer error"
+            case .incompatibleVersion: "Incompatible version"
         }
     }
 }

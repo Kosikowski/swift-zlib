@@ -26,6 +26,7 @@ pre-commit install
 #### Manual Installation
 
 1. Install pre-commit:
+
    ```bash
    pip3 install pre-commit
    # or
@@ -33,6 +34,7 @@ pre-commit install
    ```
 
 2. Install SwiftFormat:
+
    ```bash
    brew install swiftformat
    ```
@@ -102,4 +104,4 @@ swift test --verbose
 - Follow the established architecture patterns
 - Use appropriate error handling
 - Consider performance implications
-- Write clear, readable code 
+- Write clear, readable code

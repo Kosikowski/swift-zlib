@@ -52,27 +52,30 @@ try decompressor.initializeAdvanced(windowBits: .raw)  // windowBits = -15
 ### 2. Zlib Behavior with Dictionaries
 
 #### Compression with Dictionary
+
 - **Works correctly** with raw deflate format (`windowBits = -15`)
 - Dictionary must be set **before** compression begins
 - `deflateSetDictionary()` returns `Z_OK` (0) on success
 
 #### Decompression without Dictionary
+
 - Returns `Z_NEED_DICT (2)` or `Z_DATA_ERROR (-3)` when data was compressed with a dictionary
 - Both error codes are acceptable and expected behavior
 
 #### Decompression with Dictionary
+
 - Dictionary must be set **before** decompression begins
 - `inflateSetDictionary()` returns `Z_OK` (0) on success
 - Decompression proceeds normally after dictionary is set
 
 ### 3. WindowBits Format Compatibility
 
-| Format | WindowBits | Dictionary Support | Use Case |
-|--------|------------|-------------------|----------|
-| Raw Deflate | -15 | ✅ Yes | Dictionary compression |
-| Standard Deflate | 15 | ❌ No | Regular compression |
-| Gzip | 31 | ❌ No | Gzip format |
-| Auto-detect | 47 | ❌ No | Auto-detection |
+| Format           | WindowBits | Dictionary Support | Use Case               |
+| ---------------- | ---------- | ------------------ | ---------------------- |
+| Raw Deflate      | -15        | ✅ Yes             | Dictionary compression |
+| Standard Deflate | 15         | ❌ No              | Regular compression    |
+| Gzip             | 31         | ❌ No              | Gzip format            |
+| Auto-detect      | 47         | ❌ No              | Auto-detection         |
 
 ## Implementation Requirements
 
@@ -235,7 +238,7 @@ Dictionary compression in SwiftZlib requires careful attention to the windowBits
 
 - [Zlib Documentation](https://www.zlib.net/manual.html)
 - [Zlib Source Code](https://github.com/madler/zlib)
-- [SwiftZlib Implementation](../Sources/SwiftZlib/swift_zlib.swift) 
+- [SwiftZlib Implementation](../Sources/SwiftZlib/swift_zlib.swift)
 
 ## Running the Minimal C Tests
 
@@ -252,4 +255,4 @@ gcc -o test_zlib_dict_checksum test_zlib_dict_checksum.c -lz
 ```
 
 - Ensure you have the zlib development headers installed (on Linux: `sudo apt-get install zlib1g-dev`)
-- The output will show step-by-step results and error codes for each dictionary scenario. 
+- The output will show step-by-step results and error codes for each dictionary scenario.

@@ -37,25 +37,25 @@ public enum ZLibError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
             case let .compressionFailed(code):
-                return "Compression failed with code: \(code) - \(String(cString: swift_zError(code)))"
+                "Compression failed with code: \(code) - \(String(cString: swift_zError(code)))"
             case let .decompressionFailed(code):
-                return "Decompression failed with code: \(code) - \(String(cString: swift_zError(code)))"
+                "Decompression failed with code: \(code) - \(String(cString: swift_zError(code)))"
             case .invalidData:
-                return "Invalid data provided"
+                "Invalid data provided"
             case .memoryError:
-                return "Memory allocation error"
+                "Memory allocation error"
             case let .streamError(code):
-                return "Stream operation failed with code: \(code) - \(String(cString: swift_zError(code)))"
+                "Stream operation failed with code: \(code) - \(String(cString: swift_zError(code)))"
             case .versionMismatch:
-                return "ZLib version mismatch"
+                "ZLib version mismatch"
             case .needDictionary:
-                return "Dictionary needed for decompression"
+                "Dictionary needed for decompression"
             case .dataError:
-                return "Data error during operation"
+                "Data error during operation"
             case .bufferError:
-                return "Buffer error during operation"
+                "Buffer error during operation"
             case let .fileError(underlyingError):
-                return "File operation failed: \(underlyingError.localizedDescription)"
+                "File operation failed: \(underlyingError.localizedDescription)"
         }
     }
 }

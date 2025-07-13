@@ -6,29 +6,37 @@ import SwiftZlib
 // MARK: - CLITimer
 
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-import CoreFoundation
+    import CoreFoundation
 #endif
 
+// MARK: - CLITimer
+
 struct CLITimer {
+    // MARK: Properties
+
     #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    private let start: CFAbsoluteTime
+        private let start: CFAbsoluteTime
     #else
-    private let start: Date
+        private let start: Date
     #endif
-    
-    init() {
-        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-        start = CFAbsoluteTimeGetCurrent()
-        #else
-        start = Date()
-        #endif
-    }
-    
+
+    // MARK: Computed Properties
+
     var elapsed: TimeInterval {
         #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-        return CFAbsoluteTimeGetCurrent() - start
+            return CFAbsoluteTimeGetCurrent() - start
         #else
-        return Date().timeIntervalSince(start)
+            return Date().timeIntervalSince(start)
+        #endif
+    }
+
+    // MARK: Lifecycle
+
+    init() {
+        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+            start = CFAbsoluteTimeGetCurrent()
+        #else
+            start = Date()
         #endif
     }
 }

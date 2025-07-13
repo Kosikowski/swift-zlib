@@ -34,7 +34,7 @@ repos:
     hooks:
       - id: prettier
         types_or: [yaml]
-        additional_dependencies: ['prettier@3.1.0']
+        additional_dependencies: ["prettier@3.1.0"]
 
   # Markdown formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -42,7 +42,7 @@ repos:
     hooks:
       - id: prettier
         types: [markdown]
-        additional_dependencies: ['prettier@3.1.0']
+        additional_dependencies: ["prettier@3.1.0"]
 
   # Shell script formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -50,7 +50,7 @@ repos:
     hooks:
       - id: prettier
         types: [shell]
-        additional_dependencies: ['prettier@3.1.0']
+        additional_dependencies: ["prettier@3.1.0"]
 
   # Security checks
   - repo: https://github.com/Yelp/detect-secrets
@@ -66,4 +66,4 @@ repos:
               Tests/|
               doc/|
               \.github/
-          )$ 
+          )$

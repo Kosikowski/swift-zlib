@@ -68,6 +68,7 @@ If all commands complete successfully, the tool is working correctly!
 ### Basic Commands
 
 #### 1. Compress Files or Data
+
 ```bash
 # Compress a file
 swift run SwiftZlibCLI compress input.txt output.zlib
@@ -80,6 +81,7 @@ swift run SwiftZlibCLI compress "Hello, World!" output.zlib
 ```
 
 #### 2. Decompress Files or Data
+
 ```bash
 # Decompress a file
 swift run SwiftZlibCLI decompress output.zlib result.txt
@@ -89,29 +91,34 @@ swift run SwiftZlibCLI decompress "compressed_data" result.txt
 ```
 
 #### 3. Benchmark Compression Levels
+
 ```bash
 # Compare all compression levels on a file
 swift run SwiftZlibCLI benchmark large_file.dat
 ```
 
 This will show:
+
 - Compression ratio for each level
 - Processing time for each level
 - Performance profiles for different data sizes
 
 #### 4. Calculate Checksums
+
 ```bash
 # Calculate Adler-32 and CRC-32 checksums
 swift run SwiftZlibCLI checksum important_file.txt
 ```
 
 #### 5. Show Library Information
+
 ```bash
 # Display detailed zlib information
 swift run SwiftZlibCLI info
 ```
 
 Shows:
+
 - ZLib version
 - Compile flags breakdown
 - Buffer size recommendations
@@ -119,18 +126,21 @@ Shows:
 - Optimal parameters for different data sizes
 
 #### 6. Streaming Compression
+
 ```bash
 # Use streaming for large files
 swift run SwiftZlibCLI stream big_file.dat compressed.zlib
 ```
 
 #### 7. Gzip Compression
+
 ```bash
 # Compress with gzip headers
 swift run SwiftZlibCLI gzip document.txt document.gz
 ```
 
 #### 8. Large File Compression with Progress
+
 ```bash
 # Compress large files with progress bar
 swift run SwiftZlibCLI large huge_file.dat compressed.zlib 9
@@ -152,6 +162,7 @@ swift run SwiftZlibCLI large huge_file.dat compressed.zlib 9
 ## Examples
 
 ### Example 1: Quick Test and Verification
+
 ```bash
 # Test the help command
 swift run SwiftZlibCLI help
@@ -191,6 +202,7 @@ rm test_file.txt test_file.gz compressed.zlib decompressed.txt
 ```
 
 ### Example 2: Compress a Text File
+
 ```bash
 # Create a sample file
 echo "This is a sample text file for compression testing. It contains repeated text to demonstrate compression effectiveness." > sample.txt
@@ -203,6 +215,7 @@ ls -la sample.txt compressed.zlib
 ```
 
 ### Example 3: Benchmark Different Files
+
 ```bash
 # Benchmark a text file
 swift run SwiftZlibCLI benchmark sample.txt
@@ -212,6 +225,7 @@ swift run SwiftZlibCLI benchmark large_binary.dat
 ```
 
 ### Example 4: Verify Data Integrity
+
 ```bash
 # Calculate checksums
 swift run SwiftZlibCLI checksum important_file.txt
@@ -222,6 +236,7 @@ swift run SwiftZlibCLI checksum compressed.zlib
 ```
 
 ### Example 5: Streaming Large Files
+
 ```bash
 # Create a large file
 dd if=/dev/urandom of=large_file.dat bs=1M count=100
@@ -234,6 +249,7 @@ swift run SwiftZlibCLI decompress compressed.zlib decompressed.dat
 ```
 
 ### Example 6: Gzip with Headers
+
 ```bash
 # Compress with gzip format
 swift run SwiftZlibCLI gzip document.txt document.gz
@@ -244,6 +260,7 @@ gunzip document.gz
 ```
 
 ### Example 7: Large File Compression with Progress
+
 ```bash
 # Create a large test file (100MB)
 dd if=/dev/urandom of=large_test.dat bs=1M count=100
@@ -315,10 +332,13 @@ swift run SwiftZlibCLI compress
 ## Advanced Usage
 
 ### Custom Buffer Sizes
+
 The tool uses recommended buffer sizes by default, but you can modify the source code to use custom sizes for specific use cases.
 
 ### Error Recovery
+
 The tool includes error recovery suggestions based on zlib error codes, helping users understand and resolve compression issues.
 
 ### Performance Monitoring
-The benchmarking feature helps users choose the optimal compression level for their specific data and performance requirements. 
+
+The benchmarking feature helps users choose the optimal compression level for their specific data and performance requirements.

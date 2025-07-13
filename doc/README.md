@@ -5,16 +5,19 @@ Welcome to the SwiftZlib documentation! This guide will help you navigate throug
 ## 🚀 Quick Navigation
 
 ### For New Users
+
 - **[Main README](../README.md)** - Project overview and quick start
 - **[API Reference](API_REFERENCE.md)** - Complete API documentation
 - **[Error Handling](ERROR_HANDLING.md)** - How to handle errors properly
 
 ### For Developers
+
 - **[Architecture](ARCHITECTURE.md)** - Technical architecture overview
 - **[Testing](TESTING.md)** - Testing guide and best practices
 - **[CI/CD](CI_CD.md)** - Continuous integration setup
 
 ### For Advanced Users
+
 - **[Advanced Features](ADVANCED_FEATURES.md)** - Advanced usage patterns
 - **[Streaming Operations](STREAMING.md)** - Memory-efficient processing
 - **[Dictionary Compression](DICTIONARY_COMPRESSION.md)** - Custom dictionary support
@@ -22,6 +25,7 @@ Welcome to the SwiftZlib documentation! This guide will help you navigate throug
 - **[Priming Support](PRIMING.md)** - Low-level bit manipulation
 
 ### For Contributors
+
 - **[API Coverage](API_COVERAGE.md)** - Complete zlib API mapping
 - **[Contributing Guide](../CONTRIBUTING.md)** - Development guidelines
 - **[CLI Tool](../README_CLI.md)** - Command-line interface
@@ -29,44 +33,50 @@ Welcome to the SwiftZlib documentation! This guide will help you navigate throug
 ## 📖 Documentation Structure
 
 ### Getting Started
-| Document | Description |
-|----------|-------------|
-| [Main README](../README.md) | Project overview, installation, quick examples |
-| [API Reference](API_REFERENCE.md) | Complete API documentation with examples |
-| [Error Handling](ERROR_HANDLING.md) | Comprehensive error handling guide |
+
+| Document                            | Description                                    |
+| ----------------------------------- | ---------------------------------------------- |
+| [Main README](../README.md)         | Project overview, installation, quick examples |
+| [API Reference](API_REFERENCE.md)   | Complete API documentation with examples       |
+| [Error Handling](ERROR_HANDLING.md) | Comprehensive error handling guide             |
 
 ### Core Features
-| Document | Description |
-|----------|-------------|
-| [Streaming Operations](STREAMING.md) | Memory-efficient large file processing |
-| [File Operations](README.md#file-operations) | Direct file compression/decompression |
-| [Async & Combine](README.md#async--combine) | Modern Swift concurrency support |
+
+| Document                                     | Description                            |
+| -------------------------------------------- | -------------------------------------- |
+| [Streaming Operations](STREAMING.md)         | Memory-efficient large file processing |
+| [File Operations](README.md#file-operations) | Direct file compression/decompression  |
+| [Async & Combine](README.md#async--combine)  | Modern Swift concurrency support       |
 
 ### Advanced Topics
-| Document | Description |
-|----------|-------------|
-| [Advanced Features](ADVANCED_FEATURES.md) | Advanced usage patterns and optimizations |
+
+| Document                                            | Description                                      |
+| --------------------------------------------------- | ------------------------------------------------ |
+| [Advanced Features](ADVANCED_FEATURES.md)           | Advanced usage patterns and optimizations        |
 | [Dictionary Compression](DICTIONARY_COMPRESSION.md) | Custom dictionary support for better compression |
-| [Gzip Support](GZIP_SUPPORT.md) | Gzip header and metadata handling |
-| [Priming Support](PRIMING.md) | Low-level bit manipulation (advanced) |
+| [Gzip Support](GZIP_SUPPORT.md)                     | Gzip header and metadata handling                |
+| [Priming Support](PRIMING.md)                       | Low-level bit manipulation (advanced)            |
 
 ### Development & Architecture
-| Document | Description |
-|----------|-------------|
-| [Architecture](ARCHITECTURE.md) | Technical architecture and design patterns |
-| [Testing](TESTING.md) | Testing guide, debugging, and best practices |
-| [CI/CD](CI_CD.md) | Continuous integration and deployment setup |
-| [API Coverage](API_COVERAGE.md) | Complete zlib C API to Swift mapping |
+
+| Document                        | Description                                  |
+| ------------------------------- | -------------------------------------------- |
+| [Architecture](ARCHITECTURE.md) | Technical architecture and design patterns   |
+| [Testing](TESTING.md)           | Testing guide, debugging, and best practices |
+| [CI/CD](CI_CD.md)               | Continuous integration and deployment setup  |
+| [API Coverage](API_COVERAGE.md) | Complete zlib C API to Swift mapping         |
 
 ### Tools & Utilities
-| Document | Description |
-|----------|-------------|
-| [CLI Tool](../README_CLI.md) | Command-line interface documentation |
-| [Performance Guide](README.md#performance) | Performance optimization tips |
+
+| Document                                   | Description                          |
+| ------------------------------------------ | ------------------------------------ |
+| [CLI Tool](../README_CLI.md)               | Command-line interface documentation |
+| [Performance Guide](README.md#performance) | Performance optimization tips        |
 
 ## 🎯 Common Use Cases
 
 ### I want to...
+
 - **Compress data quickly**: See [Main README](../README.md#quick-start)
 - **Handle large files**: See [Streaming Operations](STREAMING.md)
 - **Use async/await**: See [Async & Combine](README.md#async--combine)
@@ -81,22 +91,26 @@ Welcome to the SwiftZlib documentation! This guide will help you navigate throug
 ## 🔍 Search by Topic
 
 ### Compression
+
 - Basic compression: [Main README](../README.md#basic-compression)
 - File compression: [File Operations](README.md#file-operations)
 - Streaming compression: [Streaming Operations](STREAMING.md)
 - Dictionary compression: [Dictionary Compression](DICTIONARY_COMPRESSION.md)
 
 ### Error Handling
+
 - Error types: [Error Handling](ERROR_HANDLING.md#error-types)
 - Recovery strategies: [Error Handling](ERROR_HANDLING.md#error-recovery)
 - Debugging: [Testing](TESTING.md#debugging-tests)
 
 ### Performance
+
 - Optimization tips: [Advanced Features](ADVANCED_FEATURES.md#performance-optimization)
 - Memory management: [Streaming Operations](STREAMING.md#memory-management)
 - Benchmarking: [CLI Tool](../README_CLI.md#benchmarking)
 
 ### Development
+
 - Architecture: [Architecture](ARCHITECTURE.md)
 - Testing: [Testing](TESTING.md)
 - CI/CD: [CI/CD](CI_CD.md)
@@ -129,4 +143,4 @@ This documentation is maintained alongside the code. If you find any issues or h
 
 ---
 
-*Last updated: January 2025* 
+_Last updated: January 2025_

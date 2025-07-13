@@ -43,9 +43,9 @@ int swift_deflateInit(z_streamp strm, int level) {
 int swift_deflate(z_streamp strm, int flush) {
 #if ZLIB_DEBUG
     // Debug: Print stream state before deflate
-    printf("[C] deflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
+    printf("[C] deflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
            flush, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
-    
+
     // Debug: Print first few bytes of input if available
     if (strm->avail_in > 0 && strm->next_in) {
         printf("[C] deflate input (first 8 bytes): ");
@@ -55,15 +55,15 @@ int swift_deflate(z_streamp strm, int flush) {
         printf("\n");
     }
 #endif
-    
+
     int result = deflate(strm, flush);
-    
+
 #if ZLIB_DEBUG
     // Debug: Print stream state after deflate
-    printf("[C] deflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
+    printf("[C] deflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
            result, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
 #endif
-    
+
     return result;
 }
 
@@ -72,7 +72,7 @@ int swift_deflateEnd(z_streamp strm) {
 }
 
 // Advanced stream compression wrappers
-int swift_deflateInit2(z_streamp strm, int level, int method, int windowBits, 
+int swift_deflateInit2(z_streamp strm, int level, int method, int windowBits,
                        int memLevel, int strategy) {
     return deflateInit2(strm, level, method, windowBits, memLevel, strategy);
 }
@@ -111,9 +111,9 @@ int swift_inflateInit(z_streamp strm) {
 int swift_inflate(z_streamp strm, int flush) {
 #if ZLIB_DEBUG
     // Debug: Print stream state before inflate
-    printf("[C] inflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
+    printf("[C] inflate: flush=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
            flush, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
-    
+
     // Debug: Print first few bytes of input if available
     if (strm->avail_in > 0 && strm->next_in) {
         printf("[C] inflate input (first 8 bytes): ");
@@ -123,15 +123,15 @@ int swift_inflate(z_streamp strm, int flush) {
         printf("\n");
     }
 #endif
-    
+
     int result = inflate(strm, flush);
-    
+
 #if ZLIB_DEBUG
     // Debug: Print stream state after inflate
-    printf("[C] inflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n", 
+    printf("[C] inflate result=%d, avail_in=%u, avail_out=%u, total_in=%lu, total_out=%lu\n",
            result, strm->avail_in, strm->avail_out, strm->total_in, strm->total_out);
 #endif
-    
+
     return result;
 }
 
@@ -201,18 +201,18 @@ int swift_inflateBackWithCallbacks(z_streamp strm, swift_in_func in_func, void *
     if (!context) {
         return Z_MEM_ERROR;
     }
-    
+
     // Initialize context
     context->swift_in_func = in_func;
     context->swift_out_func = out_func;
     context->swift_context = in_desc; // Use in_desc as context
-    
+
     // Call inflateBack with our debug wrapper functions
     int result = inflateBack(strm, debug_in_wrapper, context, debug_out_wrapper, context);
-    
+
     // Clean up context
     free(context);
-    
+
     return result;
 }
 
@@ -293,7 +293,7 @@ uLong swift_crc32_combine(uLong crc1, uLong crc2, z_off_t len2) {
 // Compile flags
 uLong swift_zlibCompileFlags(void) {
     return zlibCompileFlags();
-} 
+}
 
 // Gzip file operations
 void* swift_gzopen(const char* path, const char* mode) {
@@ -338,7 +338,7 @@ int swift_gzsetparams(void* file, int level, int strategy) {
 
 const char* swift_gzerror(void* file, int* errnum) {
     return gzerror((gzFile)file, errnum);
-} 
+}
 
 // Advanced gzip file operations
 int swift_gzprintf(void* file, const char* format, ...) {
@@ -394,4 +394,4 @@ int swift_deflateSetHeader(z_streamp strm, gz_headerp head) {
 
 int swift_inflateGetHeader(z_streamp strm, gz_headerp head) {
     return inflateGetHeader(strm, head);
-} 
+}

@@ -127,14 +127,14 @@ public enum ZLib {
         switch errorCode {
             case Z_BUF_ERROR,
                  Z_NEED_DICT:
-                return true
+                true
             case Z_STREAM_ERROR,
                  Z_DATA_ERROR,
                  Z_MEM_ERROR,
                  Z_VERSION_ERROR:
-                return false
+                false
             default:
-                return false
+                false
         }
     }
 
@@ -144,49 +144,49 @@ public enum ZLib {
     public static func getErrorRecoverySuggestions(_ errorCode: Int32) -> [String] {
         switch errorCode {
             case Z_BUF_ERROR:
-                return [
+                [
                     "Increase output buffer size",
                     "Check if input data is complete",
                     "Ensure sufficient memory is available",
                 ]
 
             case Z_NEED_DICT:
-                return [
+                [
                     "Provide a dictionary for decompression",
                     "Use setDictionary() method",
                     "Check if compressed data requires a dictionary",
                 ]
 
             case Z_STREAM_ERROR:
-                return [
+                [
                     "Reinitialize the stream",
                     "Check stream parameters",
                     "Ensure proper initialization order",
                 ]
 
             case Z_DATA_ERROR:
-                return [
+                [
                     "Check input data integrity",
                     "Verify compression format",
                     "Ensure data is not corrupted",
                 ]
 
             case Z_MEM_ERROR:
-                return [
+                [
                     "Free up system memory",
                     "Reduce compression level",
                     "Use smaller buffer sizes",
                 ]
 
             case Z_VERSION_ERROR:
-                return [
+                [
                     "Update zlib library",
                     "Check version compatibility",
                     "Recompile with compatible zlib version",
                 ]
 
             default:
-                return ["Unknown error - check zlib documentation"]
+                ["Unknown error - check zlib documentation"]
         }
     }
 
@@ -267,13 +267,13 @@ public enum ZLib {
     public static func getOptimalParameters(for dataSize: Int) -> (level: CompressionLevel, windowBits: WindowBits, memoryLevel: MemoryLevel, strategy: CompressionStrategy) {
         if dataSize < 1024 {
             // Small data: fast compression
-            return (.bestSpeed, .deflate, .level3, .defaultStrategy)
+            (.bestSpeed, .deflate, .level3, .defaultStrategy)
         } else if dataSize < 1024 * 1024 {
             // Medium data: balanced
-            return (.defaultCompression, .deflate, .level6, .defaultStrategy)
+            (.defaultCompression, .deflate, .level6, .defaultStrategy)
         } else {
             // Large data: best compression
-            return (.bestCompression, .deflate, .maximum, .defaultStrategy)
+            (.bestCompression, .deflate, .maximum, .defaultStrategy)
         }
     }
 

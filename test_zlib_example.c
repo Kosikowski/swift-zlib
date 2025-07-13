@@ -7,15 +7,15 @@ int main() {
     // Test data and dictionary must match for successful dictionary compression/decompression
     const char* test_data = "Hello, World!";
     uLong data_len = strlen(test_data);
-    
+
     // The dictionary used for compression and decompression
     const char* dict = "Hello, World!";
     uLong dict_len = strlen(dict);
-    
+
     printf("=== Zlib Example Dictionary Test ===\n");
     printf("Test data: %s\n", test_data);
     printf("Dictionary: %s\n", dict);
-    
+
     // --- Step 1: Compress with dictionary ---
     // Use raw deflate format (windowBits = -15) for dictionary support
     z_stream c_stream;
@@ -50,7 +50,7 @@ int main() {
     uLong actual_compressed_size = compressed_size - c_stream.avail_out;
     printf("Compression successful, size: %lu -> %lu\n", data_len, actual_compressed_size);
     deflateEnd(&c_stream);
-    
+
     // --- Step 2: Decompress WITHOUT dictionary (should fail) ---
     // Attempt to decompress without providing the dictionary
     z_stream d_stream1;
@@ -77,7 +77,7 @@ int main() {
     }
     inflateEnd(&d_stream1);
     free(decompressed1);
-    
+
     // --- Step 3: Decompress WITH dictionary (should succeed) ---
     // Now provide the correct dictionary and decompress
     z_stream d_stream2;
@@ -122,4 +122,4 @@ int main() {
     free(compressed);
     printf("\n=== Test completed ===\n");
     return 0;
-} 
+}
