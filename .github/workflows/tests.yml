@@ -7,41 +7,6 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  # Test on macOS with older Xcode (legacy runner)
-  test-macos-old:
-    name: macOS (Xcode 14.3)
-    runs-on: macos-12
-    
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_14.3.app
-      
-    - name: Show Xcode version
-      run: xcodebuild -version
-      
-    - name: Show Swift version
-      run: swift --version
-      
-    - name: Build package
-      run: swift build
-      
-    - name: Run all tests
-      run: swift test --verbose
-      
-    - name: Run specific test groups
-      run: |
-        swift test --filter CoreTests
-        swift test --filter ExtensionsTests
-        swift test --filter FileOperationsTests
-        swift test --filter CombineTests
-        swift test --filter PerformanceTests
-        swift test --filter ErrorHandlingTests
-        swift test --filter StreamingTests
-        swift test --filter ConcurrencyTests
-
   # Test on macOS with latest Xcode (newest runner)
   test-macos-latest:
     name: macOS (Xcode 15.2)
