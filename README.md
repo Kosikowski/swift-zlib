@@ -1907,6 +1907,7 @@ enum CompressionPhase: String {
 
 ## Documentation
 
+- [Architecture Overview](doc/ARCHITECTURE.md)
 - [Priming Support](doc/PRIMING.md)
 - [Dictionary Compression](doc/DICTIONARY_COMPRESSION.md)
 - [Streaming API](doc/STREAMING.md)
