@@ -5,6 +5,7 @@
 //
 import XCTest
 @testable import SwiftZlib
+@_spi(SwiftZLibTime) import SwiftZlib
 
 final class PerformanceTests: XCTestCase {
     // MARK: Static Properties
@@ -31,17 +32,17 @@ final class PerformanceTests: XCTestCase {
 
     func testPerformanceAndMemoryUsage() throws {
         let largeData = Data(repeating: 0xAB, count: 10_000_000) // 10MB - realistic large file size
-        let startCompress = CFAbsoluteTimeGetCurrent()
+        let timer = SwiftZlibTimer()
         let compressed = try ZLib.compress(largeData, level: .bestCompression)
-        let compressTime = CFAbsoluteTimeGetCurrent() - startCompress
+        let compressTime = timer.elapsed
         print("Compression time for 10MB: \(compressTime)s, ratio: \(Double(compressed.count) / Double(largeData.count))")
 
-        let startDecompress = CFAbsoluteTimeGetCurrent()
+        let decompressTimer = SwiftZlibTimer()
         // Use streaming decompression for large data to avoid buffer size issues
         let decompressor = Decompressor()
         try decompressor.initialize()
         let decompressed = try decompressor.decompress(compressed)
-        let decompressTime = CFAbsoluteTimeGetCurrent() - startDecompress
+        let decompressTime = decompressTimer.elapsed
         print("Decompression time for 10MB: \(decompressTime)s")
 
         XCTAssertEqual(decompressed, largeData)

@@ -317,6 +317,89 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and [ARCHITECT
 
 For detailed technical information about zlib API coverage and C function mappings, see [API Coverage](doc/API_COVERAGE.md).
 
+## Memory Safety and Gzip Headers
+
+SwiftZlib provides safe memory management for all operations, with special attention to gzip headers which require careful C pointer management.
+
+### Gzip Header Memory Management
+
+When using gzip headers with compression, SwiftZlib automatically manages the memory for header fields (`extra`, `name`, `comment`) to prevent use-after-free errors:
+
+```swift
+let header = GzipHeader()
+header.name = "example.txt"
+header.comment = "Test file"
+header.extra = "metadata".data(using: .utf8)
+
+// Memory is automatically managed - no manual cleanup needed
+let compressed = try data.compressedWithGzipHeader(level: .default, header: header)
+```
+
+**Important Notes:**
+
+- Each compressor can only have one gzip header set
+- Memory is automatically freed when the compressor is deallocated
+- No manual memory management required
+
+For advanced usage details, see the [Architecture Documentation](doc/ARCHITECTURE.md#memory-management).
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Running Tests with Sanitizers and Leak Detection
+
+SwiftZlib supports memory safety and correctness checks using sanitizers. This is especially useful for catching bugs in C interop and low-level code.
+
+### Address Sanitizer (ASan)
+
+Run all tests with Address Sanitizer enabled (detects use-after-free, buffer overflows, and some leaks):
+
+```sh
+swift test --sanitize=address --verbose
+```
+
+- **macOS:** ASan is supported and will catch most memory errors.
+- **Linux:** ASan is supported and will also report memory leaks at the end of the test run.
+
+### Thread Sanitizer (TSan)
+
+Detects data races in concurrent code:
+
+```sh
+swift test --sanitize=thread --verbose
+```
+
+### Undefined Behavior Sanitizer (UBSan)
+
+Detects undefined behavior in C/Swift code:
+
+```sh
+swift test --sanitize=undefined --verbose
+```
+
+### Leak Detection
+
+#### On macOS
+
+- LeakSanitizer (`--sanitize=leak`) is **not supported** by Swift on macOS.
+- Use Xcode Instruments for leak detection:
+  1. Open your project in Xcode.
+  2. Product > Profile (⌘I), select "Leaks".
+  3. Run your tests and inspect for leaks.
+- Or, use the "Leaks" instrument from the command line:
+  ```sh
+  instruments -t "Leaks" .build/debug/SwiftZlibPackageTests.xctest
+  ```
+
+#### On Linux
+
+- LeakSanitizer is integrated with AddressSanitizer:
+  - Run: `swift test --sanitize=address --verbose`
+  - Leaks will be reported at the end of the output if present.
+
+### Notes
+
+- Sanitizers may slow down test execution.
+- Always run tests with sanitizers enabled before submitting code, especially after changes to C interop or memory management.
+- For more information, see the [Swift documentation on sanitizers](https://www.swift.org/documentation/#sanitizers).

@@ -9,11 +9,15 @@ import CZLib
 import Foundation
 
 /// Stream-based compression for large data or streaming scenarios
-final class Compressor {
+public final class Compressor {
     // MARK: Properties
 
     private var stream = z_stream()
     private var isInitialized = false
+    private var isFinished = false
+
+    /// Gzip header memory management
+    private var gzipHeaderStorage: GzipHeaderStorage?
 
     // MARK: Lifecycle
 
@@ -23,6 +27,7 @@ final class Compressor {
     }
 
     deinit {
+        // gzipHeaderStorage will be deallocated automatically
         if isInitialized {
             swift_deflateEnd(&stream)
         }
@@ -385,11 +390,14 @@ final class Compressor {
 
     /// Set the gzip header for the stream (must be called after initializeAdvanced)
     public func setGzipHeader(_ header: GzipHeader) throws {
-        var cHeader = gz_header()
-        to_c_gz_header(header, cHeader: &cHeader)
-        let result = swift_deflateSetHeader(&stream, &cHeader)
+        guard gzipHeaderStorage == nil else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+        let storage = GzipHeaderStorage(swiftHeader: header)
+        let result = swift_deflateSetHeader(&stream, &storage.cHeader)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
+        gzipHeaderStorage = storage
     }
 }

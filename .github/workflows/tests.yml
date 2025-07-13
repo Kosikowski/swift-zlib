@@ -43,18 +43,17 @@ jobs:
 
   # Test on Linux (Ubuntu)
   test-linux:
-    name: Linux (Ubuntu 22.04)
-    runs-on: ubuntu-22.04
+    name: Linux (Ubuntu 24.04, Swift 5.10.1)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2
+        uses: SwiftyLab/setup-swift@v1
         with:
-          swift-version: "5.9"
-          gpg-private-key: ""
+          swift-version: "5.10.1"
 
       - name: Show Swift version
         run: swift --version
@@ -80,18 +79,17 @@ jobs:
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
-    name: Linux (Ubuntu 22.04, Swift 5.9)
-    runs-on: ubuntu-22.04
+    name: Linux (Ubuntu 24.04, Swift 5.10.1)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2
+        uses: SwiftyLab/setup-swift@v1
         with:
-          swift-version: "5.9"
-          gpg-private-key: ""
+          swift-version: "5.10.1"
 
       - name: Show Swift version
         run: swift --version
@@ -255,35 +253,21 @@ jobs:
           swift package show-dependencies
           swift package resolve
 
-  # Build verification
-  build-verification:
-    name: Build Verification
+  # Build verification - macOS
+  build-verification-macos:
+    name: Build Verification (macOS)
     strategy:
       matrix:
         configuration: [debug, release]
-        platform: [macos, linux]
-    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || 'ubuntu-22.04' }}
+    runs-on: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup environment (macOS)
-        if: matrix.platform == 'macos'
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
-      - name: Install Swift (Linux)
-        if: matrix.platform == 'linux'
-        uses: swift-actions/setup-swift@v2
-        with:
-          swift-version: "5.9"
-          gpg-private-key: ""
-
-      - name: Install zlib (Linux)
-        if: matrix.platform == 'linux'
-        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
-
       - name: Install zlib (macOS)
-        if: matrix.platform == 'macos'
         run: brew install zlib
 
       - name: Build package
@@ -294,3 +278,53 @@ jobs:
 
       - name: Build CLI tool
         run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+
+  # Build verification - Linux
+  build-verification-linux:
+    name: Build Verification (Linux)
+    strategy:
+      matrix:
+        configuration: [debug, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "5.10.1"
+
+      - name: Install zlib (Linux)
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Build package
+        run: swift build -c ${{ matrix.configuration }}
+
+      - name: Test package
+        run: swift test -c ${{ matrix.configuration }}
+
+      - name: Build CLI tool
+        run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+
+  memory-leak-linux:
+    name: Linux Memory Leak Test (MemoryLeakTests only)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "5.10.1"
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Install zlib development headers
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Run MemoryLeakTests
+        run: swift test --filter MemoryLeakTests --verbose

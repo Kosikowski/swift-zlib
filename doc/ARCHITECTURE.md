@@ -377,6 +377,112 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
+### 8. Gzip Header Memory Management
+
+SwiftZlib includes special memory management for gzip headers to ensure safety when interfacing with zlib's C API.
+
+**The Problem:**
+Gzip headers contain optional fields (`extra`, `name`, `comment`) that require C pointers to remain valid for the entire lifetime of the compression stream:
+
+```swift
+struct GzipHeader {
+    var text: Int32 = 0
+    var time: UInt32 = 0
+    var xflags: Int32 = 0
+    var os: Int32 = 0
+    var hcrc: Int32 = 0
+    var done: Int32 = 0
+    var extra: Data?
+    var name: String?
+    var comment: String?
+}
+```
+
+When these Swift types are converted to C pointers for zlib, Swift's automatic memory management can deallocate the pointers prematurely, leading to use-after-free errors and segmentation faults.
+
+**The Solution:**
+SwiftZlib uses a dedicated `GzipHeaderStorage` class to manage the lifetime of gzip header memory:
+
+```swift
+final class GzipHeaderStorage {
+    var cHeader: gz_header
+    private var extraPtr: UnsafeMutablePointer<Bytef>?
+    private var namePtr: UnsafeMutablePointer<CChar>?
+    private var commentPtr: UnsafeMutablePointer<CChar>?
+
+    init(swiftHeader: GzipHeader) {
+        cHeader = gz_header()
+        // Allocate and copy memory for each field
+        // Store pointers for later deallocation
+    }
+
+    deinit {
+        // Safely deallocate all memory
+        extraPtr?.deallocate()
+        namePtr?.deallocate()
+        commentPtr?.deallocate()
+    }
+}
+```
+
+**Memory Management Flow:**
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Swift         │    │   GzipHeader    │    │   Zlib C        │
+│   GzipHeader    │    │   Storage       │    │   API           │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│                 │    │                 │    │                 │
+│ • extra: Data?  │───▶│ • extraPtr      │───▶│ • gz_header.extra│
+│ • name: String? │    │ • namePtr       │    │ • gz_header.name│
+│ • comment: String?│  │ • commentPtr    │    │ • gz_header.comment│
+│                 │    │ • Lifetime Mgmt │    │ • Stream Usage  │
+│                 │    │ • Auto Cleanup  │    │ • Memory Valid  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Memory        │    │   Memory        │    │   Memory        │
+│   Allocation    │    │   Validation    │    │   Cleanup       │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│                 │    │                 │    │                 │
+│ • Data.copyBytes│    │ • Pointer Valid │    │ • deallocate()  │
+│ • String.cString│    │ • Lifetime Check│    │ • Stream End    │
+│ • Memory Alloc  │    │ • Safety Check  │    │ • Auto Cleanup  │
+│ • Copy Data     │    │ • Error Detect  │    │ • Memory Free   │
+│ • Store Ptrs    │    │ • Debug Output  │    │ • Final Check   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+**Key Benefits:**
+
+- **Memory Safety**: Prevents use-after-free and double-free errors
+- **Stream Lifetime**: Memory remains valid for the entire zlib stream
+- **Single Header**: Each compressor can only have one gzip header, preventing conflicts
+- **Automatic Cleanup**: Memory is deallocated when the compressor is deinitialized
+
+**Usage Pattern:**
+
+```swift
+let compressor = Compressor()
+try compressor.initializeAdvanced(level: .default, method: .deflated, windowBits: 16)
+
+// Memory is automatically managed - no manual cleanup needed
+try compressor.setGzipHeader(header)
+
+// ... compression operations ...
+// Memory is automatically freed when compressor is deallocated
+```
+
+**Error Prevention:**
+
+- **Segmentation Faults**: Eliminated through proper memory lifetime management
+- **Use-After-Free**: Prevented by maintaining strong references
+- **Double-Free**: Avoided through single header enforcement
+- **Memory Leaks**: Prevented through automatic cleanup in deinit
+
+This memory management strategy ensures that gzip headers work safely across all platforms while maintaining the performance and usability of the SwiftZlib API.
+
 ## Design Patterns
 
 ### 1. Builder Pattern

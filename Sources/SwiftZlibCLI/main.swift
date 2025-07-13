@@ -2,44 +2,7 @@
 
 import Foundation
 import SwiftZlib
-
-// MARK: - CLITimer
-
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    import CoreFoundation
-#endif
-
-// MARK: - CLITimer
-
-struct CLITimer {
-    // MARK: Properties
-
-    #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-        private let start: CFAbsoluteTime
-    #else
-        private let start: Date
-    #endif
-
-    // MARK: Computed Properties
-
-    var elapsed: TimeInterval {
-        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-            return CFAbsoluteTimeGetCurrent() - start
-        #else
-            return Date().timeIntervalSince(start)
-        #endif
-    }
-
-    // MARK: Lifecycle
-
-    init() {
-        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-            start = CFAbsoluteTimeGetCurrent()
-        #else
-            start = Date()
-        #endif
-    }
-}
+@_spi(SwiftZLibTime) import SwiftZlib
 
 // MARK: - Command Line Interface
 
@@ -170,9 +133,9 @@ func handleBenchmark(_ args: [String]) {
         print("-----\t\t----\t\t-----\t\t--------")
 
         for level in levels {
-            let timer = CLITimer()
+            let timer = SwiftZlibTimer()
             let compressed = try data.compressed(level: level)
-            let timeMs = timer.elapsed * 1000
+            let timeMs = timer.elapsedMilliseconds
 
             let ratio = Double(compressed.count) / Double(data.count)
 
