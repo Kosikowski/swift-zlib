@@ -307,6 +307,22 @@ jobs:
       - name: Build CLI tool
         run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
 
+  # C zlib C API tests
+  test-c-zlib:
+    name: C zlib C API tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools and zlib
+        run: sudo apt-get update && sudo apt-get install -y build-essential zlib1g-dev
+
+      - name: Build and run C zlib tests
+        run: |
+          cd Tests/CZLibC
+          make clean all run
+
   memory-leak-linux:
     name: Linux Memory Leak Test (MemoryLeakTests only)
     runs-on: ubuntu-latest
