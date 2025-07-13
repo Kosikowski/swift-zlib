@@ -126,33 +126,21 @@ func zlibError(_ message: String, file: String = #file, function: String = #func
 class ZLibTimer {
     // MARK: Properties
 
-    #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-        private let startTime: CFAbsoluteTime
-    #else
-        private let startTime: Date
-    #endif
+    private let timer: SwiftZlibTimer
     private let operation: String
 
     // MARK: Lifecycle
 
     init(_ operation: String) {
         self.operation = operation
-        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-            startTime = CFAbsoluteTimeGetCurrent()
-        #else
-            startTime = Date()
-        #endif
+        self.timer = SwiftZlibTimer()
         zlibDebug("Starting \(operation)")
     }
 
     // MARK: Functions
 
     func finish() -> TimeInterval {
-        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-            let duration = CFAbsoluteTimeGetCurrent() - startTime
-        #else
-            let duration = Date().timeIntervalSince(startTime)
-        #endif
+        let duration = timer.elapsed
         zlibDebug("Finished \(operation) in \(String(format: "%.4f", duration))s")
         return duration
     }
