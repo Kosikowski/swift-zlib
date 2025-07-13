@@ -396,7 +396,7 @@ func createTestFile() -> String {
     let testContent = "This is a test file for SwiftZlib compression and decompression testing."
     let tempDir = FileManager.default.temporaryDirectory
     let testFile = tempDir.appendingPathComponent("swiftzlib_test.txt")
-    
+
     do {
         try testContent.write(to: testFile, atomically: true, encoding: .utf8)
         return testFile.path
@@ -413,7 +413,7 @@ func cleanupTestFiles() {
     for file in files {
         try? FileManager.default.removeItem(atPath: file)
     }
-    
+
     // Also clean up temp files
     let tempDir = FileManager.default.temporaryDirectory
     let tempFiles = ["swiftzlib_test.txt", "swiftzlib_test.txt.gz", "swiftzlib_test_decompressed.txt"]
