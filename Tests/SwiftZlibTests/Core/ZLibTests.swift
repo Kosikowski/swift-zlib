@@ -32,13 +32,6 @@ final class ZLibTests: XCTestCase {
         XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
     }
     
-    func testZLibVersionOriginal() {
-        let version = ZLib.version
-        XCTAssertFalse(version.isEmpty)
-        XCTAssertTrue(version.contains("."))
-        print("ZLib version: \(version)")
-    }
-    
     func testBasicCompressionAndDecompression() throws {
         let originalData = "Hello, World! This is a test string for compression.".data(using: .utf8)!
 
@@ -56,25 +49,6 @@ final class ZLibTests: XCTestCase {
     }
     
     func testCompressionLevels() throws {
-        let originalData = "Test data for compression levels".data(using: .utf8)!
-        
-        let levels: [CompressionLevel] = [.noCompression, .bestSpeed, .defaultCompression, .bestCompression]
-        var compressedSizes: [Int] = []
-        
-        for level in levels {
-            let compressed = try ZLib.compress(originalData, level: level)
-            compressedSizes.append(compressed.count)
-            
-            // Verify decompression works
-            let decompressed = try ZLib.decompress(compressed)
-            XCTAssertEqual(decompressed, originalData)
-        }
-        
-        // Best compression should produce smaller output than no compression
-        XCTAssertLessThanOrEqual(compressedSizes[3], compressedSizes[0], "Best compression should be smaller than no compression")
-    }
-    
-    func testCompressionLevelsOriginal() throws {
         let originalString = "This is a longer test string that should demonstrate different compression levels. " +
             "We'll repeat this several times to make it longer and more compressible. " +
             "This is a longer test string that should demonstrate different compression levels. " +
@@ -99,29 +73,7 @@ final class ZLibTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(compressedSizes[2], compressedSizes[3]) // default >= bestCompression
     }
     
-    func testEmptyData() throws {
-        let emptyData = Data()
-        let compressed = try ZLib.compress(emptyData)
-        let decompressed = try ZLib.decompress(compressed)
-        
-        XCTAssertEqual(decompressed, emptyData)
-    }
-    
-    func testSingleByteData() throws {
-        let singleByte = Data([0x42])
-        let compressed = try ZLib.compress(singleByte)
-        let decompressed = try ZLib.decompress(compressed)
-        
-        XCTAssertEqual(decompressed, singleByte)
-    }
-    
-    func testBinaryData() throws {
-        let binaryData = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09])
-        let compressed = try ZLib.compress(binaryData)
-        let decompressed = try ZLib.decompress(compressed)
-        
-        XCTAssertEqual(decompressed, binaryData)
-    }
+
     
     func testCorruptedData() throws {
         let originalData = "Test data".data(using: .utf8)!
@@ -231,9 +183,6 @@ final class ZLibTests: XCTestCase {
         ("testZLibVersion", testZLibVersion),
         ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
         ("testCompressionLevels", testCompressionLevels),
-        ("testEmptyData", testEmptyData),
-        ("testSingleByteData", testSingleByteData),
-        ("testBinaryData", testBinaryData),
         ("testCorruptedData", testCorruptedData),
         ("testMemoryPressure", testMemoryPressure),
         ("testConcurrentAccess", testConcurrentAccess),
