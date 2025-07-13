@@ -79,7 +79,7 @@ jobs:
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
-    name: Linux (Ubuntu 22.04, Swift 5.10)
+    name: Linux (Ubuntu 22.04, Swift 5.9)
     runs-on: ubuntu-22.04
     
     steps:
@@ -89,7 +89,7 @@ jobs:
     - name: Install Swift
       uses: swift-actions/setup-swift@v1
       with:
-        swift-version: '5.10'
+        swift-version: '5.9'
         
     - name: Show Swift version
       run: swift --version
@@ -275,7 +275,7 @@ jobs:
       if: matrix.platform == 'linux'
       uses: swift-actions/setup-swift@v1
       with:
-        swift-version: '5.10'
+        swift-version: '5.9'
         
     - name: Install zlib (Linux)
       if: matrix.platform == 'linux'
