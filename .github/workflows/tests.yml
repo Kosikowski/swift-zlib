@@ -174,18 +174,24 @@ jobs:
         # Test info command
         .build/release/SwiftZlibCLI info
         
+        # Create test file in a writable location
+        echo "test data for SwiftZlib CLI testing" > /tmp/test.txt
+        
         # Test compression
-        echo "test data" > test.txt
-        .build/release/SwiftZlibCLI compress test.txt -o test.txt.gz
+        .build/release/SwiftZlibCLI compress /tmp/test.txt /tmp/test.txt.gz
         
         # Test decompression
-        .build/release/SwiftZlibCLI decompress test.txt.gz -o test_decompressed.txt
+        .build/release/SwiftZlibCLI decompress /tmp/test.txt.gz /tmp/test_decompressed.txt
         
         # Verify round-trip
-        diff test.txt test_decompressed.txt
+        diff /tmp/test.txt /tmp/test_decompressed.txt
+        
+        # Show file sizes for debugging
+        echo "File sizes:"
+        ls -la /tmp/test*.txt*
         
         # Clean up
-        rm -f test.txt test.txt.gz test_decompressed.txt
+        rm -f /tmp/test.txt /tmp/test.txt.gz /tmp/test_decompressed.txt
 
   # Performance benchmarks
   benchmark:
