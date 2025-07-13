@@ -271,6 +271,27 @@ final class MemoryLeakTests: XCTestCase {
             // Compressor deallocated here
         }
     }
+
+    /// Minimal test to isolate allocation/deallocation for AddressSanitizer
+    func testIsolatedAllocationDeallocation() throws {
+        // Allocate and deallocate Compressor
+        do {
+            let compressor = Compressor()
+            try compressor.initialize(level: .defaultCompression)
+            let testData = "leak test".data(using: .utf8)!
+            let _ = try compressor.compress(testData, flush: .finish)
+            // Compressor deallocated at end of scope
+        }
+        // Allocate and deallocate Decompressor
+        do {
+            let decompressor = Decompressor()
+            try decompressor.initialize()
+            let testData = "leak test".data(using: .utf8)!
+            let compressed = try ZLib.compress(testData)
+            let _ = try decompressor.decompress(compressed)
+            // Decompressor deallocated at end of scope
+        }
+    }
 }
 
 #if !os(macOS)
@@ -291,6 +312,7 @@ final class MemoryLeakTests: XCTestCase {
             ("testRapidCreateDestroy", testRapidCreateDestroy),
             ("testDifferentCompressionLevels", testDifferentCompressionLevels),
             ("testDifferentWindowBits", testDifferentWindowBits),
+            ("testIsolatedAllocationDeallocation", testIsolatedAllocationDeallocation),
         ]
     }
 #endif
