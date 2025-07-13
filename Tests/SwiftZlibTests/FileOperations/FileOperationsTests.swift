@@ -362,6 +362,13 @@ final class FileOperationsTests: XCTestCase {
         try decompressor.decompressFile(from: destPath, to: decompressedPath)
 
         let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+
+        // Add debugging information for Linux CI issues
+        print("Original data size: \(testData.count) bytes")
+        print("Decompressed data size: \(decompressedData.count) bytes")
+        print("Original data: \(String(data: testData, encoding: .utf8) ?? "invalid")")
+        print("Decompressed data: \(String(data: decompressedData, encoding: .utf8) ?? "invalid")")
+
         XCTAssertEqual(decompressedData, testData)
 
         // Clean up
