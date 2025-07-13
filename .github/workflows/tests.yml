@@ -189,7 +189,7 @@ jobs:
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
