@@ -1,7 +1,7 @@
 import XCTest
 @testable import SwiftZlib
 
-final class ErrorHandlingTests: XCTestCase {
+final class EdgeCaseErrorHandlingTests: XCTestCase {
     /// Helper function to check that ZLibErrors are not double-wrapped
     /// This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
     private func assertNoDoubleWrappedZLibError(_ error: Error) {
