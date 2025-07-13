@@ -616,26 +616,41 @@ The leak only occurs on Linux, not macOS, due to:
 
 We updated our GitHub Actions workflow to:
 
-- Use Swift 6.1 on Linux runners
-- Disable AddressSanitizer on Ubuntu runners
+- Use Swift 5.10.1 on Ubuntu 24.04 runners
+- Use SwiftyLab/setup-swift@v1 to avoid GPG verification issues
 - Focus on functional testing rather than memory analysis
 
 ```yaml
 # Updated memory-leak-linux job
 memory-leak-linux:
   name: Linux Memory Leak Test (MemoryLeakTests only)
-  runs-on: ubuntu-22.04
+  runs-on: ubuntu-latest
   steps:
     - name: Install Swift
-      uses: swift-actions/setup-swift@v2.3.0
+      uses: SwiftyLab/setup-swift@v1
       with:
-        swift-version: "6.1"
+        swift-version: "5.10.1"
 
     - name: Run MemoryLeakTests
-      run: swift test --filter MemoryLeakTests --verbose # No --sanitize=address
+      run: swift test --filter MemoryLeakTests --verbose # No sanitizer flags
 ```
 
-#### 2. Memory Leak Test Strategy
+**Note**: We removed `--no-sanitize` flags from all test commands because:
+
+- `--no-sanitize` is not a valid Swift option
+- The alternative Swift installation (SwiftyLab/setup-swift) handles installation more reliably
+- We focus on functional testing rather than sanitizer-based memory analysis
+
+#### 2. Alternative Swift Installation
+
+We switched from the official `swift-actions/setup-swift` to `SwiftyLab/setup-swift@v1` because:
+
+- **GPG Issues**: The official action had GPG key rotation problems
+- **Reliability**: Alternative action works more consistently
+- **Cross-platform**: Better support across different environments
+- **Simpler**: No complex signing key management
+
+#### 3. Memory Leak Test Strategy
 
 Our approach to memory leak testing:
 
@@ -644,11 +659,12 @@ Our approach to memory leak testing:
 3. **Stress Testing**: Create many objects in rapid succession
 4. **Error Testing**: Ensure proper cleanup even when errors occur
 
-#### 3. Known Limitations
+#### 4. Known Limitations
 
 - AddressSanitizer on Linux may report false positives from Swift/XCTest runtime
 - Small leaks (32 bytes) in runtime code are common and not actionable
 - Platform-specific differences in memory management are expected
+- Alternative Swift installation avoids GPG issues but may not have sanitizer support
 
 ### Best Practices for Memory Testing
 

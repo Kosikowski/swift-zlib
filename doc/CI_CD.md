@@ -8,23 +8,14 @@ The CI pipeline runs on every push to `main`/`develop` branches and on all pull 
 
 ### Test Matrix
 
-| Platform     | Runner         | Xcode/Swift | Purpose              |
-| ------------ | -------------- | ----------- | -------------------- |
-| macOS 12     | `macos-12`     | Xcode 14.3  | Legacy compatibility |
-| macOS 14     | `macos-14`     | Xcode 15.2  | Latest features      |
-| Ubuntu 22.04 | `ubuntu-22.04` | Swift 5.9   | Linux compatibility  |
-| Ubuntu 22.04 | `ubuntu-22.04` | Swift 5.10  | Latest Swift         |
+| Platform     | Runner          | Xcode/Swift  | Purpose             |
+| ------------ | --------------- | ------------ | ------------------- |
+| macOS 14     | `macos-14`      | Xcode 15.2   | Latest features     |
+| Ubuntu 24.04 | `ubuntu-latest` | Swift 5.10.1 | Linux compatibility |
 
 ## Jobs Breakdown
 
 ### 1. Platform Testing
-
-#### macOS (Legacy)
-
-- **Runner**: `macos-12`
-- **Xcode**: 14.3
-- **Purpose**: Ensure compatibility with older macOS/Xcode versions
-- **Tests**: All test suites + specific test groups
 
 #### macOS (Latest)
 
@@ -33,19 +24,11 @@ The CI pipeline runs on every push to `main`/`develop` branches and on all pull 
 - **Purpose**: Test with latest macOS/Xcode features
 - **Tests**: All test suites + specific test groups
 
-#### Linux (Stable)
-
-- **Runner**: `ubuntu-22.04`
-- **Swift**: 5.9
-- **Purpose**: Linux compatibility testing
-- **Dependencies**: `zlib1g-dev`
-- **Tests**: All test suites + specific test groups
-
 #### Linux (Latest)
 
-- **Runner**: `ubuntu-22.04`
-- **Swift**: 5.10
-- **Purpose**: Latest Swift features on Linux
+- **Runner**: `ubuntu-latest` (Ubuntu 24.04)
+- **Swift**: 5.10.1 (via SwiftyLab/setup-swift@v1)
+- **Purpose**: Linux compatibility testing with latest Swift
 - **Dependencies**: `zlib1g-dev`
 - **Tests**: All test suites + specific test groups
 
@@ -97,6 +80,13 @@ The CI pipeline runs on every push to `main`/`develop` branches and on all pull 
   - Package build verification
   - CLI tool build verification
   - Test execution in all configurations
+
+### 7. Memory Leak Testing
+
+- **Platform**: Ubuntu 24.04
+- **Purpose**: Detect memory leaks in compression/decompression
+- **Tests**: MemoryLeakTests only
+- **Note**: Uses alternative Swift installation to avoid GPG issues
 
 ## Test Groups
 
