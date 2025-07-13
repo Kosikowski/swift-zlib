@@ -90,7 +90,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2
+        uses: swift-actions/setup-swift@v2.3.0
         with:
           swift-version: "5.9"
 
@@ -277,7 +277,7 @@ jobs:
 
       - name: Install Swift (Linux)
         if: matrix.platform == 'linux'
-        uses: swift-actions/setup-swift@v2
+        uses: swift-actions/setup-swift@v2.3.0
         with:
           swift-version: "5.9"
 
@@ -307,7 +307,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2
+        uses: swift-actions/setup-swift@v2.3.0
         with:
           swift-version: "5.9"
 
