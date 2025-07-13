@@ -20,13 +20,32 @@ jobs:
       - name: Install Swift
         id: install-swift
         run: |
-          # Download and install Swift 6.1 manually
-          wget -q https://download.swift.org/swift-6.1-release/ubuntu2204/swift-6.1-RELEASE-ubuntu22.04.tar.gz
-          tar xzf swift-6.1-RELEASE-ubuntu22.04.tar.gz
-          sudo mv swift-6.1-RELEASE-ubuntu22.04 /opt/swift
+          # Download and install Swift 5.10 manually (more stable than 6.1)
+          echo "Downloading Swift 5.10..."
+          wget -q --show-progress https://download.swift.org/swift-5.10-release/ubuntu2204/swift-5.10-RELEASE-ubuntu22.04.tar.gz
+
+          if [ ! -f swift-5.10-RELEASE-ubuntu22.04.tar.gz ]; then
+            echo "Error: Swift download failed"
+            exit 1
+          fi
+
+          echo "Extracting Swift..."
+          tar xzf swift-5.10-RELEASE-ubuntu22.04.tar.gz
+
+          if [ ! -d swift-5.10-RELEASE-ubuntu22.04 ]; then
+            echo "Error: Swift extraction failed"
+            exit 1
+          fi
+
+          echo "Installing Swift to /opt/swift..."
+          sudo mv swift-5.10-RELEASE-ubuntu22.04 /opt/swift
+
+          echo "Setting up environment..."
           echo "path=/opt/swift/usr/bin" >> $GITHUB_OUTPUT
           echo "/opt/swift/usr/bin" >> $GITHUB_PATH
           echo "SWIFT_HOME=/opt/swift" >> $GITHUB_ENV
+
+          echo "Swift installation completed successfully"
 
   # Test on macOS with latest Xcode (newest runner)
   test-macos-latest:
@@ -101,7 +120,7 @@ jobs:
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
-    name: Linux (Ubuntu 22.04, Swift 6.1)
+    name: Linux (Ubuntu 22.04, Swift 5.10)
     runs-on: ubuntu-22.04
     needs: install-swift-linux
 
