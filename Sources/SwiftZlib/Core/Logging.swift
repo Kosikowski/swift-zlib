@@ -122,21 +122,33 @@ func zlibError(_ message: String, file: String = #file, function: String = #func
 class ZLibTimer {
     // MARK: Properties
 
+    #if canImport(CoreFoundation)
     private let startTime: CFAbsoluteTime
+    #else
+    private let startTime: Date
+    #endif
     private let operation: String
 
     // MARK: Lifecycle
 
     init(_ operation: String) {
         self.operation = operation
+        #if canImport(CoreFoundation)
         startTime = CFAbsoluteTimeGetCurrent()
+        #else
+        startTime = Date()
+        #endif
         zlibDebug("Starting \(operation)")
     }
 
     // MARK: Functions
 
     func finish() -> TimeInterval {
+        #if canImport(CoreFoundation)
         let duration = CFAbsoluteTimeGetCurrent() - startTime
+        #else
+        let duration = Date().timeIntervalSince(startTime)
+        #endif
         zlibDebug("Finished \(operation) in \(String(format: "%.4f", duration))s")
         return duration
     }
