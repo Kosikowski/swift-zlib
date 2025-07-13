@@ -302,10 +302,10 @@ func handleLargeFile(_ args: [String]) {
 
         // Use public API for large file compression
         let startTime = Date()
-        
+
         // Read file data
         let sourceData = try Data(contentsOf: URL(fileURLWithPath: inputPath))
-        
+
         // Show initial progress
         updateProgressBar(
             percentage: 0.0,
@@ -314,10 +314,10 @@ func handleLargeFile(_ args: [String]) {
             speed: 0.0,
             eta: 0.0
         )
-        
+
         // Compress with progress simulation
         let compressedData = try ZLib.compress(sourceData)
-        
+
         // Show final progress
         updateProgressBar(
             percentage: 100.0,
@@ -326,7 +326,7 @@ func handleLargeFile(_ args: [String]) {
             speed: Double(sourceData.count) / Date().timeIntervalSince(startTime),
             eta: 0.0
         )
-        
+
         // Write compressed data
         try compressedData.write(to: URL(fileURLWithPath: outputPath))
 

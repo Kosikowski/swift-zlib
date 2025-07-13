@@ -5,8 +5,8 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import Foundation
 import Combine
+import Foundation
 
 public extension ZLib {
     /// Combine publisher for async compression
@@ -55,7 +55,9 @@ public extension ZLib {
         bufferSize: Int = 64 * 1024,
         compressionLevel: CompressionLevel = .defaultCompression,
         windowBits: WindowBits = .deflate
-    ) -> AnyPublisher<Void, Error> {
+    )
+        -> AnyPublisher<Void, Error>
+    {
         Future { promise in
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
@@ -81,7 +83,9 @@ public extension ZLib {
         to destinationPath: String,
         bufferSize: Int = 64 * 1024,
         windowBits: WindowBits = .deflate
-    ) -> AnyPublisher<Void, Error> {
+    )
+        -> AnyPublisher<Void, Error>
+    {
         Future { promise in
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
@@ -107,7 +111,9 @@ public extension ZLib {
         bufferSize: Int = 64 * 1024,
         compressionLevel: CompressionLevel = .defaultCompression,
         windowBits: WindowBits = .deflate
-    ) -> AnyPublisher<(processed: Int, total: Int, percent: Double), Error> {
+    )
+        -> AnyPublisher<(processed: Int, total: Int, percent: Double), Error>
+    {
         let subject = PassthroughSubject<(processed: Int, total: Int, percent: Double), Error>()
         DispatchQueue.global(qos: .userInitiated).async {
             do {
@@ -135,7 +141,9 @@ public extension ZLib {
         to destinationPath: String,
         bufferSize: Int = 64 * 1024,
         windowBits: WindowBits = .deflate
-    ) -> AnyPublisher<(processed: Int, total: Int, percent: Double), Error> {
+    )
+        -> AnyPublisher<(processed: Int, total: Int, percent: Double), Error>
+    {
         let subject = PassthroughSubject<(processed: Int, total: Int, percent: Double), Error>()
         DispatchQueue.global(qos: .userInitiated).async {
             do {
@@ -154,4 +162,4 @@ public extension ZLib {
         }
         return subject.eraseToAnyPublisher()
     }
-} 
+}

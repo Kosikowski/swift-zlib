@@ -7,8 +7,10 @@ import XCTest
 @testable import SwiftZlib
 
 #if canImport(Combine)
-import Combine
+    import Combine
 #endif
+
+// MARK: - FileOperationsTests
 
 final class FileOperationsTests: XCTestCase {
     // MARK: Static Properties
@@ -381,178 +383,178 @@ final class FileOperationsTests: XCTestCase {
 }
 
 #if canImport(Combine)
-extension FileOperationsTests {
-    func testCombineFileCompressionDecompression() throws {
-        let testData = "Hello, Combine! This is a test file for Combine compression.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_combine_source.txt"
-        let compressedPath = "/tmp/test_combine_compressed.gz"
-        let decompressedPath = "/tmp/test_combine_decompressed.txt"
-        try testData.write(to: URL(fileURLWithPath: sourcePath))
+    extension FileOperationsTests {
+        func testCombineFileCompressionDecompression() throws {
+            let testData = "Hello, Combine! This is a test file for Combine compression.".data(using: .utf8)!
+            let sourcePath = "/tmp/test_combine_source.txt"
+            let compressedPath = "/tmp/test_combine_compressed.gz"
+            let decompressedPath = "/tmp/test_combine_decompressed.txt"
+            try testData.write(to: URL(fileURLWithPath: sourcePath))
 
-        let compressExpectation = expectation(description: "Combine file compression completes")
-        let decompressExpectation = expectation(description: "Combine file decompression completes")
-        var cancellables = Set<AnyCancellable>()
+            let compressExpectation = expectation(description: "Combine file compression completes")
+            let decompressExpectation = expectation(description: "Combine file decompression completes")
+            var cancellables = Set<AnyCancellable>()
 
-        // Compress file using Combine publisher
-        ZLib.compressFilePublisher(from: sourcePath, to: compressedPath)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    compressExpectation.fulfill()
-                case .failure(let error):
-                    XCTFail("Compression failed: \(error)")
-                }
-            }, receiveValue: { })
-            .store(in: &cancellables)
+            // Compress file using Combine publisher
+            ZLib.compressFilePublisher(from: sourcePath, to: compressedPath)
+                .sink(receiveCompletion: { completion in
+                    switch completion {
+                        case .finished:
+                            compressExpectation.fulfill()
+                        case let .failure(error):
+                            XCTFail("Compression failed: \(error)")
+                    }
+                }, receiveValue: {})
+                .store(in: &cancellables)
 
-        wait(for: [compressExpectation], timeout: 5.0)
+            wait(for: [compressExpectation], timeout: 5.0)
 
-        // Decompress file using Combine publisher
-        ZLib.decompressFilePublisher(from: compressedPath, to: decompressedPath)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    decompressExpectation.fulfill()
-                case .failure(let error):
-                    XCTFail("Decompression failed: \(error)")
-                }
-            }, receiveValue: { })
-            .store(in: &cancellables)
+            // Decompress file using Combine publisher
+            ZLib.decompressFilePublisher(from: compressedPath, to: decompressedPath)
+                .sink(receiveCompletion: { completion in
+                    switch completion {
+                        case .finished:
+                            decompressExpectation.fulfill()
+                        case let .failure(error):
+                            XCTFail("Decompression failed: \(error)")
+                    }
+                }, receiveValue: {})
+                .store(in: &cancellables)
 
-        wait(for: [decompressExpectation], timeout: 5.0)
+            wait(for: [decompressExpectation], timeout: 5.0)
 
-        // Verify decompressed data matches original
-        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
-        XCTAssertEqual(decompressedData, testData)
+            // Verify decompressed data matches original
+            let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+            XCTAssertEqual(decompressedData, testData)
 
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
-        try? FileManager.default.removeItem(atPath: compressedPath)
-        try? FileManager.default.removeItem(atPath: decompressedPath)
+            // Clean up
+            try? FileManager.default.removeItem(atPath: sourcePath)
+            try? FileManager.default.removeItem(atPath: compressedPath)
+            try? FileManager.default.removeItem(atPath: decompressedPath)
+        }
+
+        func testCombineFileCompressionWithProgress() throws {
+            let testData = String(repeating: "Hello, Combine Progress! ", count: 1000).data(using: .utf8)!
+            let sourcePath = "/tmp/test_combine_progress_source.txt"
+            let compressedPath = "/tmp/test_combine_progress_compressed.gz"
+            try testData.write(to: URL(fileURLWithPath: sourcePath))
+
+            let progressExpectation = expectation(description: "Combine file compression with progress completes")
+            var progressUpdates = 0
+            var lastPercent: Double = 0
+            var cancellables = Set<AnyCancellable>()
+
+            ZLib.compressFileProgressPublisher(from: sourcePath, to: compressedPath)
+                .sink(receiveCompletion: { completion in
+                    switch completion {
+                        case .finished:
+                            progressExpectation.fulfill()
+                        case let .failure(error):
+                            XCTFail("Compression with progress failed: \(error)")
+                    }
+                }, receiveValue: { progress in
+                    progressUpdates += 1
+                    lastPercent = progress.percent
+                    XCTAssertGreaterThanOrEqual(progress.percent, 0)
+                    XCTAssertLessThanOrEqual(progress.percent, 100)
+                })
+                .store(in: &cancellables)
+
+            wait(for: [progressExpectation], timeout: 10.0)
+            XCTAssertGreaterThan(progressUpdates, 0)
+            XCTAssertEqual(lastPercent, 100, accuracy: 0.1)
+
+            // Clean up
+            try? FileManager.default.removeItem(atPath: sourcePath)
+            try? FileManager.default.removeItem(atPath: compressedPath)
+        }
+
+        func testCombineFileDecompressionWithProgress() throws {
+            let testData = String(repeating: "Hello, Combine Decompression Progress! ", count: 1000).data(using: .utf8)!
+            let sourcePath = "/tmp/test_combine_decomp_progress_source.txt"
+            let compressedPath = "/tmp/test_combine_decomp_progress_compressed.gz"
+            let decompressedPath = "/tmp/test_combine_decomp_progress_decompressed.txt"
+            try testData.write(to: URL(fileURLWithPath: sourcePath))
+
+            // Compress file first
+            let compressExpectation = expectation(description: "Compression for decompression progress test completes")
+            var cancellables = Set<AnyCancellable>()
+            ZLib.compressFilePublisher(from: sourcePath, to: compressedPath)
+                .sink(receiveCompletion: { completion in
+                    if case .finished = completion { compressExpectation.fulfill() }
+                }, receiveValue: {})
+                .store(in: &cancellables)
+            wait(for: [compressExpectation], timeout: 5.0)
+
+            // Decompress file with progress
+            let progressExpectation = expectation(description: "Combine file decompression with progress completes")
+            var progressUpdates = 0
+            var lastPercent: Double = 0
+            ZLib.decompressFileProgressPublisher(from: compressedPath, to: decompressedPath)
+                .sink(receiveCompletion: { completion in
+                    switch completion {
+                        case .finished:
+                            progressExpectation.fulfill()
+                        case let .failure(error):
+                            XCTFail("Decompression with progress failed: \(error)")
+                    }
+                }, receiveValue: { progress in
+                    progressUpdates += 1
+                    lastPercent = progress.percent
+                    XCTAssertGreaterThanOrEqual(progress.percent, 0)
+                    XCTAssertLessThanOrEqual(progress.percent, 100)
+                })
+                .store(in: &cancellables)
+            wait(for: [progressExpectation], timeout: 10.0)
+            XCTAssertGreaterThan(progressUpdates, 0)
+            XCTAssertEqual(lastPercent, 100, accuracy: 0.1)
+
+            // Verify decompressed data matches original
+            let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
+            XCTAssertEqual(decompressedData, testData)
+
+            // Clean up
+            try? FileManager.default.removeItem(atPath: sourcePath)
+            try? FileManager.default.removeItem(atPath: compressedPath)
+            try? FileManager.default.removeItem(atPath: decompressedPath)
+        }
+
+        func testCombineFileCompressionError() throws {
+            let nonExistentPath = "/tmp/does_not_exist.txt"
+            let destPath = "/tmp/should_not_be_created.gz"
+            let expectation = expectation(description: "Combine compression error")
+            var cancellables = Set<AnyCancellable>()
+            ZLib.compressFilePublisher(from: nonExistentPath, to: destPath)
+                .sink(receiveCompletion: { completion in
+                    switch completion {
+                        case .finished:
+                            XCTFail("Should not finish successfully")
+                        case .failure:
+                            expectation.fulfill()
+                    }
+                }, receiveValue: {})
+                .store(in: &cancellables)
+            wait(for: [expectation], timeout: 5.0)
+            try? FileManager.default.removeItem(atPath: destPath)
+        }
+
+        func testCombineFileDecompressionError() throws {
+            let nonExistentPath = "/tmp/does_not_exist.gz"
+            let destPath = "/tmp/should_not_be_created.txt"
+            let expectation = expectation(description: "Combine decompression error")
+            var cancellables = Set<AnyCancellable>()
+            ZLib.decompressFilePublisher(from: nonExistentPath, to: destPath)
+                .sink(receiveCompletion: { completion in
+                    switch completion {
+                        case .finished:
+                            XCTFail("Should not finish successfully")
+                        case .failure:
+                            expectation.fulfill()
+                    }
+                }, receiveValue: {})
+                .store(in: &cancellables)
+            wait(for: [expectation], timeout: 5.0)
+            try? FileManager.default.removeItem(atPath: destPath)
+        }
     }
-
-    func testCombineFileCompressionWithProgress() throws {
-        let testData = String(repeating: "Hello, Combine Progress! ", count: 1000).data(using: .utf8)!
-        let sourcePath = "/tmp/test_combine_progress_source.txt"
-        let compressedPath = "/tmp/test_combine_progress_compressed.gz"
-        try testData.write(to: URL(fileURLWithPath: sourcePath))
-
-        let progressExpectation = expectation(description: "Combine file compression with progress completes")
-        var progressUpdates = 0
-        var lastPercent: Double = 0
-        var cancellables = Set<AnyCancellable>()
-
-        ZLib.compressFileProgressPublisher(from: sourcePath, to: compressedPath)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    progressExpectation.fulfill()
-                case .failure(let error):
-                    XCTFail("Compression with progress failed: \(error)")
-                }
-            }, receiveValue: { progress in
-                progressUpdates += 1
-                lastPercent = progress.percent
-                XCTAssertGreaterThanOrEqual(progress.percent, 0)
-                XCTAssertLessThanOrEqual(progress.percent, 100)
-            })
-            .store(in: &cancellables)
-
-        wait(for: [progressExpectation], timeout: 10.0)
-        XCTAssertGreaterThan(progressUpdates, 0)
-        XCTAssertEqual(lastPercent, 100, accuracy: 0.1)
-
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
-        try? FileManager.default.removeItem(atPath: compressedPath)
-    }
-
-    func testCombineFileDecompressionWithProgress() throws {
-        let testData = String(repeating: "Hello, Combine Decompression Progress! ", count: 1000).data(using: .utf8)!
-        let sourcePath = "/tmp/test_combine_decomp_progress_source.txt"
-        let compressedPath = "/tmp/test_combine_decomp_progress_compressed.gz"
-        let decompressedPath = "/tmp/test_combine_decomp_progress_decompressed.txt"
-        try testData.write(to: URL(fileURLWithPath: sourcePath))
-
-        // Compress file first
-        let compressExpectation = expectation(description: "Compression for decompression progress test completes")
-        var cancellables = Set<AnyCancellable>()
-        ZLib.compressFilePublisher(from: sourcePath, to: compressedPath)
-            .sink(receiveCompletion: { completion in
-                if case .finished = completion { compressExpectation.fulfill() }
-            }, receiveValue: { })
-            .store(in: &cancellables)
-        wait(for: [compressExpectation], timeout: 5.0)
-
-        // Decompress file with progress
-        let progressExpectation = expectation(description: "Combine file decompression with progress completes")
-        var progressUpdates = 0
-        var lastPercent: Double = 0
-        ZLib.decompressFileProgressPublisher(from: compressedPath, to: decompressedPath)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    progressExpectation.fulfill()
-                case .failure(let error):
-                    XCTFail("Decompression with progress failed: \(error)")
-                }
-            }, receiveValue: { progress in
-                progressUpdates += 1
-                lastPercent = progress.percent
-                XCTAssertGreaterThanOrEqual(progress.percent, 0)
-                XCTAssertLessThanOrEqual(progress.percent, 100)
-            })
-            .store(in: &cancellables)
-        wait(for: [progressExpectation], timeout: 10.0)
-        XCTAssertGreaterThan(progressUpdates, 0)
-        XCTAssertEqual(lastPercent, 100, accuracy: 0.1)
-
-        // Verify decompressed data matches original
-        let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
-        XCTAssertEqual(decompressedData, testData)
-
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
-        try? FileManager.default.removeItem(atPath: compressedPath)
-        try? FileManager.default.removeItem(atPath: decompressedPath)
-    }
-
-    func testCombineFileCompressionError() throws {
-        let nonExistentPath = "/tmp/does_not_exist.txt"
-        let destPath = "/tmp/should_not_be_created.gz"
-        let expectation = self.expectation(description: "Combine compression error")
-        var cancellables = Set<AnyCancellable>()
-        ZLib.compressFilePublisher(from: nonExistentPath, to: destPath)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    XCTFail("Should not finish successfully")
-                case .failure:
-                    expectation.fulfill()
-                }
-            }, receiveValue: { })
-            .store(in: &cancellables)
-        wait(for: [expectation], timeout: 5.0)
-        try? FileManager.default.removeItem(atPath: destPath)
-    }
-
-    func testCombineFileDecompressionError() throws {
-        let nonExistentPath = "/tmp/does_not_exist.gz"
-        let destPath = "/tmp/should_not_be_created.txt"
-        let expectation = self.expectation(description: "Combine decompression error")
-        var cancellables = Set<AnyCancellable>()
-        ZLib.decompressFilePublisher(from: nonExistentPath, to: destPath)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    XCTFail("Should not finish successfully")
-                case .failure:
-                    expectation.fulfill()
-                }
-            }, receiveValue: { })
-            .store(in: &cancellables)
-        wait(for: [expectation], timeout: 5.0)
-        try? FileManager.default.removeItem(atPath: destPath)
-    }
-}
 #endif
