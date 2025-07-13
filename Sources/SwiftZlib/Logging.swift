@@ -1,0 +1,158 @@
+import Foundation
+import CZLib
+
+// MARK: - Verbose Logging System
+
+/// Verbose logging configuration for ZLib operations
+public struct ZLibVerboseConfig {
+    /// Enable verbose logging
+    public static var enabled: Bool = false
+    
+    /// Enable detailed stream state logging
+    public static var logStreamState: Bool = false
+    
+    /// Enable compression/decompression progress logging
+    public static var logProgress: Bool = false
+    
+    /// Enable memory allocation logging
+    public static var logMemory: Bool = false
+    
+    /// Enable error detailed logging
+    public static var logErrors: Bool = false
+    
+    /// Enable performance timing
+    public static var logTiming: Bool = false
+    
+    /// Log level for filtering messages
+    public enum LogLevel: Int, CaseIterable {
+        case debug = 0
+        case info = 1
+        case warning = 2
+        case error = 3
+        
+        public var description: String {
+            switch self {
+            case .debug: return "DEBUG"
+            case .info: return "INFO"
+            case .warning: return "WARNING"
+            case .error: return "ERROR"
+            }
+        }
+    }
+    
+    /// Current minimum log level
+    public static var minLogLevel: LogLevel = .info
+    
+    /// Custom log handler
+    public static var logHandler: ((LogLevel, String) -> Void)?
+    
+    /// Enable all verbose logging
+    public static func enableAll() {
+        enabled = true
+        logStreamState = true
+        logProgress = true
+        logMemory = true
+        logErrors = true
+        logTiming = true
+        minLogLevel = .debug
+    }
+    
+    /// Disable all verbose logging
+    public static func disableAll() {
+        enabled = false
+        logStreamState = false
+        logProgress = false
+        logMemory = false
+        logErrors = false
+        logTiming = false
+    }
+}
+
+/// Internal logging functions
+internal func zlibLog(_ level: ZLibVerboseConfig.LogLevel, _ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    guard ZLibVerboseConfig.enabled && level.rawValue >= ZLibVerboseConfig.minLogLevel.rawValue else { return }
+    
+    let formatter = DateFormatter()
+    formatter.dateFormat = "HH:mm:ss.SSS"
+    let timestamp = formatter.string(from: Date())
+    
+    let fileName = (file as NSString).lastPathComponent
+    let logMessage = "[\(timestamp)] [\(level.description)] [\(fileName):\(line)] \(function): \(message)"
+    
+    if let handler = ZLibVerboseConfig.logHandler {
+        handler(level, logMessage)
+    } else {
+        print(logMessage)
+    }
+}
+
+internal func zlibDebug(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    zlibLog(.debug, message, file: file, function: function, line: line)
+}
+
+internal func zlibInfo(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    zlibLog(.info, message, file: file, function: function, line: line)
+}
+
+internal func zlibWarning(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    zlibLog(.warning, message, file: file, function: function, line: line)
+}
+
+internal func zlibError(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+    zlibLog(.error, message, file: file, function: function, line: line)
+}
+
+/// Performance timing utilities
+internal class ZLibTimer {
+    private let startTime: CFAbsoluteTime
+    private let operation: String
+    
+    init(_ operation: String) {
+        self.operation = operation
+        self.startTime = CFAbsoluteTimeGetCurrent()
+        zlibDebug("Starting \(operation)")
+    }
+    
+    func finish() -> TimeInterval {
+        let duration = CFAbsoluteTimeGetCurrent() - startTime
+        zlibDebug("Finished \(operation) in \(String(format: "%.4f", duration))s")
+        return duration
+    }
+}
+
+internal func withTiming<T>(_ operation: String, _ block: () throws -> T) rethrows -> T {
+    if ZLibVerboseConfig.logTiming {
+        let timer = ZLibTimer(operation)
+        let result = try block()
+        _ = timer.finish()
+        return result
+    } else {
+        return try block()
+    }
+}
+
+/// Stream state logging utilities
+internal func logStreamState(_ stream: z_stream, operation: String) {
+    guard ZLibVerboseConfig.logStreamState else { return }
+    
+    zlibDebug("""
+        Stream state for \(operation):
+        - total_in: \(stream.total_in)
+        - total_out: \(stream.total_out)
+        - avail_in: \(stream.avail_in)
+        - avail_out: \(stream.avail_out)
+        - next_in: \(stream.next_in != nil ? "valid" : "nil")
+        - next_out: \(stream.next_out != nil ? "valid" : "nil")
+        """)
+}
+
+internal func logMemoryUsage(_ operation: String, bytes: Int) {
+    guard ZLibVerboseConfig.logMemory else { return }
+    zlibDebug("Memory allocation for \(operation): \(bytes) bytes")
+}
+
+internal func logProgress(_ operation: String, processed: Int, total: Int, current: Int) {
+    guard ZLibVerboseConfig.logProgress else { return }
+    let percentage = total > 0 ? Double(current) / Double(total) * 100.0 : 0.0
+    zlibInfo("\(operation) progress: \(current)/\(total) bytes (\(String(format: "%.1f", percentage))%)")
+} 
