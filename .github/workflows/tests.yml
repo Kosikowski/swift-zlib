@@ -65,17 +65,17 @@ jobs:
         run: swift build
 
       - name: Run all tests
-        run: swift test --no-sanitize --verbose
+        run: swift test --verbose
 
       - name: Run specific test groups
         run: |
-          swift test --filter CoreTests --no-sanitize
-          swift test --filter ExtensionsTests --no-sanitize
-          swift test --filter FileOperationsTests --no-sanitize
-          swift test --filter PerformanceTests --no-sanitize
-          swift test --filter ErrorHandlingTests --no-sanitize
-          swift test --filter StreamingTests --no-sanitize
-          swift test --filter ConcurrencyTests --no-sanitize
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter PerformanceTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
@@ -101,17 +101,17 @@ jobs:
         run: swift build
 
       - name: Run all tests
-        run: swift test --no-sanitize --verbose
+        run: swift test --verbose
 
       - name: Run specific test groups
         run: |
-          swift test --filter CoreTests --no-sanitize
-          swift test --filter ExtensionsTests --no-sanitize
-          swift test --filter FileOperationsTests --no-sanitize
-          swift test --filter PerformanceTests --no-sanitize
-          swift test --filter ErrorHandlingTests --no-sanitize
-          swift test --filter StreamingTests --no-sanitize
-          swift test --filter ConcurrencyTests --no-sanitize
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter PerformanceTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
 
   # Build and test CLI tool
   test-cli:
@@ -302,7 +302,7 @@ jobs:
         run: swift build -c ${{ matrix.configuration }}
 
       - name: Test package
-        run: swift test -c ${{ matrix.configuration }} --no-sanitize
+        run: swift test -c ${{ matrix.configuration }}
 
       - name: Build CLI tool
         run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
@@ -327,4 +327,4 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
 
       - name: Run MemoryLeakTests
-        run: swift test --filter MemoryLeakTests --no-sanitize --verbose
+        run: swift test --filter MemoryLeakTests --verbose
