@@ -486,6 +486,23 @@ try inflateBack.processWithCallbacks(
 )
 ```
 
+### Compressor Reset Semantics
+
+**Note:** `Compressor.reset()` (maps to zlib's `deflateReset`) only resets the internal state for continued use with the same parameters. It does **not** re-emit headers or fully reinitialize the stream. If you need to start a new, unrelated compression (with a new header and fresh state), you must create a new `Compressor` instance or call `initialize` again. See the [zlib manual on deflateReset](https://zlib.net/manual.html#deflateReset) for details.
+
+Example:
+
+```swift
+// Correct: Use a new Compressor for a new logical stream
+let compressor1 = Compressor()
+try compressor1.initialize(level: .defaultCompression)
+let compressed1 = try compressor1.compress(data1, flush: .finish)
+
+let compressor2 = Compressor()
+try compressor2.initialize(level: .defaultCompression)
+let compressed2 = try compressor2.compress(data2, flush: .finish)
+```
+
 ### Compressor and Decompressor Lifecycle
 
 #### Initialization

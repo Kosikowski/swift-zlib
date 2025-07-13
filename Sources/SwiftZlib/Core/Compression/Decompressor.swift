@@ -75,7 +75,8 @@ public class Decompressor {
         }
     }
 
-    /// Reset the decompressor for reuse
+    /// Reset the decom
+    /// pressor for reuse
     /// - Throws: ZLibError if reset fails
     public func reset() throws {
         guard isInitialized else {

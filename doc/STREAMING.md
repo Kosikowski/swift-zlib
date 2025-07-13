@@ -10,6 +10,8 @@ SwiftZlib provides advanced streaming APIs for both compression and decompressio
 - Flushing and finishing
 - Performance tips
 
+> **Note:** `Compressor.reset()` (zlib's `deflateReset`) only resets the internal state for continued use with the same parameters. It does **not** re-emit headers or fully reinitialize the stream. For a new, unrelated compression, create a new `Compressor` instance or re-initialize. See the [zlib manual](https://zlib.net/manual.html#deflateReset) for details.
+
 ## Streaming Decompressor
 - Usage
 - Chunked input
