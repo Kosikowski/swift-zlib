@@ -297,3 +297,25 @@ jobs:
 
       - name: Build CLI tool
         run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+
+  memory-leak-linux:
+    name: Linux Memory Leak Test (MemoryLeakTests only)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Install zlib development headers
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Run MemoryLeakTests with Address Sanitizer
+        run: swift test --filter MemoryLeakTests --sanitize=address --verbose
