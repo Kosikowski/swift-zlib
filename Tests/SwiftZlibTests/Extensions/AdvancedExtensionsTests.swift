@@ -1,5 +1,10 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class AdvancedExtensionsTests: XCTestCase {
     func testDataExtensionsAdvanced() throws {
@@ -72,4 +77,4 @@ final class AdvancedExtensionsTests: XCTestCase {
         ("testDataExtensionsAdvanced", testDataExtensionsAdvanced),
         ("testStringExtensionsAdvanced", testStringExtensionsAdvanced),
     ]
-} 
+}

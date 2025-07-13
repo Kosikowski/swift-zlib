@@ -1,3 +1,8 @@
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
 import XCTest
 
@@ -14,7 +19,7 @@ final class GzipHeaderTests: XCTestCase {
         let decompressedData = try decompressor.decompress(compressedData, flush: .finish)
         XCTAssertEqual(decompressedData, originalData)
     }
-    
+
     func testStringCompressionWithGzipHeader() throws {
         let originalString = "Test string with gzip header"
         var header = GzipHeader()
@@ -27,7 +32,7 @@ final class GzipHeaderTests: XCTestCase {
         let decompressedString = String(data: decompressedData, encoding: .utf8)!
         XCTAssertEqual(decompressedString, originalString)
     }
-    
+
     func testGzipHeaderWithMetadata() throws {
         let data = "test data with metadata".data(using: .utf8)!
         let compressor = Compressor()
@@ -586,4 +591,4 @@ final class GzipHeaderTests: XCTestCase {
         ("testGzipHeaderWithNullTerminatedStrings", testGzipHeaderWithNullTerminatedStrings),
         ("testGzipHeaderWithNonAsciiStrings", testGzipHeaderWithNonAsciiStrings),
     ]
-} 
+}

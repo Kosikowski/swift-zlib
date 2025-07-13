@@ -1,10 +1,14 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class ZLibTests: XCTestCase {
-    
     // MARK: - Helper Functions
-    
+
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
@@ -21,17 +25,17 @@ final class ZLibTests: XCTestCase {
             }
         }
     }
-    
+
     // MARK: - Basic Tests
-    
+
     func testZLibVersion() throws {
         let version = ZLib.version
         XCTAssertFalse(version.isEmpty, "Version should not be empty")
-        
+
         let compileFlags = ZLib.compileFlags
         XCTAssertGreaterThan(compileFlags, 0, "Compile flags should be greater than 0")
     }
-    
+
     func testBasicCompressionAndDecompression() throws {
         let originalData = "Hello, World! This is a test string for compression.".data(using: .utf8)!
 
@@ -47,7 +51,7 @@ final class ZLibTests: XCTestCase {
 
         print("=== Completed basic compression/decompression test ===")
     }
-    
+
     func testCompressionLevels() throws {
         let originalString = "This is a longer test string that should demonstrate different compression levels. " +
             "We'll repeat this several times to make it longer and more compressible. " +
@@ -72,9 +76,7 @@ final class ZLibTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(compressedSizes[1], compressedSizes[2]) // bestSpeed >= default
         XCTAssertGreaterThanOrEqual(compressedSizes[2], compressedSizes[3]) // default >= bestCompression
     }
-    
 
-    
     func testCorruptedData() throws {
         let originalData = "Test data".data(using: .utf8)!
         let compressedData = try ZLib.compress(originalData)
@@ -90,7 +92,7 @@ final class ZLibTests: XCTestCase {
             assertNoDoubleWrappedZLibError(error)
         }
     }
-    
+
     func testMemoryPressure() throws {
         // Test with very large, highly compressible data
         let original = Data(repeating: 0x41, count: 100_000)
@@ -102,7 +104,7 @@ final class ZLibTests: XCTestCase {
         let decompressed = try decompressor.decompress(compressed)
         XCTAssertEqual(decompressed, original)
     }
-    
+
     func testConcurrentAccess() throws {
         // Test that multiple compressors/decompressors can be used concurrently
         let data1 = "Data 1".data(using: .utf8)!
@@ -143,7 +145,7 @@ final class ZLibTests: XCTestCase {
             XCTFail("decompressor2 error: \(error)")
         }
     }
-    
+
     func testMinimalSmallStringCompression() throws {
         let original = "Hello!"
         let data = original.data(using: .utf8)!
@@ -153,7 +155,7 @@ final class ZLibTests: XCTestCase {
         XCTAssertNotNil(decompressedString)
         XCTAssertEqual(decompressedString, original)
     }
-    
+
     func testMinimalSmallStringStreamingCompression() throws {
         let original = "Hello!"
         let data = original.data(using: .utf8)!
@@ -176,9 +178,9 @@ final class ZLibTests: XCTestCase {
         XCTAssertNotNil(decompressedString)
         XCTAssertEqual(decompressedString, original)
     }
-    
+
     // MARK: - Test Discovery
-    
+
     static var allTests = [
         ("testZLibVersion", testZLibVersion),
         ("testBasicCompressionAndDecompression", testBasicCompressionAndDecompression),
@@ -189,4 +191,4 @@ final class ZLibTests: XCTestCase {
         ("testMinimalSmallStringCompression", testMinimalSmallStringCompression),
         ("testMinimalSmallStringStreamingCompression", testMinimalSmallStringStreamingCompression),
     ]
-} 
+}

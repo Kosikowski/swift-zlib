@@ -1,5 +1,10 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class StreamTests: XCTestCase {
     func testStreamCompression() throws {
@@ -88,4 +93,4 @@ final class StreamTests: XCTestCase {
         ("testStreamDecompression", testStreamDecompression),
         ("testLargeDataCompression", testLargeDataCompression),
     ]
-} 
+}

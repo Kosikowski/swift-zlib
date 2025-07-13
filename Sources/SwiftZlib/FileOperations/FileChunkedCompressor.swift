@@ -13,7 +13,7 @@ public class FileChunkedCompressor {
     public let bufferSize: Int
     public let compressionLevel: CompressionLevel
     public let windowBits: WindowBits
-    
+
     @discardableResult
     private func wrapFileError<T>(_ operation: () throws -> T) throws -> T {
         do {
@@ -33,7 +33,7 @@ public class FileChunkedCompressor {
     public func compressFile(from sourcePath: String, to destinationPath: String) throws {
         let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
-        
+
         try wrapFileError {
             FileManager.default.createFile(atPath: destinationPath, contents: nil)
         }

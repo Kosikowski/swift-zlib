@@ -1,3 +1,8 @@
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
 import XCTest
 
@@ -107,4 +112,4 @@ final class AsyncStreamTests: XCTestCase {
     static var allTests = [
         ("testAsyncAwaitSupport", testAsyncAwaitSupport),
     ]
-} 
+}

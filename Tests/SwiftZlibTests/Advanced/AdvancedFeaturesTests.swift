@@ -1,5 +1,10 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class AdvancedFeaturesTests: XCTestCase {
     func testChecksums() throws {
@@ -100,4 +105,4 @@ final class AdvancedFeaturesTests: XCTestCase {
         ("testCompressionWithGzipHeader", testCompressionWithGzipHeader),
         ("testStringCompressionWithGzipHeader", testStringCompressionWithGzipHeader),
     ]
-} 
+}

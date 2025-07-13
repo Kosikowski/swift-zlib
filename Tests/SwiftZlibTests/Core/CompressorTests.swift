@@ -1,10 +1,14 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class CompressorTests: XCTestCase {
-    
     // MARK: - Helper Functions
-    
+
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
@@ -21,23 +25,23 @@ final class CompressorTests: XCTestCase {
             }
         }
     }
-    
+
     // MARK: - Compressor Tests
-    
+
     func testAdvancedCompressorInitialization() throws {
         let compressor = Compressor()
-        
+
         // Test basic initialization
         try compressor.initialize(level: .defaultCompression)
-        
+
         // Test advanced initialization
         try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
-        
+
         // Test with different window bits
         try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
         try compressor.initializeAdvanced(level: .bestSpeed, windowBits: .raw)
     }
-    
+
     // Note: We do not test compressor.reset() for starting a new, unrelated compression stream.
     // According to zlib semantics, deflateReset only resets the stream for continued use with the same parameters;
     // it does not re-emit headers or fully reinitialize the stream. For a new logical compression, use a new Compressor instance.
@@ -66,29 +70,29 @@ final class CompressorTests: XCTestCase {
         XCTAssertEqual(decompressed1, data1)
         XCTAssertEqual(decompressed2, data2)
     }
-    
+
     func testCompressorAdvancedFeatures() throws {
         let data = "Test data for advanced features".data(using: .utf8)!
-        
+
         let compressor = Compressor()
         try compressor.initializeAdvanced(level: .bestCompression, windowBits: .deflate)
-        
+
         // Test compression
         let compressed = try compressor.compress(data, flush: .finish)
         XCTAssertGreaterThan(compressed.count, 0)
-        
+
         // Test stream info
         let streamInfo = try compressor.getStreamInfo()
         XCTAssertGreaterThan(streamInfo.totalIn, 0)
         XCTAssertGreaterThan(streamInfo.totalOut, 0)
         XCTAssertTrue(streamInfo.isActive)
-        
+
         // Test pending data
         let (pending, bits) = try compressor.getPending()
         XCTAssertGreaterThanOrEqual(pending, 0)
         XCTAssertGreaterThanOrEqual(bits, 0)
     }
-    
+
     func testCompressionWithInvalidLevel() throws {
         let data = "test".data(using: .utf8)!
         let compressor = Compressor()
@@ -101,7 +105,7 @@ final class CompressorTests: XCTestCase {
         try decompressor.initializeAdvanced(windowBits: .raw)
         XCTAssertThrowsError(try decompressor.decompress(compressed))
     }
-    
+
     func testCompressionWithNullData() throws {
         let compressor = Compressor()
         try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
@@ -110,7 +114,7 @@ final class CompressorTests: XCTestCase {
         let compressed = try compressor.compress(Data(), flush: .finish)
         XCTAssertGreaterThanOrEqual(compressed.count, 0)
     }
-    
+
     func testCompressionWithUninitializedStream() throws {
         let data = "test data".data(using: .utf8)!
         let compressor = Compressor()
@@ -120,7 +124,7 @@ final class CompressorTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-    
+
     func testCompressionWithInvalidFlushMode() throws {
         let data = "test data".data(using: .utf8)!
         let compressor = Compressor()
@@ -130,7 +134,7 @@ final class CompressorTests: XCTestCase {
         XCTAssertNoThrow(try compressor.compress(data, flush: .noFlush))
         XCTAssertNoThrow(try compressor.compress(data, flush: .finish))
     }
-    
+
     func testCompressionWithLargeInput() throws {
         let largeData = String(repeating: "test data ", count: 10000).data(using: .utf8)!
         let compressor = Compressor()
@@ -146,7 +150,7 @@ final class CompressorTests: XCTestCase {
         let decompressed = try decompressor.decompress(compressed)
         XCTAssertEqual(decompressed, largeData)
     }
-    
+
     func testCompressionWithZeroSizedBuffer() throws {
         let compressor = Compressor()
         try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
@@ -155,7 +159,7 @@ final class CompressorTests: XCTestCase {
         let compressed = try compressor.compress(Data(), flush: .finish)
         XCTAssertGreaterThanOrEqual(compressed.count, 0)
     }
-    
+
     func testCompressionWithInvalidWindowBits() throws {
         _ = "test data".data(using: .utf8)!
         let compressor = Compressor()
@@ -165,7 +169,7 @@ final class CompressorTests: XCTestCase {
         XCTAssertNoThrow(try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .raw))
         XCTAssertNoThrow(try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip))
     }
-    
+
     func testCompressionWithReusedStream() throws {
         let data = "test data".data(using: .utf8)!
         let compressor = Compressor()
@@ -180,7 +184,7 @@ final class CompressorTests: XCTestCase {
         let compressed2 = try compressor.compress(data, flush: .finish)
         XCTAssertGreaterThan(compressed2.count, 0)
     }
-    
+
     func testCompressionWithInvalidDictionary() throws {
         let data = "test data".data(using: .utf8)!
         let compressor = Compressor()
@@ -193,7 +197,7 @@ final class CompressorTests: XCTestCase {
         let compressed = try compressor.compress(data, flush: .finish)
         XCTAssertGreaterThan(compressed.count, 0)
     }
-    
+
     func testCompressionWithMemoryPressure() throws {
         let largeData = String(repeating: "test data ", count: 50000).data(using: .utf8)!
         let compressor = Compressor()
@@ -209,7 +213,7 @@ final class CompressorTests: XCTestCase {
         let decompressed = try decompressor.decompress(compressed)
         XCTAssertEqual(decompressed, largeData)
     }
-    
+
     func testCompressionWithInvalidState() throws {
         let data = "test data".data(using: .utf8)!
         let compressor = Compressor()
@@ -223,9 +227,9 @@ final class CompressorTests: XCTestCase {
         try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .deflate)
         XCTAssertNoThrow(try compressor.setDictionary(data))
     }
-    
+
     // MARK: - Test Discovery
-    
+
     static var allTests = [
         ("testAdvancedCompressorInitialization", testAdvancedCompressorInitialization),
         ("testCompressorResetAndCopy", testCompressorResetAndCopy),
@@ -242,4 +246,4 @@ final class CompressorTests: XCTestCase {
         ("testCompressionWithMemoryPressure", testCompressionWithMemoryPressure),
         ("testCompressionWithInvalidState", testCompressionWithInvalidState),
     ]
-} 
+}

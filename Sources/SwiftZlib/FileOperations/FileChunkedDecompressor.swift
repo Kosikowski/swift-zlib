@@ -11,7 +11,7 @@ import Foundation
 public class FileChunkedDecompressor {
     public let bufferSize: Int
     public let windowBits: WindowBits
-    
+
     @discardableResult
     private func wrapFileError<T>(_ operation: () throws -> T) throws -> T {
         do {

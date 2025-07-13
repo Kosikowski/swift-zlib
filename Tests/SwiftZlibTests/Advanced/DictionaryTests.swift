@@ -1,10 +1,14 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class DictionaryTests: XCTestCase {
-    
     // MARK: - Helper Functions
-    
+
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
@@ -21,9 +25,9 @@ final class DictionaryTests: XCTestCase {
             }
         }
     }
-    
+
     // MARK: - Dictionary Tests
-    
+
     func testDictionaryCompressionDecompression_Success() throws {
         // Create a dictionary with a specific pattern
         let dictString = String(repeating: "abcdefghijklmnop", count: 2) // 32 bytes
@@ -163,9 +167,9 @@ final class DictionaryTests: XCTestCase {
         // Dictionary should still be set after compression
         XCTAssertNoThrow(try compressor.setDictionary(dictionary))
     }
-    
+
     // MARK: - Test Discovery
-    
+
     static var allTests = [
         ("testDictionaryCompressionDecompression_Success", testDictionaryCompressionDecompression_Success),
         ("testDictionaryCompressionDecompression_WrongDictionary", testDictionaryCompressionDecompression_WrongDictionary),
@@ -175,4 +179,4 @@ final class DictionaryTests: XCTestCase {
         ("testDictionaryCompressionDecompression_LargeDictionary", testDictionaryCompressionDecompression_LargeDictionary),
         ("testDictionarySetAtWrongTime", testDictionarySetAtWrongTime),
     ]
-} 
+}

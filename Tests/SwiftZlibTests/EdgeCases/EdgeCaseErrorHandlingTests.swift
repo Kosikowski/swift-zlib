@@ -1,5 +1,10 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class EdgeCaseErrorHandlingTests: XCTestCase {
     /// Helper function to check that ZLibErrors are not double-wrapped
@@ -27,10 +32,10 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
     func testNoDoubleWrappedZLibErrors() {
         // Test that ZLibErrors are not wrapped in other ZLibErrors
         // This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
-        
+
         // Test file operations that should not double-wrap errors
         let nonExistentPath = "/non/existent/path/file.txt"
-        
+
         // Test FileChunkedCompressor
         let compressor = FileChunkedCompressor()
         XCTAssertThrowsError(try compressor.compressFile(from: nonExistentPath, to: "/tmp/test.gz")) { error in
@@ -42,7 +47,7 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
                 XCTFail("Expected ZLibError.fileError, got \(error)")
             }
         }
-        
+
         // Test FileChunkedDecompressor
         let decompressor = FileChunkedDecompressor()
         XCTAssertThrowsError(try decompressor.decompressFile(from: nonExistentPath, to: "/tmp/test.txt")) { error in
@@ -59,11 +64,11 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
     func testAsyncStreamNoDoubleWrappedZLibErrors() async throws {
         // Specifically test the AsyncStream methods we fixed to ensure they don't double-wrap errors
         let nonExistentPath = "/non/existent/path/file.txt"
-        
+
         // Test compressFileProgressStream
         let compressor = FileChunkedCompressor()
         let compressionStream = compressor.compressFileProgressStream(from: nonExistentPath, to: "/tmp/test.gz")
-        
+
         do {
             for try await _ in compressionStream {
                 // Should not reach here
@@ -77,11 +82,11 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
                 XCTFail("Expected ZLibError.fileError, got \(error)")
             }
         }
-        
+
         // Test decompressFileProgressStream
         let decompressor = FileChunkedDecompressor()
         let decompressionStream = decompressor.decompressFileProgressStream(from: nonExistentPath, to: "/tmp/test.txt")
-        
+
         do {
             for try await _ in decompressionStream {
                 // Should not reach here
@@ -137,4 +142,4 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
         ("testSingleByteData", testSingleByteData),
         ("testBinaryData", testBinaryData),
     ]
-} 
+}

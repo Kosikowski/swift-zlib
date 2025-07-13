@@ -1,10 +1,14 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class StringExtensionsTests: XCTestCase {
-    
     // MARK: - Helper Functions
-    
+
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
@@ -21,34 +25,34 @@ final class StringExtensionsTests: XCTestCase {
             }
         }
     }
-    
+
     // MARK: - String Extension Tests
-    
+
     func testStringExtensions() throws {
         let originalString = "Hello, World!"
-        
+
         // Test compression
         let compressed = try originalString.compressed()
         XCTAssertGreaterThan(compressed.count, 0, "Compressed data should not be empty")
-        
+
         // Test decompression
         let decompressedString = try String.decompressed(from: compressed)
         XCTAssertEqual(decompressedString, originalString)
     }
-    
+
     func testStringExtensionsAdvanced() throws {
         let originalString = "Advanced string extension test"
-        
+
         // Test with different compression levels
         let levels: [CompressionLevel] = [.noCompression, .bestSpeed, .defaultCompression, .bestCompression]
-        
+
         for level in levels {
             let compressed = try originalString.compressed(level: level)
             let decompressedString = try String.decompressed(from: compressed)
             XCTAssertEqual(decompressedString, originalString)
         }
     }
-    
+
     func testConcurrentStringOperations() throws {
         let testString = "Concurrent string operations test string"
         let iterations = 100
@@ -79,12 +83,12 @@ final class StringExtensionsTests: XCTestCase {
             XCTAssertEqual(decompressedString, testString)
         }
     }
-    
+
     // MARK: - Test Discovery
-    
+
     static var allTests = [
         ("testStringExtensions", testStringExtensions),
         ("testStringExtensionsAdvanced", testStringExtensionsAdvanced),
         ("testConcurrentStringOperations", testConcurrentStringOperations),
     ]
-} 
+}

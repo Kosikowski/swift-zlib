@@ -1,8 +1,12 @@
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
 import XCTest
 
 final class StreamingTests: XCTestCase {
-    
     func testStreamingCompressionWithSmallChunks() throws {
         let data = "streaming test data with small chunks".data(using: .utf8)!
         let compressor = Compressor()
@@ -427,4 +431,4 @@ final class StreamingTests: XCTestCase {
         ("testStreamingWithMemoryPressure", testStreamingWithMemoryPressure),
         ("testStreamingWithStateTransitions", testStreamingWithStateTransitions),
     ]
-} 
+}

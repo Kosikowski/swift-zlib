@@ -1,10 +1,14 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class DataExtensionsTests: XCTestCase {
-    
     // MARK: - Helper Functions
-    
+
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
@@ -21,9 +25,9 @@ final class DataExtensionsTests: XCTestCase {
             }
         }
     }
-    
+
     // MARK: - Data Extension Tests
-    
+
     func testDataExtensions() throws {
         let originalData = "Test data for extension methods".data(using: .utf8)!
 
@@ -33,20 +37,20 @@ final class DataExtensionsTests: XCTestCase {
 
         XCTAssertEqual(decompressedData, originalData)
     }
-    
+
     func testDataExtensionsAdvanced() throws {
         let originalData = "Advanced data extension test".data(using: .utf8)!
-        
+
         // Test with different compression levels
         let levels: [CompressionLevel] = [.noCompression, .bestSpeed, .defaultCompression, .bestCompression]
-        
+
         for level in levels {
             let compressed = try originalData.compressed(level: level)
             let decompressed = try compressed.decompressed()
             XCTAssertEqual(decompressed, originalData)
         }
     }
-    
+
     func testConcurrentDataExtensions() throws {
         let testData = "Concurrent data extensions test data".data(using: .utf8)!
         let iterations = 100
@@ -77,12 +81,12 @@ final class DataExtensionsTests: XCTestCase {
             XCTAssertEqual(decompressed, testData)
         }
     }
-    
+
     // MARK: - Test Discovery
-    
+
     static var allTests = [
         ("testDataExtensions", testDataExtensions),
         ("testDataExtensionsAdvanced", testDataExtensionsAdvanced),
         ("testConcurrentDataExtensions", testConcurrentDataExtensions),
     ]
-} 
+}

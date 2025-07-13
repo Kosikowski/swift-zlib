@@ -1,8 +1,12 @@
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
 import XCTest
 
 final class PrimeTests: XCTestCase {
-    
     /// Helper function to check that ZLibErrors are not double-wrapped
     /// This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
     private func assertNoDoubleWrappedZLibError(_ error: Error) {
@@ -378,4 +382,4 @@ final class PrimeTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-} 
+}

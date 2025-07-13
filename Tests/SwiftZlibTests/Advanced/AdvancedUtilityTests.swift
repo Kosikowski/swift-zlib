@@ -1,5 +1,10 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class AdvancedUtilityTests: XCTestCase {
     func testCompressedSizeEstimation() throws {
@@ -91,4 +96,4 @@ final class AdvancedUtilityTests: XCTestCase {
         ("testCompressionStatistics", testCompressionStatistics),
         ("testCompileFlags", testCompileFlags),
     ]
-} 
+}

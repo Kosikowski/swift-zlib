@@ -1,8 +1,12 @@
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
 import XCTest
 
 final class ConcurrencyTests: XCTestCase {
-    
     //
     // Only per-instance concurrency is valid for zlib and this wrapper.
     // Each thread must use its own Compressor/Decompressor instance.
@@ -676,4 +680,4 @@ final class ConcurrencyTests: XCTestCase {
         ("testConcurrentMemoryPressure", testConcurrentMemoryPressure),
         ("testConcurrentStressTest", testConcurrentStressTest),
     ]
-} 
+}

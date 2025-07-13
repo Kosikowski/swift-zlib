@@ -1,10 +1,14 @@
-import XCTest
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
+import XCTest
 
 final class DecompressorTests: XCTestCase {
-    
     // MARK: - Helper Functions
-    
+
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
             switch zlibError {
@@ -21,52 +25,52 @@ final class DecompressorTests: XCTestCase {
             }
         }
     }
-    
+
     // MARK: - Decompressor Tests
-    
+
     func testDecompressorResetAndCopy() throws {
         let originalData = "Test data for decompressor reset and copy".data(using: .utf8)!
         let compressedData = try ZLib.compress(originalData)
-        
+
         let decompressor1 = Decompressor()
         try decompressor1.initialize()
-        
+
         // Decompress some data
         let decompressed1 = try decompressor1.decompress(compressedData)
-        
+
         // Reset the decompressor
         try decompressor1.reset()
-        
+
         // Decompress again after reset
         let decompressed2 = try decompressor1.decompress(compressedData)
-        
+
         XCTAssertEqual(decompressed1, originalData)
         XCTAssertEqual(decompressed2, originalData)
     }
-    
+
     func testDecompressorAdvancedFeatures() throws {
         let originalData = "Test data for advanced features".data(using: .utf8)!
         let compressedData = try ZLib.compress(originalData)
-        
+
         let decompressor = Decompressor()
         try decompressor.initializeAdvanced(windowBits: .deflate)
-        
+
         // Test decompression
         let decompressed = try decompressor.decompress(compressedData)
         XCTAssertEqual(decompressed, originalData)
-        
+
         // Test stream info
         let streamInfo = try decompressor.getStreamInfo()
         XCTAssertGreaterThan(streamInfo.totalIn, 0)
         XCTAssertGreaterThan(streamInfo.totalOut, 0)
         XCTAssertTrue(streamInfo.isActive)
-        
+
         // Test pending data
         let (pending, bits) = try decompressor.getPending()
         XCTAssertGreaterThanOrEqual(pending, 0)
         XCTAssertGreaterThanOrEqual(bits, 0)
     }
-    
+
     func testDecompressionWithInvalidData() throws {
         let invalidData = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07])
         let decompressor = Decompressor()
@@ -76,7 +80,7 @@ final class DecompressorTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-    
+
     func testDecompressionWithTruncatedData() throws {
         let data = "test data for truncation".data(using: .utf8)!
         let compressor = Compressor()
@@ -98,7 +102,7 @@ final class DecompressorTests: XCTestCase {
         // Accept both: error thrown or partial data returned
         XCTAssertTrue(threw || true)
     }
-    
+
     func testDecompressionWithUninitializedStream() throws {
         let data = "test data".data(using: .utf8)!
         let compressed = try ZLib.compress(data)
@@ -109,7 +113,7 @@ final class DecompressorTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-    
+
     func testDecompressionWithInvalidFlushMode() throws {
         let data = "test data".data(using: .utf8)!
         let compressed = try ZLib.compress(data)
@@ -119,7 +123,7 @@ final class DecompressorTests: XCTestCase {
         // Test with valid flush modes
         XCTAssertNoThrow(try decompressor.decompress(compressed, flush: .noFlush))
     }
-    
+
     func testDecompressionWithCorruptedData() throws {
         let data = "test data for corruption".data(using: .utf8)!
         let compressor = Compressor()
@@ -145,7 +149,7 @@ final class DecompressorTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-    
+
     func testDecompressionWithZeroSizedBuffer() throws {
         let data = "test data".data(using: .utf8)!
         let compressed = try ZLib.compress(data)
@@ -156,7 +160,7 @@ final class DecompressorTests: XCTestCase {
         let decompressed = try decompressor.decompress(compressed)
         XCTAssertEqual(decompressed, data)
     }
-    
+
     func testDecompressionWithInvalidWindowBits() throws {
         let data = "test data".data(using: .utf8)!
         _ = try ZLib.compress(data)
@@ -167,7 +171,7 @@ final class DecompressorTests: XCTestCase {
         XCTAssertNoThrow(try decompressor.initializeAdvanced(windowBits: .raw))
         XCTAssertNoThrow(try decompressor.initializeAdvanced(windowBits: .gzip))
     }
-    
+
     func testDecompressionWithReusedStream() throws {
         let data = "test data".data(using: .utf8)!
         let compressed = try ZLib.compress(data)
@@ -183,7 +187,7 @@ final class DecompressorTests: XCTestCase {
         let decompressed2 = try decompressor.decompress(compressed)
         XCTAssertEqual(decompressed2, data)
     }
-    
+
     func testDecompressionWithInvalidDictionary() throws {
         let data = "test data".data(using: .utf8)!
         let compressed = try ZLib.compress(data)
@@ -204,7 +208,7 @@ final class DecompressorTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-    
+
     func testDecompressionWithMemoryPressure() throws {
         let largeData = String(repeating: "test data ", count: 50000).data(using: .utf8)!
         let compressed = try ZLib.compress(largeData)
@@ -215,7 +219,7 @@ final class DecompressorTests: XCTestCase {
         let decompressed = try decompressor.decompress(compressed)
         XCTAssertEqual(decompressed, largeData)
     }
-    
+
     func testDecompressionWithInvalidState() throws {
         let data = "test data".data(using: .utf8)!
         _ = try ZLib.compress(data)
@@ -233,9 +237,9 @@ final class DecompressorTests: XCTestCase {
             XCTAssertTrue(error is ZLibError)
         }
     }
-    
+
     // MARK: - Test Discovery
-    
+
     static var allTests = [
         ("testDecompressorResetAndCopy", testDecompressorResetAndCopy),
         ("testDecompressorAdvancedFeatures", testDecompressorAdvancedFeatures),
@@ -251,4 +255,4 @@ final class DecompressorTests: XCTestCase {
         ("testDecompressionWithMemoryPressure", testDecompressionWithMemoryPressure),
         ("testDecompressionWithInvalidState", testDecompressionWithInvalidState),
     ]
-} 
+}

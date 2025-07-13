@@ -1,8 +1,12 @@
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
 import XCTest
 
 final class ErrorHandlingTests: XCTestCase {
-    
     func testCompressionWithInvalidLevel() throws {
         let data = "test data".data(using: .utf8)!
         let compressor = Compressor()
@@ -329,4 +333,4 @@ final class ErrorHandlingTests: XCTestCase {
         ("testCompressionWithInvalidState", testCompressionWithInvalidState),
         ("testDecompressionWithInvalidState", testDecompressionWithInvalidState),
     ]
-} 
+}

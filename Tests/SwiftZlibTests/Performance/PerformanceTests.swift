@@ -1,8 +1,12 @@
+//  Compression.swift
+//  SwiftZlib
+//
+//  Created by Mateusz Kosikowski on 13/07/2025.
+//
 @testable import SwiftZlib
 import XCTest
 
 final class PerformanceTests: XCTestCase {
-    
     func testPerformanceAndMemoryUsage() throws {
         let largeData = Data(repeating: 0xAB, count: 10_000_000) // 10MB - realistic large file size
         let startCompress = CFAbsoluteTimeGetCurrent()
@@ -408,4 +412,4 @@ final class PerformanceTests: XCTestCase {
         ("testSpecificErrorTypes", testSpecificErrorTypes),
         ("testPlatformAgnosticValidation", testPlatformAgnosticValidation),
     ]
-} 
+}
