@@ -258,37 +258,39 @@ jobs:
   # Build verification
   build-verification:
     name: Build Verification
-    runs-on: macos-14
-    
     strategy:
       matrix:
         configuration: [debug, release]
         platform: [macos, linux]
-    
+    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || 'ubuntu-22.04' }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Setup environment
-      if: matrix.platform == 'macos'
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
-      
-    - name: Install Swift (Linux)
-      if: matrix.platform == 'linux'
-      uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: '5.9'
-        gpg-private-key: ''
-        
-    - name: Install zlib (Linux)
-      if: matrix.platform == 'linux'
-      run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
-      
-    - name: Build package
-      run: swift build -c ${{ matrix.configuration }}
-      
-    - name: Test package
-      run: swift test -c ${{ matrix.configuration }}
-      
-    - name: Build CLI tool
-      run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI 
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup environment (macOS)
+        if: matrix.platform == 'macos'
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Install Swift (Linux)
+        if: matrix.platform == 'linux'
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '5.9'
+          gpg-private-key: ''
+
+      - name: Install zlib (Linux)
+        if: matrix.platform == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Install zlib (macOS)
+        if: matrix.platform == 'macos'
+        run: brew install zlib
+
+      - name: Build package
+        run: swift build -c ${{ matrix.configuration }}
+
+      - name: Test package
+        run: swift test -c ${{ matrix.configuration }}
+
+      - name: Build CLI tool
+        run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI 
