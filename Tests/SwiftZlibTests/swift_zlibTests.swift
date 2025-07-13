@@ -4,6 +4,15 @@ import XCTest
 private let Z_NEED_DICT: Int32 = 2
 
 final class SwiftZlibTests: XCTestCase {
+    
+    /// Helper function to check that ZLibErrors are not double-wrapped
+    /// This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
+    private func assertNoDoubleWrappedZLibError(_ error: Error) {
+        if case let .fileError(underlyingError) = error as? ZLibError {
+            XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
+        }
+    }
+    
     override func setUp() {
         super.setUp()
         // Enable verbose logging for all tests
@@ -197,6 +206,80 @@ final class SwiftZlibTests: XCTestCase {
             // Should be a data error (-3) for invalid zlib data
             if case let .decompressionFailed(code) = error as? ZLibError {
                 XCTAssertEqual(code, -3, "Expected Z_DATA_ERROR for invalid zlib data")
+            }
+            assertNoDoubleWrappedZLibError(error)
+        }
+    }
+
+    func testNoDoubleWrappedZLibErrors() {
+        // Test that ZLibErrors are not wrapped in other ZLibErrors
+        // This ensures our error handling doesn't create nested ZLibError.fileError(ZLibError.xxx) patterns
+        
+        // Test file operations that should not double-wrap errors
+        let nonExistentPath = "/non/existent/path/file.txt"
+        
+        // Test FileChunkedCompressor
+        let compressor = FileChunkedCompressor()
+        XCTAssertThrowsError(try compressor.compressFile(from: nonExistentPath, to: "/tmp/test.gz")) { error in
+            // Should be a ZLibError.fileError, but the underlying error should NOT be another ZLibError
+            if case let .fileError(underlyingError) = error as? ZLibError {
+                // The underlying error should be a Foundation error (like NSError), not another ZLibError
+                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
+            } else {
+                XCTFail("Expected ZLibError.fileError, got \(error)")
+            }
+        }
+        
+        // Test FileChunkedDecompressor
+        let decompressor = FileChunkedDecompressor()
+        XCTAssertThrowsError(try decompressor.decompressFile(from: nonExistentPath, to: "/tmp/test.txt")) { error in
+            // Should be a ZLibError.fileError, but the underlying error should NOT be another ZLibError
+            if case let .fileError(underlyingError) = error as? ZLibError {
+                // The underlying error should be a Foundation error (like NSError), not another ZLibError
+                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
+            } else {
+                XCTFail("Expected ZLibError.fileError, got \(error)")
+            }
+        }
+    }
+
+    func testAsyncStreamNoDoubleWrappedZLibErrors() async throws {
+        // Specifically test the AsyncStream methods we fixed to ensure they don't double-wrap errors
+        let nonExistentPath = "/non/existent/path/file.txt"
+        
+        // Test compressFileProgressStream
+        let compressor = FileChunkedCompressor()
+        let compressionStream = compressor.compressFileProgressStream(from: nonExistentPath, to: "/tmp/test.gz")
+        
+        do {
+            for try await _ in compressionStream {
+                // Should not reach here
+                XCTFail("Should have thrown an error")
+            }
+        } catch {
+            // Should be a ZLibError.fileError, but the underlying error should NOT be another ZLibError
+            if case let .fileError(underlyingError) = error as? ZLibError {
+                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
+            } else {
+                XCTFail("Expected ZLibError.fileError, got \(error)")
+            }
+        }
+        
+        // Test decompressFileProgressStream
+        let decompressor = FileChunkedDecompressor()
+        let decompressionStream = decompressor.decompressFileProgressStream(from: nonExistentPath, to: "/tmp/test.txt")
+        
+        do {
+            for try await _ in decompressionStream {
+                // Should not reach here
+                XCTFail("Should have thrown an error")
+            }
+        } catch {
+            // Should be a ZLibError.fileError, but the underlying error should NOT be another ZLibError
+            if case let .fileError(underlyingError) = error as? ZLibError {
+                XCTAssertFalse(underlyingError is ZLibError, "ZLibError should not be wrapped in another ZLibError")
+            } else {
+                XCTFail("Expected ZLibError.fileError, got \(error)")
             }
         }
     }
@@ -927,6 +1010,7 @@ final class SwiftZlibTests: XCTestCase {
 
         XCTAssertThrowsError(try ZLib.decompress(corruptedData)) { error in
             XCTAssertTrue(error is ZLibError)
+            assertNoDoubleWrappedZLibError(error)
         }
     }
 
@@ -1185,6 +1269,7 @@ final class SwiftZlibTests: XCTestCase {
         let compressor = Compressor()
         XCTAssertThrowsError(try compressor.setDictionary(dictionary)) { error in
             XCTAssertTrue(error is ZLibError)
+            assertNoDoubleWrappedZLibError(error)
         }
         // Try to set dictionary after compression
         try compressor.initialize(level: .noCompression)
@@ -1307,6 +1392,7 @@ final class SwiftZlibTests: XCTestCase {
         // Try to prime before initialization (should fail)
         XCTAssertThrowsError(try compressor.prime(bits: 8, value: 0x42)) { error in
             XCTAssertTrue(error is ZLibError)
+            assertNoDoubleWrappedZLibError(error)
         }
     }
 
@@ -1422,6 +1508,7 @@ final class SwiftZlibTests: XCTestCase {
         // Try to prime before initialization (should fail)
         XCTAssertThrowsError(try decompressor.prime(bits: 8, value: 0x42)) { error in
             XCTAssertTrue(error is ZLibError)
+            assertNoDoubleWrappedZLibError(error)
         }
     }
 
@@ -1448,6 +1535,7 @@ final class SwiftZlibTests: XCTestCase {
         // and interferes with the compressed data format
         XCTAssertThrowsError(try decompressor.decompress(compressed)) { error in
             XCTAssertTrue(error is ZLibError)
+            assertNoDoubleWrappedZLibError(error)
         }
     }
 
@@ -1691,6 +1779,7 @@ final class SwiftZlibTests: XCTestCase {
             // Accept stream error for raw deflate with empty input
             if case let .compressionFailed(code) = error {
                 XCTAssertEqual(code, -2)
+                assertNoDoubleWrappedZLibError(error)
                 return // Test passes for this platform
             } else {
                 XCTFail("Unexpected error for raw deflate: \(error)")
@@ -1712,6 +1801,7 @@ final class SwiftZlibTests: XCTestCase {
                 // This is platform-specific behavior, so accept either round-trip or stream error
                 if case let .compressionFailed(code) = error {
                     XCTAssertEqual(code, -2)
+                    assertNoDoubleWrappedZLibError(error)
                 } else {
                     XCTFail("Unexpected error for \(windowBits): \(error)")
                 }
@@ -1730,6 +1820,7 @@ final class SwiftZlibTests: XCTestCase {
         try decompressor.initializeAdvanced(windowBits: .gzip)
         XCTAssertThrowsError(try decompressor.decompress(compressed)) { error in
             XCTAssertTrue(error is ZLibError)
+            assertNoDoubleWrappedZLibError(error)
         }
     }
 
@@ -7705,6 +7796,8 @@ final class SwiftZlibTests: XCTestCase {
         ("testStreamDecompression", testStreamDecompression),
         ("testLargeDataCompression", testLargeDataCompression),
         ("testErrorHandling", testErrorHandling),
+        ("testNoDoubleWrappedZLibErrors", testNoDoubleWrappedZLibErrors),
+        ("testAsyncStreamNoDoubleWrappedZLibErrors", testAsyncStreamNoDoubleWrappedZLibErrors),
         ("testEmptyData", testEmptyData),
         ("testSingleByteData", testSingleByteData),
         ("testBinaryData", testBinaryData),
