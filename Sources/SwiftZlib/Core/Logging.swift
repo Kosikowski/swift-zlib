@@ -133,7 +133,7 @@ class ZLibTimer {
 
     init(_ operation: String) {
         self.operation = operation
-        self.timer = SwiftZlibTimer()
+        timer = SwiftZlibTimer()
         zlibDebug("Starting \(operation)")
     }
 
