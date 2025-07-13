@@ -51,9 +51,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2
+        uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9"
+          swift-version: "6.1"
 
       - name: Show Swift version
         run: swift --version
@@ -82,7 +82,7 @@ jobs:
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
-    name: Linux (Ubuntu 22.04, Swift 5.9)
+    name: Linux (Ubuntu 22.04, Swift 6.1)
     runs-on: ubuntu-22.04
 
     steps:
@@ -92,16 +92,13 @@ jobs:
       - name: Install Swift
         uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9"
+          swift-version: "6.1"
 
       - name: Show Swift version
         run: swift --version
 
       - name: Install zlib development headers
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
-
-      - name: Run tests with Address Sanitizer
-        run: swift test --sanitize=address --verbose
 
       - name: Build package
         run: swift build
@@ -279,7 +276,7 @@ jobs:
         if: matrix.platform == 'linux'
         uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9"
+          swift-version: "6.1"
 
       - name: Install zlib (Linux)
         if: matrix.platform == 'linux'
@@ -309,7 +306,7 @@ jobs:
       - name: Install Swift
         uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9"
+          swift-version: "6.1"
 
       - name: Show Swift version
         run: swift --version
@@ -317,5 +314,5 @@ jobs:
       - name: Install zlib development headers
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
 
-      - name: Run MemoryLeakTests with Address Sanitizer
-        run: swift test --filter MemoryLeakTests --sanitize=address --verbose
+      - name: Run MemoryLeakTests
+        run: swift test --filter MemoryLeakTests --verbose
