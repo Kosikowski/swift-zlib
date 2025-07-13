@@ -43,7 +43,7 @@ jobs:
 
   # Test on Linux (Ubuntu)
   test-linux:
-    name: Linux (Ubuntu 24.04, Swift 5.9.3)
+    name: Linux (Ubuntu 24.04, Swift 5.10)
     runs-on: ubuntu-latest
 
     steps:
@@ -53,7 +53,7 @@ jobs:
       - name: Install Swift
         uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9.3"
+          swift-version: "5.10"
 
       - name: Show Swift version
         run: swift --version
@@ -79,7 +79,7 @@ jobs:
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
-    name: Linux (Ubuntu 24.04, Swift 5.9.3)
+    name: Linux (Ubuntu 24.04, Swift 5.10)
     runs-on: ubuntu-latest
 
     steps:
@@ -89,7 +89,7 @@ jobs:
       - name: Install Swift
         uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9.3"
+          swift-version: "5.10"
 
       - name: Show Swift version
         run: swift --version
@@ -293,7 +293,7 @@ jobs:
       - name: Install Swift
         uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9.3"
+          swift-version: "5.10"
 
       - name: Install zlib (Linux)
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
@@ -318,7 +318,7 @@ jobs:
       - name: Install Swift
         uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9.3"
+          swift-version: "5.10"
 
       - name: Show Swift version
         run: swift --version
