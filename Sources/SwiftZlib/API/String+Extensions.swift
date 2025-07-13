@@ -1,5 +1,5 @@
 //
-//  String+Extansions.swift
+//  String+Extensions.swift
 //  SwiftZlib
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
