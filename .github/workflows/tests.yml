@@ -54,7 +54,6 @@ jobs:
         uses: swift-actions/setup-swift@v2
         with:
           swift-version: "5.9"
-          gpg-private-key: ""
 
       - name: Show Swift version
         run: swift --version
@@ -94,7 +93,6 @@ jobs:
         uses: swift-actions/setup-swift@v2
         with:
           swift-version: "5.9"
-          gpg-private-key: ""
 
       - name: Show Swift version
         run: swift --version
@@ -282,7 +280,6 @@ jobs:
         uses: swift-actions/setup-swift@v2
         with:
           swift-version: "5.9"
-          gpg-private-key: ""
 
       - name: Install zlib (Linux)
         if: matrix.platform == 'linux'
