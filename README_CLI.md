@@ -152,6 +152,89 @@ swift run SwiftZlibCLI large huge_file.dat compressed.zlib 9
 # - Compression ratio
 ```
 
+## Large File Compression Demonstration
+
+The `large` command now demonstrates compression on three types of data to illustrate how data entropy affects compression effectiveness:
+
+- **Random Data (Incompressible):** High entropy, should not compress (ratio ≈ 1.00)
+- **Zero-Filled Data (Highly Compressible):** Low entropy, compresses extremely well (ratio ≈ 0.01)
+- **Repetitive Text Data (Moderately Compressible):** Moderate entropy, compresses well (ratio ≈ 0.30)
+
+### Example Usage
+
+```bash
+swift run SwiftZlibCLI large test large_output
+```
+
+### Example Output
+
+```
+🚀 SwiftZlib Command Line Tool
+================================
+🗜️ Large file compression demonstration
+=====================================
+📊 Using streaming compression with progress tracking...
+🔧 Compression level: defaultCompression
+
+🧪 Test 1: Random Data (Incompressible)
+----------------------------------------
+📝 This test uses random data which has high entropy and cannot be compressed effectively.
+📊 Expected result: Compression ratio ≈ 1.00 (0% reduction)
+
+📁 Creating random test file...
+📁 File: test_random
+📦 Size: 10.0 MB
+🎯 Type: Random data
+📦 [██████████████████████████████████████████████████] 100.0% (10.0/10.0 MB) 56.2 MB/s ETA: ∞
+✅ Compression completed!
+⏱️ Time: 0.2 seconds
+📊 Speed: 55.3 MB/s
+📦 Ratio: 1.00 (-0.0% reduction)
+
+🧪 Test 2: Zero-Filled Data (Highly Compressible)
+--------------------------------------------------
+📝 This test uses zero-filled data which has very low entropy and compresses extremely well.
+📊 Expected result: Compression ratio ≈ 0.01 (99% reduction)
+
+📁 Creating zero-filled test file...
+📁 File: test_zeros
+📦 Size: 10.0 MB
+🎯 Type: Zero-filled data
+📦 [██████████████████████████████████████████████████] 100.0% (10.0/10.0 MB) 434.6 MB/s ETA: ∞
+✅ Compression completed!
+⏱️ Time: 0.0 seconds
+📊 Speed: 426.7 MB/s
+📦 Ratio: 0.00 (99.9% reduction)
+
+🧪 Test 3: Repetitive Text Data (Moderately Compressible)
+----------------------------------------------------------
+📝 This test uses repetitive text which has moderate entropy and compresses reasonably well.
+📊 Expected result: Compression ratio ≈ 0.30 (70% reduction)
+
+📁 Creating repetitive text file...
+📁 File: test_text
+📦 Size: 11.6 MB
+🎯 Type: Repetitive text data
+📦 [██████████████████████████████████████████████████] 100.0% (11.6/11.6 MB) 408.0 MB/s ETA: ∞
+✅ Compression completed!
+⏱️ Time: 0.0 seconds
+📊 Speed: 404.5 MB/s
+📦 Ratio: 0.00 (99.7% reduction)
+
+📊 Compression Test Summary
+==========================
+Random data:    1.00 ratio (-0.0% reduction)
+Zero-filled:    0.00 ratio (99.9% reduction)
+Repetitive text: 0.00 ratio (99.7% reduction)
+
+💡 Key Insight: Data entropy determines compression effectiveness!
+   - High entropy (random) = poor compression
+   - Low entropy (repetitive) = excellent compression
+   - Moderate entropy (text) = good compression
+```
+
+This demonstration helps users understand why some files compress well and others do not, based on their content's entropy.
+
 ## Compression Levels
 
 - **0** - No compression (fastest)
