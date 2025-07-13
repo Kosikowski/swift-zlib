@@ -5,7 +5,7 @@ let package = Package(
     name: "SwiftZlib",
     platforms: [.macOS(.v12)],
     products: [
-        .library(name: "SwiftZlib", targets: ["SwiftZlib"])
+        .library(name: "SwiftZlib", targets: ["SwiftZlib"]),
     ],
     targets: [
         // ① thin shim so SwiftPM can find the headers
@@ -13,10 +13,10 @@ let package = Package(
             name: "CZLib",
             path: "Sources/CZLib",
             cSettings: [
-                .headerSearchPath("include")
+                .headerSearchPath("include"),
             ],
             linkerSettings: [
-                .unsafeFlags(["-L/usr/lib", "-lz.1.2.12"])
+                .unsafeFlags(["-L/usr/lib", "-lz.1.2.12"]),
             ]
         ),
 
@@ -25,13 +25,13 @@ let package = Package(
             name: "SwiftZlib",
             dependencies: ["CZLib"],
             swiftSettings: [
-                .define("ZLIB_VERBOSE_DISABLED")
+                .define("ZLIB_VERBOSE_DISABLED"),
             ]
         ),
-        
+
         .testTarget(
             name: "SwiftZlibTests",
             dependencies: ["SwiftZlib"]
-        )
+        ),
     ]
 )
