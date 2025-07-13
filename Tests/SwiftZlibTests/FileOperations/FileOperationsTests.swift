@@ -15,22 +15,46 @@ import XCTest
 final class FileOperationsTests: XCTestCase {
     // MARK: Static Properties
 
-    static var allTests = [
-        ("testGzipFileAPI", testGzipFileAPI),
-        ("testGzipFileFlushModes", testGzipFileFlushModes),
-        ("testFileCompression", testFileCompression),
-        ("testFileDecompression", testFileDecompression),
-        ("testFileProcessor", testFileProcessor),
-        ("testFileCompressionWithProgress", testFileCompressionWithProgress),
-        ("testChunkedProcessor", testChunkedProcessor),
-        ("testStreamingProcessor", testStreamingProcessor),
-        ("testConvenienceFileMethods", testConvenienceFileMethods),
-        ("testFileCompressionToMemory", testFileCompressionToMemory),
-        ("testFileDecompressionToMemory", testFileDecompressionToMemory),
-        ("testStreamingConfig", testStreamingConfig),
-        ("testFileChunkedCompression", testFileChunkedCompression),
-        ("testFileChunkedCompressionWithDifferentBufferSizes", testFileChunkedCompressionWithDifferentBufferSizes),
-    ]
+    #if canImport(Combine)
+        static let allTests: [(String, (FileOperationsTests) -> () throws -> Void)] = [
+            ("testGzipFileAPI", testGzipFileAPI),
+            ("testGzipFileFlushModes", testGzipFileFlushModes),
+            ("testFileCompression", testFileCompression),
+            ("testFileDecompression", testFileDecompression),
+            ("testFileProcessor", testFileProcessor),
+            ("testFileCompressionWithProgress", testFileCompressionWithProgress),
+            ("testChunkedProcessor", testChunkedProcessor),
+            ("testStreamingProcessor", testStreamingProcessor),
+            ("testConvenienceFileMethods", testConvenienceFileMethods),
+            ("testFileCompressionToMemory", testFileCompressionToMemory),
+            ("testFileDecompressionToMemory", testFileDecompressionToMemory),
+            ("testStreamingConfig", testStreamingConfig),
+            ("testFileChunkedCompression", testFileChunkedCompression),
+            ("testFileChunkedCompressionWithDifferentBufferSizes", testFileChunkedCompressionWithDifferentBufferSizes),
+            ("testCombineFileCompressionDecompression", testCombineFileCompressionDecompression),
+            ("testCombineFileCompressionWithProgress", testCombineFileCompressionWithProgress),
+            ("testCombineFileDecompressionWithProgress", testCombineFileDecompressionWithProgress),
+            ("testCombineFileCompressionError", testCombineFileCompressionError),
+            ("testCombineFileDecompressionError", testCombineFileDecompressionError),
+        ]
+    #else
+        static let allTests: [(String, (FileOperationsTests) -> () throws -> Void)] = [
+            ("testGzipFileAPI", testGzipFileAPI),
+            ("testGzipFileFlushModes", testGzipFileFlushModes),
+            ("testFileCompression", testFileCompression),
+            ("testFileDecompression", testFileDecompression),
+            ("testFileProcessor", testFileProcessor),
+            ("testFileCompressionWithProgress", testFileCompressionWithProgress),
+            ("testChunkedProcessor", testChunkedProcessor),
+            ("testStreamingProcessor", testStreamingProcessor),
+            ("testConvenienceFileMethods", testConvenienceFileMethods),
+            ("testFileCompressionToMemory", testFileCompressionToMemory),
+            ("testFileDecompressionToMemory", testFileDecompressionToMemory),
+            ("testStreamingConfig", testStreamingConfig),
+            ("testFileChunkedCompression", testFileChunkedCompression),
+            ("testFileChunkedCompressionWithDifferentBufferSizes", testFileChunkedCompressionWithDifferentBufferSizes),
+        ]
+    #endif
 
     // MARK: Functions
 

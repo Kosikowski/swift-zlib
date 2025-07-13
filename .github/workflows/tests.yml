@@ -36,7 +36,6 @@ jobs:
         swift test --filter CoreTests
         swift test --filter ExtensionsTests
         swift test --filter FileOperationsTests
-        swift test --filter CombineTests
         swift test --filter PerformanceTests
         swift test --filter ErrorHandlingTests
         swift test --filter StreamingTests
@@ -73,7 +72,6 @@ jobs:
         swift test --filter CoreTests
         swift test --filter ExtensionsTests
         swift test --filter FileOperationsTests
-        swift test --filter CombineTests
         swift test --filter PerformanceTests
         swift test --filter ErrorHandlingTests
         swift test --filter StreamingTests
@@ -110,7 +108,6 @@ jobs:
         swift test --filter CoreTests
         swift test --filter ExtensionsTests
         swift test --filter FileOperationsTests
-        swift test --filter CombineTests
         swift test --filter PerformanceTests
         swift test --filter ErrorHandlingTests
         swift test --filter StreamingTests

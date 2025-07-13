@@ -104,6 +104,8 @@ try await ZLib.decompressFile(
 
 ### Combine Integration
 
+> **Note**: Combine support is only available on platforms that support the Combine framework (iOS 13.0+, macOS 10.15+, tvOS 13.0+, watchOS 6.0+).
+
 ```swift
 import Combine
 
