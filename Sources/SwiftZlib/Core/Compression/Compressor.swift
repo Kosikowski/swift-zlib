@@ -388,6 +388,10 @@ final class Compressor {
         var cHeader = gz_header()
         to_c_gz_header(header, cHeader: &cHeader)
         let result = swift_deflateSetHeader(&stream, &cHeader)
+
+        // Clean up allocated memory regardless of result
+        cleanup_gz_header(&cHeader)
+
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }

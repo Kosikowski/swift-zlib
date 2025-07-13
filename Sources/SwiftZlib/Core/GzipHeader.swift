@@ -49,27 +49,41 @@ func to_c_gz_header(_ swift: GzipHeader, cHeader: UnsafeMutablePointer<gz_header
     cHeader.pointee.os = swift.os
     cHeader.pointee.hcrc = swift.hcrc
     cHeader.pointee.done = swift.done
-    // Extra, name, comment: set pointers if present
+
+    // Extra field: we need to ensure the pointer remains valid
     if let extra = swift.extra {
-        extra.withUnsafeBytes { buf in
-            cHeader.pointee.extra = UnsafeMutablePointer<Bytef>(mutating: buf.baseAddress?.assumingMemoryBound(to: Bytef.self))
-            cHeader.pointee.extra_len = uInt(extra.count)
-        }
+        // Allocate memory for the extra data and copy it
+        let extraPtr = UnsafeMutablePointer<Bytef>.allocate(capacity: extra.count)
+        extra.copyBytes(to: extraPtr, count: extra.count)
+        cHeader.pointee.extra = extraPtr
+        cHeader.pointee.extra_len = uInt(extra.count)
     } else {
         cHeader.pointee.extra = nil
         cHeader.pointee.extra_len = 0
     }
+
+    // Name: we need to ensure the pointer remains valid
     if let name = swift.name {
-        name.withCString { cstr in
-            cHeader.pointee.name = UnsafeMutablePointer<Bytef>(mutating: UnsafePointer<Bytef>(OpaquePointer(cstr)))
+        // Allocate memory for the C string and copy it
+        let nameLength = name.utf8.count + 1 // +1 for null terminator
+        let namePtr = UnsafeMutablePointer<CChar>.allocate(capacity: nameLength)
+        name.utf8CString.withUnsafeBufferPointer { buffer in
+            namePtr.initialize(from: buffer.baseAddress!, count: nameLength)
         }
+        cHeader.pointee.name = UnsafeMutablePointer<Bytef>(OpaquePointer(namePtr))
     } else {
         cHeader.pointee.name = nil
     }
+
+    // Comment: we need to ensure the pointer remains valid
     if let comment = swift.comment {
-        comment.withCString { cstr in
-            cHeader.pointee.comment = UnsafeMutablePointer<Bytef>(mutating: UnsafePointer<Bytef>(OpaquePointer(cstr)))
+        // Allocate memory for the C string and copy it
+        let commentLength = comment.utf8.count + 1 // +1 for null terminator
+        let commentPtr = UnsafeMutablePointer<CChar>.allocate(capacity: commentLength)
+        comment.utf8CString.withUnsafeBufferPointer { buffer in
+            commentPtr.initialize(from: buffer.baseAddress!, count: commentLength)
         }
+        cHeader.pointee.comment = UnsafeMutablePointer<Bytef>(OpaquePointer(commentPtr))
     } else {
         cHeader.pointee.comment = nil
     }
@@ -96,4 +110,29 @@ func from_c_gz_header(_ cHeader: UnsafePointer<gz_header>) -> GzipHeader {
         swift.comment = String(cString: UnsafePointer<CChar>(OpaquePointer(comment)))
     }
     return swift
+}
+
+/// Clean up allocated memory for a gz_header structure
+/// - Parameter cHeader: C gzip header pointer
+func cleanup_gz_header(_ cHeader: UnsafeMutablePointer<gz_header>) {
+    // Free extra field memory
+    if let extra = cHeader.pointee.extra {
+        extra.deallocate()
+        cHeader.pointee.extra = nil
+        cHeader.pointee.extra_len = 0
+    }
+
+    // Free name memory
+    if let name = cHeader.pointee.name {
+        let namePtr = UnsafeMutablePointer<CChar>(OpaquePointer(name))
+        namePtr.deallocate()
+        cHeader.pointee.name = nil
+    }
+
+    // Free comment memory
+    if let comment = cHeader.pointee.comment {
+        let commentPtr = UnsafeMutablePointer<CChar>(OpaquePointer(comment))
+        commentPtr.deallocate()
+        cHeader.pointee.comment = nil
+    }
 }
