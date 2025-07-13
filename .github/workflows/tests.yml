@@ -43,7 +43,7 @@ jobs:
 
   # Test on Linux (Ubuntu)
   test-linux:
-    name: Linux (Ubuntu 24.04, Swift 5.10)
+    name: Linux (Ubuntu 24.04, Swift 5.10.1)
     runs-on: ubuntu-latest
 
     steps:
@@ -51,9 +51,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2.3.0
+        uses: swift-actions/setup-swift@v2.2.0
         with:
-          swift-version: "5.10"
+          swift-version: "5.10.1"
+          no-check-gpg: true
 
       - name: Show Swift version
         run: swift --version
@@ -79,7 +80,7 @@ jobs:
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
-    name: Linux (Ubuntu 24.04, Swift 5.10)
+    name: Linux (Ubuntu 24.04, Swift 5.10.1)
     runs-on: ubuntu-latest
 
     steps:
@@ -87,9 +88,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2.3.0
+        uses: swift-actions/setup-swift@v2.2.0
         with:
-          swift-version: "5.10"
+          swift-version: "5.10.1"
+          no-check-gpg: true
 
       - name: Show Swift version
         run: swift --version
@@ -291,9 +293,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2.3.0
+        uses: swift-actions/setup-swift@v2.2.0
         with:
-          swift-version: "5.10"
+          swift-version: "5.10.1"
+          no-check-gpg: true
 
       - name: Install zlib (Linux)
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
@@ -316,9 +319,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2.3.0
+        uses: swift-actions/setup-swift@v2.2.0
         with:
-          swift-version: "5.10"
+          swift-version: "5.10.1"
+          no-check-gpg: true
 
       - name: Show Swift version
         run: swift --version
