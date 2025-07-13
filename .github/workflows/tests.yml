@@ -20,25 +20,31 @@ jobs:
       - name: Install Swift
         id: install-swift
         run: |
-          # Download and install Swift 5.10 manually (more stable than 6.1)
-          echo "Downloading Swift 5.10..."
-          wget -q --show-progress https://download.swift.org/swift-5.10-release/ubuntu2204/swift-5.10-RELEASE-ubuntu22.04.tar.gz
+          # Download and install Swift 5.9 manually (stable and available)
+          echo "Downloading Swift 5.9..."
 
-          if [ ! -f swift-5.10-RELEASE-ubuntu22.04.tar.gz ]; then
-            echo "Error: Swift download failed"
+          # Try wget first, then curl as fallback
+          if ! wget -q --show-progress https://download.swift.org/swift-5.9.2-release/ubuntu2204/swift-5.9.2-RELEASE-ubuntu22.04.tar.gz; then
+            echo "wget failed, trying curl..."
+            curl -L -o swift-5.9.2-RELEASE-ubuntu22.04.tar.gz https://download.swift.org/swift-5.9.2-release/ubuntu2204/swift-5.9.2-RELEASE-ubuntu22.04.tar.gz
+          fi
+
+          if [ ! -f swift-5.9.2-RELEASE-ubuntu22.04.tar.gz ]; then
+            echo "Error: Swift download failed with both wget and curl"
+            echo "Available Swift versions can be found at: https://download.swift.org/"
             exit 1
           fi
 
           echo "Extracting Swift..."
-          tar xzf swift-5.10-RELEASE-ubuntu22.04.tar.gz
+          tar xzf swift-5.9.2-RELEASE-ubuntu22.04.tar.gz
 
-          if [ ! -d swift-5.10-RELEASE-ubuntu22.04 ]; then
+          if [ ! -d swift-5.9.2-RELEASE-ubuntu22.04 ]; then
             echo "Error: Swift extraction failed"
             exit 1
           fi
 
           echo "Installing Swift to /opt/swift..."
-          sudo mv swift-5.10-RELEASE-ubuntu22.04 /opt/swift
+          sudo mv swift-5.9.2-RELEASE-ubuntu22.04 /opt/swift
 
           echo "Setting up environment..."
           echo "path=/opt/swift/usr/bin" >> $GITHUB_OUTPUT
@@ -120,7 +126,7 @@ jobs:
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
-    name: Linux (Ubuntu 22.04, Swift 5.10)
+    name: Linux (Ubuntu 22.04, Swift 5.9)
     runs-on: ubuntu-22.04
     needs: install-swift-linux
 
