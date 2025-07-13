@@ -454,10 +454,6 @@ public enum ZLib {
     /// - Returns: Tuple of (decompressed data, bytes consumed from input, bytes written to output)
     /// - Throws: ZLibError if decompression fails
     public static func partialDecompress(_ data: Data, maxOutputSize: Int = 4096) throws -> (decompressed: Data, inputConsumed: Int, outputWritten: Int) {
-        // Validate input parameters
-        guard !data.isEmpty else {
-            throw ZLibError.invalidData
-        }
         guard maxOutputSize > 0 else {
             throw ZLibError.invalidData
         }

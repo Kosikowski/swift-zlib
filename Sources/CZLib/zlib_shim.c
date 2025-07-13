@@ -19,6 +19,10 @@ int swift_compress(Bytef *dest, uLongf *destLen,
     if (!dest || !destLen || !source) {
         return Z_STREAM_ERROR;
     }
+    if (sourceLen == 0 || *destLen == 0) {
+        *destLen = 0;
+        return Z_OK;
+    }
     return compress2(dest, destLen, source, sourceLen, level);
 }
 
@@ -27,6 +31,10 @@ int swift_uncompress(Bytef *dest, uLongf *destLen,
     if (!dest || !destLen || !source) {
         return Z_STREAM_ERROR;
     }
+    if (sourceLen == 0 || *destLen == 0) {
+        *destLen = 0;
+        return Z_OK;
+    }
     return uncompress(dest, destLen, source, sourceLen);
 }
 
@@ -34,6 +42,10 @@ int swift_uncompress2(Bytef *dest, uLongf *destLen,
                       const Bytef *source, uLong *sourceLen) {
     if (!dest || !destLen || !source || !sourceLen) {
         return Z_STREAM_ERROR;
+    }
+    if (*sourceLen == 0 || *destLen == 0) {
+        *destLen = 0;
+        return Z_OK;
     }
     // uncompress2 might not be available in all zlib versions
     // We'll provide a fallback implementation using uncompress
@@ -263,15 +275,15 @@ int swift_inflateSetDictionary(z_streamp strm, const Bytef *dictionary, uInt dic
 
 // Checksum functions
 uLong swift_adler32(uLong adler, const Bytef *buf, uInt len) {
-    if (!buf && len > 0) {
-        return adler; // Return initial value if no buffer provided
+    if ((!buf && len > 0) || len == 0) {
+        return adler; // Return initial value if no buffer provided or len is 0
     }
     return adler32(adler, buf, len);
 }
 
 uLong swift_crc32(uLong crc, const Bytef *buf, uInt len) {
-    if (!buf && len > 0) {
-        return crc; // Return initial value if no buffer provided
+    if ((!buf && len > 0) || len == 0) {
+        return crc; // Return initial value if no buffer provided or len is 0
     }
     return crc32(crc, buf, len);
 }
