@@ -1,4 +1,5 @@
 #include "zlib_shim.h"
+#include <zlib.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -29,13 +30,21 @@ int swift_compress(Bytef *dest, uLongf *destLen,
         return Z_OK;
     }
 
+#if ZLIB_DEBUG
+    printf("[C] swift_compress: sourceLen=%lu, destLen(before)=%lu, level=%d\n", sourceLen, *destLen, level);
+    fflush(stdout);
+#endif
     int result = compress2(dest, destLen, source, sourceLen, level);
 #if ZLIB_DEBUG
-    if (result != Z_OK) {
-        printf("[C] swift_compress ERROR: result=%d, sourceLen=%lu, destLen=%lu\n",
-               result, sourceLen, *destLen);
-        fflush(stdout);
+    printf("[C] swift_compress: compress2 result=%d, destLen(after)=%lu\n", result, *destLen);
+    fflush(stdout);
+    // Print first 16 bytes of output
+    printf("[C] swift_compress: first 16 bytes of output: ");
+    for (int i = 0; i < 16 && i < *destLen; i++) {
+        printf("%02x ", dest[i]);
     }
+    printf("\n");
+    fflush(stdout);
 #endif
     return result;
 }

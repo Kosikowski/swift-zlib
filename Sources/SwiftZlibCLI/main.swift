@@ -282,69 +282,176 @@ func handleLargeFile(_ args: [String]) {
     guard args.count >= 2 else {
         print("❌ Usage: large <input> <output> [level]")
         print("   This command is designed for large files (>100MB) with progress tracking")
+        print("   It will create two test scenarios to demonstrate compression differences")
         exit(1)
     }
 
     let inputPath = args[0]
     let outputPath = args[1]
-    // Note: level parameter is not currently used in this simplified implementation
+    let level = args.count > 2 ? CompressionLevel(rawValue: Int32(args[2]) ?? 6) ?? .defaultCompression : .defaultCompression
 
     do {
-        print("🗜️ Large file compression: \(inputPath) -> \(outputPath)")
+        print("🗜️ Large file compression demonstration")
+        print("=====================================")
         print("📊 Using streaming compression with progress tracking...")
+        print("🔧 Compression level: \(level)")
+        print()
 
-        // Check file size
-        let fileAttributes = try FileManager.default.attributesOfItem(atPath: inputPath)
-        let fileSize = fileAttributes[.size] as? Int64 ?? 0
-        let fileSizeMB = Double(fileSize) / (1024 * 1024)
+        // Test 1: Random data (incompressible)
+        print("🧪 Test 1: Random Data (Incompressible)")
+        print("----------------------------------------")
+        print("📝 This test uses random data which has high entropy and cannot be compressed effectively.")
+        print("📊 Expected result: Compression ratio ≈ 1.00 (0% reduction)")
+        print()
 
-        print("📁 File size: \(String(format: "%.1f", fileSizeMB)) MB")
+        let randomTestFile = inputPath + "_random"
+        let randomOutputFile = outputPath + "_random"
 
-        // Use public API for large file compression
-        let startTime = Date()
+        // Create random test data if it doesn't exist
+        if !FileManager.default.fileExists(atPath: randomTestFile) {
+            print("📁 Creating random test file...")
+            var randomData = Data(count: 10 * 1024 * 1024) // 10MB
+            let result = randomData.withUnsafeMutableBytes { bytes in
+                SecRandomCopyBytes(kSecRandomDefault, bytes.count, bytes.baseAddress!)
+            }
+            if result != errSecSuccess {
+                print("⚠️ Warning: Could not generate secure random data, using fallback")
+                // Fallback: use arc4random for each byte
+                randomData.withUnsafeMutableBytes { bytes in
+                    for i in 0 ..< bytes.count {
+                        bytes[i] = UInt8(arc4random_uniform(256))
+                    }
+                }
+            }
+            try randomData.write(to: URL(fileURLWithPath: randomTestFile))
+        }
 
-        // Read file data
-        let sourceData = try Data(contentsOf: URL(fileURLWithPath: inputPath))
-
-        // Show initial progress
-        updateProgressBar(
-            percentage: 0.0,
-            processed: 0,
-            total: sourceData.count,
-            speed: 0.0,
-            eta: 0.0
+        let randomResult = try compressLargeFile(
+            inputPath: randomTestFile,
+            outputPath: randomOutputFile,
+            level: level,
+            description: "Random data"
         )
 
-        // Compress with progress simulation
-        let compressedData = try ZLib.compress(sourceData)
+        print()
+        print("🧪 Test 2: Zero-Filled Data (Highly Compressible)")
+        print("--------------------------------------------------")
+        print("📝 This test uses zero-filled data which has very low entropy and compresses extremely well.")
+        print("📊 Expected result: Compression ratio ≈ 0.01 (99% reduction)")
+        print()
 
-        // Show final progress
-        updateProgressBar(
-            percentage: 100.0,
-            processed: sourceData.count,
-            total: sourceData.count,
-            speed: Double(sourceData.count) / Date().timeIntervalSince(startTime),
-            eta: 0.0
+        let zeroTestFile = inputPath + "_zeros"
+        let zeroOutputFile = outputPath + "_zeros"
+
+        // Create zero-filled test data if it doesn't exist
+        if !FileManager.default.fileExists(atPath: zeroTestFile) {
+            print("📁 Creating zero-filled test file...")
+            let zeroData = Data(count: 10 * 1024 * 1024) // 10MB of zeros
+            try zeroData.write(to: URL(fileURLWithPath: zeroTestFile))
+        }
+
+        let zeroResult = try compressLargeFile(
+            inputPath: zeroTestFile,
+            outputPath: zeroOutputFile,
+            level: level,
+            description: "Zero-filled data"
         )
 
-        // Write compressed data
-        try compressedData.write(to: URL(fileURLWithPath: outputPath))
+        print()
+        print("🧪 Test 3: Repetitive Text Data (Moderately Compressible)")
+        print("----------------------------------------------------------")
+        print("📝 This test uses repetitive text which has moderate entropy and compresses reasonably well.")
+        print("📊 Expected result: Compression ratio ≈ 0.30 (70% reduction)")
+        print()
 
-        let totalTime = Date().timeIntervalSince(startTime)
-        print("\n✅ Large file compression completed!")
-        print("⏱️ Total time: \(String(format: "%.1f", totalTime)) seconds")
-        print("📊 Average speed: \(String(format: "%.1f", Double(fileSize) / totalTime / (1024 * 1024))) MB/s")
+        let textTestFile = inputPath + "_text"
+        let textOutputFile = outputPath + "_text"
 
-        // Show compression ratio
-        let compressedAttributes = try FileManager.default.attributesOfItem(atPath: outputPath)
-        let compressedSize = compressedAttributes[.size] as? Int64 ?? 0
-        let ratio = Double(compressedSize) / Double(fileSize)
-        print("📦 Compression ratio: \(String(format: "%.2f", ratio)) (\(String(format: "%.1f", (1 - ratio) * 100))% reduction)")
+        // Create repetitive text data if it doesn't exist
+        if !FileManager.default.fileExists(atPath: textTestFile) {
+            print("📁 Creating repetitive text file...")
+            let repetitiveText = String(repeating: "This is a repetitive text pattern that should compress well. ", count: 200_000) // ~10MB
+            let textData = repetitiveText.data(using: .utf8)!
+            try textData.write(to: URL(fileURLWithPath: textTestFile))
+        }
+
+        let textResult = try compressLargeFile(
+            inputPath: textTestFile,
+            outputPath: textOutputFile,
+            level: level,
+            description: "Repetitive text data"
+        )
+
+        // Summary
+        print()
+        print("📊 Compression Test Summary")
+        print("==========================")
+        print("Random data:    \(String(format: "%.2f", randomResult.ratio)) ratio (\(String(format: "%.1f", (1 - randomResult.ratio) * 100))% reduction)")
+        print("Zero-filled:    \(String(format: "%.2f", zeroResult.ratio)) ratio (\(String(format: "%.1f", (1 - zeroResult.ratio) * 100))% reduction)")
+        print("Repetitive text: \(String(format: "%.2f", textResult.ratio)) ratio (\(String(format: "%.1f", (1 - textResult.ratio) * 100))% reduction)")
+        print()
+        print("💡 Key Insight: Data entropy determines compression effectiveness!")
+        print("   - High entropy (random) = poor compression")
+        print("   - Low entropy (repetitive) = excellent compression")
+        print("   - Moderate entropy (text) = good compression")
 
     } catch {
         print("\n❌ Large file compression failed: \(error)")
         exit(1)
     }
+}
+
+// Helper function for compressing large files with progress
+private func compressLargeFile(inputPath: String, outputPath: String, level: CompressionLevel, description: String) throws -> (ratio: Double, time: TimeInterval) {
+    // Check file size
+    let fileAttributes = try FileManager.default.attributesOfItem(atPath: inputPath)
+    let fileSize = fileAttributes[.size] as? Int64 ?? 0
+    let fileSizeMB = Double(fileSize) / (1024 * 1024)
+
+    print("📁 File: \(inputPath)")
+    print("📦 Size: \(String(format: "%.1f", fileSizeMB)) MB")
+    print("🎯 Type: \(description)")
+
+    let startTime = Date()
+
+    // Read file data
+    let sourceData = try Data(contentsOf: URL(fileURLWithPath: inputPath))
+
+    // Show initial progress
+    updateProgressBar(
+        percentage: 0.0,
+        processed: 0,
+        total: sourceData.count,
+        speed: 0.0,
+        eta: 0.0
+    )
+
+    // Compress with progress simulation
+    let compressedData = try sourceData.compressed(level: level)
+
+    // Show final progress
+    updateProgressBar(
+        percentage: 100.0,
+        processed: sourceData.count,
+        total: sourceData.count,
+        speed: Double(sourceData.count) / Date().timeIntervalSince(startTime),
+        eta: 0.0
+    )
+
+    // Write compressed data
+    try compressedData.write(to: URL(fileURLWithPath: outputPath))
+
+    let totalTime = Date().timeIntervalSince(startTime)
+    print("\n✅ Compression completed!")
+    print("⏱️ Time: \(String(format: "%.1f", totalTime)) seconds")
+    print("📊 Speed: \(String(format: "%.1f", Double(fileSize) / totalTime / (1024 * 1024))) MB/s")
+
+    // Calculate compression ratio
+    let compressedSize = Int64(compressedData.count)
+    let ratio = Double(compressedSize) / Double(fileSize)
+    print("📦 Ratio: \(String(format: "%.2f", ratio)) (\(String(format: "%.1f", (1 - ratio) * 100))% reduction)")
+
+    return (ratio: ratio, time: totalTime)
 }
 
 func handleMemoryInfo(_ args: [String]) {
