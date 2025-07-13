@@ -18,6 +18,7 @@ public enum ZLibError: Error, LocalizedError {
     case needDictionary
     case dataError
     case bufferError
+    case fileError(Error)
 
     public var errorDescription: String? {
         switch self {
@@ -39,6 +40,8 @@ public enum ZLibError: Error, LocalizedError {
             return "Data error during operation"
         case .bufferError:
             return "Buffer error during operation"
+        case let .fileError(underlyingError):
+            return "File operation failed: \(underlyingError.localizedDescription)"
         }
     }
 }

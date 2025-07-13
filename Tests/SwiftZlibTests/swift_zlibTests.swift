@@ -5247,8 +5247,10 @@ final class SwiftZlibTests: XCTestCase {
             }
             XCTFail("Should throw error for non-existent file")
         } catch {
-            // Expected error - any error is acceptable for non-existent file
-            XCTAssertTrue(error is Error)
+            // Expected error - should be ZLibError.fileError for non-existent file
+            print("Actual error type: \(type(of: error))")
+            print("Error: \(error)")
+            XCTAssertTrue(error is ZLibError)
         }
 
         try? FileManager.default.removeItem(atPath: dstPath)
@@ -5670,8 +5672,10 @@ final class SwiftZlibTests: XCTestCase {
             }
             XCTFail("Should throw error for non-existent file")
         } catch {
-            // Expected error - any error is acceptable for non-existent file
-            XCTAssertTrue(error is Error)
+            // Expected error - should be ZLibError.fileError for non-existent file
+            print("Actual error type: \(type(of: error))")
+            print("Error: \(error)")
+            XCTAssertTrue(error is ZLibError)
         }
 
         try? FileManager.default.removeItem(atPath: dstPath)

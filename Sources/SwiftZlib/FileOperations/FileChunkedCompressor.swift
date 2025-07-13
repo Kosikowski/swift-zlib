@@ -13,6 +13,15 @@ public class FileChunkedCompressor {
     public let bufferSize: Int
     public let compressionLevel: CompressionLevel
     public let windowBits: WindowBits
+    
+    @discardableResult
+    private func wrapFileError<T>(_ operation: () throws -> T) throws -> T {
+        do {
+            return try operation()
+        } catch {
+            throw ZLibError.fileError(error)
+        }
+    }
 
     public init(bufferSize: Int = 64 * 1024, compressionLevel: CompressionLevel = .defaultCompression, windowBits: WindowBits = .deflate) {
         self.bufferSize = bufferSize
@@ -22,10 +31,13 @@ public class FileChunkedCompressor {
 
     /// Compress a file to another file using true streaming (constant memory)
     public func compressFile(from sourcePath: String, to destinationPath: String) throws {
-        let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
+        let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
-        FileManager.default.createFile(atPath: destinationPath, contents: nil)
-        let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
+        
+        try wrapFileError {
+            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+        }
+        let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
 
         let compressor = Compressor()
@@ -38,7 +50,7 @@ public class FileChunkedCompressor {
             let flush: FlushMode = isLast ? .finish : .noFlush
             let compressed = try compressor.compress(chunk, flush: flush)
             if !compressed.isEmpty {
-                try output.write(contentsOf: compressed)
+                try wrapFileError { try output.write(contentsOf: compressed) }
             }
             if isLast { isFinished = true }
         }
@@ -50,10 +62,12 @@ public class FileChunkedCompressor {
         to destinationPath: String,
         progress: @escaping (Int, Int) -> Void
     ) throws {
-        let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
+        let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
-        FileManager.default.createFile(atPath: destinationPath, contents: nil)
-        let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
+        try wrapFileError {
+            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+        }
+        let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
 
         let compressor = Compressor()
@@ -70,7 +84,7 @@ public class FileChunkedCompressor {
             let flush: FlushMode = isLast ? .finish : .noFlush
             let compressed = try compressor.compress(chunk, flush: flush)
             if !compressed.isEmpty {
-                try output.write(contentsOf: compressed)
+                try wrapFileError { try output.write(contentsOf: compressed) }
             }
 
             processedBytes += chunk.count
@@ -87,6 +101,7 @@ public class FileChunkedCompressor {
                 try compressFile(from: sourcePath, to: destinationPath)
                 continuation.resume()
             } catch {
+                // The synchronous method already wraps errors in ZLibError, so we can pass through
                 continuation.resume(throwing: error)
             }
         }
@@ -103,6 +118,7 @@ public class FileChunkedCompressor {
                 try compressFile(from: sourcePath, to: destinationPath, progress: progress)
                 continuation.resume()
             } catch {
+                // The synchronous method already wraps errors in ZLibError, so we can pass through
                 continuation.resume(throwing: error)
             }
         }
@@ -117,10 +133,12 @@ public class FileChunkedCompressor {
         progressInterval: TimeInterval = 0.1, // seconds
         progressQueue: DispatchQueue = .main
     ) throws {
-        let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
+        let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
-        FileManager.default.createFile(atPath: destinationPath, contents: nil)
-        let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
+        try wrapFileError {
+            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+        }
+        let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
 
         let compressor = Compressor()
@@ -176,7 +194,7 @@ public class FileChunkedCompressor {
             let compressed = try compressor.compress(chunk, flush: flush)
             phase = .writing
             if !compressed.isEmpty {
-                try output.write(contentsOf: compressed)
+                try wrapFileError { try output.write(contentsOf: compressed) }
             }
             processedBytes += chunk.count
             if isLast {
@@ -268,7 +286,8 @@ public class FileChunkedCompressor {
                     reportProgress(phase: .finished)
                     continuation.finish()
                 } catch {
-                    continuation.finish(throwing: error)
+                    let zlibError = (error is ZLibError) ? error : ZLibError.fileError(error)
+                    continuation.finish(throwing: zlibError)
                 }
             }
         }

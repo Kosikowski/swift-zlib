@@ -11,6 +11,15 @@ import Foundation
 public class FileChunkedDecompressor {
     public let bufferSize: Int
     public let windowBits: WindowBits
+    
+    @discardableResult
+    private func wrapFileError<T>(_ operation: () throws -> T) throws -> T {
+        do {
+            return try operation()
+        } catch {
+            throw ZLibError.fileError(error)
+        }
+    }
 
     public init(bufferSize: Int = 64 * 1024, windowBits: WindowBits = .deflate) {
         self.bufferSize = bufferSize
@@ -19,10 +28,12 @@ public class FileChunkedDecompressor {
 
     /// Decompress a file to another file using true streaming (constant memory)
     public func decompressFile(from sourcePath: String, to destinationPath: String) throws {
-        let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
+        let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
-        FileManager.default.createFile(atPath: destinationPath, contents: nil)
-        let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
+        try wrapFileError {
+            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+        }
+        let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
 
         let decompressor = Decompressor()
@@ -35,7 +46,7 @@ public class FileChunkedDecompressor {
             let flush: FlushMode = isLast ? .finish : .noFlush
             let decompressed = try decompressor.decompress(chunk, flush: flush)
             if !decompressed.isEmpty {
-                try output.write(contentsOf: decompressed)
+                try wrapFileError { try output.write(contentsOf: decompressed) }
             }
             if isLast { isFinished = true }
         }
@@ -47,10 +58,12 @@ public class FileChunkedDecompressor {
         to destinationPath: String,
         progress: @escaping (Int, Int) -> Void
     ) throws {
-        let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
+        let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
-        FileManager.default.createFile(atPath: destinationPath, contents: nil)
-        let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
+        try wrapFileError {
+            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+        }
+        let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
 
         let decompressor = Decompressor()
@@ -67,7 +80,7 @@ public class FileChunkedDecompressor {
             let flush: FlushMode = isLast ? .finish : .noFlush
             let decompressed = try decompressor.decompress(chunk, flush: flush)
             if !decompressed.isEmpty {
-                try output.write(contentsOf: decompressed)
+                try wrapFileError { try output.write(contentsOf: decompressed) }
             }
 
             processedBytes += chunk.count
@@ -84,6 +97,7 @@ public class FileChunkedDecompressor {
                 try decompressFile(from: sourcePath, to: destinationPath)
                 continuation.resume()
             } catch {
+                // The synchronous method already wraps errors in ZLibError, so we can pass through
                 continuation.resume(throwing: error)
             }
         }
@@ -100,6 +114,7 @@ public class FileChunkedDecompressor {
                 try decompressFile(from: sourcePath, to: destinationPath, progress: progress)
                 continuation.resume()
             } catch {
+                // The synchronous method already wraps errors in ZLibError, so we can pass through
                 continuation.resume(throwing: error)
             }
         }
@@ -114,10 +129,12 @@ public class FileChunkedDecompressor {
         progressInterval: TimeInterval = 0.1, // seconds
         progressQueue: DispatchQueue = .main
     ) throws {
-        let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
+        let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
-        FileManager.default.createFile(atPath: destinationPath, contents: nil)
-        let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
+        try wrapFileError {
+            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+        }
+        let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
 
         let decompressor = Decompressor()
@@ -173,7 +190,7 @@ public class FileChunkedDecompressor {
             let decompressed = try decompressor.decompress(chunk, flush: flush)
             phase = .writing
             if !decompressed.isEmpty {
-                try output.write(contentsOf: decompressed)
+                try wrapFileError { try output.write(contentsOf: decompressed) }
             }
             processedBytes += chunk.count
             if isLast {
@@ -265,7 +282,8 @@ public class FileChunkedDecompressor {
                     reportProgress(phase: .finished)
                     continuation.finish()
                 } catch {
-                    continuation.finish(throwing: error)
+                    let zlibError = (error is ZLibError) ? error : ZLibError.fileError(error)
+                    continuation.finish(throwing: zlibError)
                 }
             }
         }
