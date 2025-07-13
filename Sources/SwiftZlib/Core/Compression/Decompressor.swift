@@ -289,7 +289,7 @@ final class Decompressor {
             var iteration = 0
             repeat {
                 iteration += 1
-                zlibDebug("[Decompressor.decompress] Iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
+                // zlibDebug("[Decompressor.decompress] Iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
                 let outputBufferCount = outputBuffer.count
                 result = try outputBuffer.withUnsafeMutableBytes { outputPtr -> Int32 in
                     stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
