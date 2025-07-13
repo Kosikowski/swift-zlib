@@ -43,17 +43,17 @@ jobs:
 
   # Test on Linux (Ubuntu)
   test-linux:
-    name: Linux (Ubuntu 22.04)
-    runs-on: ubuntu-22.04
+    name: Linux (Ubuntu 24.04, Swift 5.9.3)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2.1.0
+        uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9"
+          swift-version: "5.9.3"
 
       - name: Show Swift version
         run: swift --version
@@ -79,17 +79,17 @@ jobs:
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
-    name: Linux (Ubuntu 22.04, Swift 5.9)
-    runs-on: ubuntu-22.04
+    name: Linux (Ubuntu 24.04, Swift 5.9.3)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2.1.0
+        uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9"
+          swift-version: "5.9.3"
 
       - name: Show Swift version
         run: swift --version
@@ -285,15 +285,15 @@ jobs:
     strategy:
       matrix:
         configuration: [debug, release]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2.1.0
+        uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9"
+          swift-version: "5.9.3"
 
       - name: Install zlib (Linux)
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
@@ -309,16 +309,16 @@ jobs:
 
   memory-leak-linux:
     name: Linux Memory Leak Test (MemoryLeakTests only)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Swift
-        uses: swift-actions/setup-swift@v2.1.0
+        uses: swift-actions/setup-swift@v2.3.0
         with:
-          swift-version: "5.9"
+          swift-version: "5.9.3"
 
       - name: Show Swift version
         run: swift --version
