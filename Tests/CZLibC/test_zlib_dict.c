@@ -94,46 +94,8 @@ int main() {
     inflateEnd(&d_stream1);
     free(decompressed1);
 
-    // Step 3: Try to set dictionary after Z_NEED_DICT (should fail)
-    printf("\n--- Step 3: Try to set dictionary after Z_NEED_DICT ---\n");
-
-    z_stream d_stream2;
-    memset(&d_stream2, 0, sizeof(z_stream));
-
-    ret = inflateInit(&d_stream2);
-    if (ret != Z_OK) {
-        printf("inflateInit failed: %d\n", ret);
-        free(compressed);
-        return 1;
-    }
-
-    d_stream2.next_in = compressed;
-    d_stream2.avail_in = actual_compressed_size;
-
-    // Try to decompress first
-    ret = inflate(&d_stream2, Z_NO_FLUSH);
-    printf("First inflate call returned: %d\n", ret);
-
-    if (ret == Z_NEED_DICT) {
-        printf("Got Z_NEED_DICT, now trying to set dictionary...\n");
-
-        // Try to set dictionary
-        ret = inflateSetDictionary(&d_stream2, (const Bytef*)dict, dict_len);
-        printf("inflateSetDictionary returned: %d\n", ret);
-
-        if (ret == Z_STREAM_ERROR) {
-            printf("Z_STREAM_ERROR as expected - cannot set dictionary at this point\n");
-        } else if (ret == Z_OK) {
-            printf("Dictionary set successfully (unexpected)\n");
-        } else {
-            printf("Unexpected return code: %d\n", ret);
-        }
-    }
-
-    inflateEnd(&d_stream2);
-
-    // Step 4: Decompress WITH dictionary (should succeed)
-    printf("\n--- Step 4: Decompress WITH dictionary ---\n");
+    // Step 3: Decompress WITH dictionary (correct zlib pattern)
+    printf("\n--- Step 3: Decompress WITH dictionary (correct pattern) ---\n");
 
     z_stream d_stream3;
     memset(&d_stream3, 0, sizeof(z_stream));
@@ -145,38 +107,44 @@ int main() {
         return 1;
     }
 
-    // Set dictionary BEFORE decompressing
-    ret = inflateSetDictionary(&d_stream3, (const Bytef*)dict, dict_len);
-    if (ret != Z_OK) {
-        printf("inflateSetDictionary failed: %d\n", ret);
-        inflateEnd(&d_stream3);
-        free(compressed);
-        return 1;
-    }
-    printf("Dictionary set successfully\n");
-
     Bytef* decompressed3 = malloc(data_len + 1);
     d_stream3.next_in = compressed;
     d_stream3.avail_in = actual_compressed_size;
     d_stream3.next_out = decompressed3;
     d_stream3.avail_out = data_len + 1;
 
-    ret = inflate(&d_stream3, Z_FINISH);
-    printf("inflate with dictionary returned: %d\n", ret);
-
-    if (ret == Z_STREAM_END) {
-        decompressed3[d_stream3.total_out] = '\0';
-        printf("Decompression successful!\n");
-        printf("Original: %s\n", test_data);
-        printf("Decompressed: %s\n", decompressed3);
-
-        if (strcmp(test_data, (char*)decompressed3) == 0) {
-            printf("Data matches! ✓\n");
+    // First call to inflate, expect Z_NEED_DICT
+    ret = inflate(&d_stream3, Z_NO_FLUSH);
+    if (ret == Z_NEED_DICT) {
+        printf("inflate returned Z_NEED_DICT as expected\n");
+        // Now set the dictionary
+        ret = inflateSetDictionary(&d_stream3, (const Bytef*)dict, dict_len);
+        if (ret != Z_OK) {
+            printf("inflateSetDictionary failed: %d\n", ret);
+            inflateEnd(&d_stream3);
+            free(decompressed3);
+            free(compressed);
+            return 1;
+        }
+        printf("Dictionary set successfully\n");
+        // Continue inflation
+        ret = inflate(&d_stream3, Z_FINISH);
+        printf("inflate after setting dictionary returned: %d\n", ret);
+        if (ret == Z_STREAM_END) {
+            decompressed3[d_stream3.total_out] = '\0';
+            printf("Decompression successful!\n");
+            printf("Original: %s\n", test_data);
+            printf("Decompressed: %s\n", decompressed3);
+            if (strcmp(test_data, (char*)decompressed3) == 0) {
+                printf("Data matches! ✓\n");
+            } else {
+                printf("Data mismatch! ✗\n");
+            }
         } else {
-            printf("Data mismatch! ✗\n");
+            printf("Decompression failed: %d\n", ret);
         }
     } else {
-        printf("Decompression failed: %d\n", ret);
+        printf("inflate did not return Z_NEED_DICT as expected, got: %d\n", ret);
     }
 
     inflateEnd(&d_stream3);
