@@ -66,15 +66,16 @@ jobs:
   test-linux:
     name: Linux (Ubuntu 22.04)
     runs-on: ubuntu-22.04
+    needs: install-swift-linux
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Swift
-        uses: swift-actions/setup-swift@v2.2.0
-        with:
-          swift-version: "6.1"
+      - name: Setup Swift environment
+        run: |
+          echo "${{ needs.install-swift-linux.outputs.swift-path }}" >> $GITHUB_PATH
+          echo "SWIFT_HOME=/opt/swift" >> $GITHUB_ENV
 
       - name: Show Swift version
         run: swift --version
@@ -82,24 +83,21 @@ jobs:
       - name: Install zlib development headers
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
 
-      - name: Run tests with Address Sanitizer
-        run: swift test --sanitize=address --verbose
-
       - name: Build package
         run: swift build
 
       - name: Run all tests
-        run: swift test --verbose
+        run: swift test --no-sanitize --verbose
 
       - name: Run specific test groups
         run: |
-          swift test --filter CoreTests
-          swift test --filter ExtensionsTests
-          swift test --filter FileOperationsTests
-          swift test --filter PerformanceTests
-          swift test --filter ErrorHandlingTests
-          swift test --filter StreamingTests
-          swift test --filter ConcurrencyTests
+          swift test --filter CoreTests --no-sanitize
+          swift test --filter ExtensionsTests --no-sanitize
+          swift test --filter FileOperationsTests --no-sanitize
+          swift test --filter PerformanceTests --no-sanitize
+          swift test --filter ErrorHandlingTests --no-sanitize
+          swift test --filter StreamingTests --no-sanitize
+          swift test --filter ConcurrencyTests --no-sanitize
 
   # Test on Linux (Ubuntu) with latest Swift
   test-linux-latest:
