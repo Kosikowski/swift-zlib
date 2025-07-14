@@ -94,6 +94,14 @@ jobs:
           echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
         shell: pwsh
 
+      - name: Set zlib include and lib paths
+        run: |
+          $inc = "C:\vcpkg\installed\x64-windows\include"
+          $lib = "C:\vcpkg\installed\x64-windows\lib"
+          echo "C_INCLUDE_PATH=$inc" >> $env:GITHUB_ENV
+          echo "LIB=$lib" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Build and test package
         run: |
           swift build -c ${{ matrix.configuration }}
