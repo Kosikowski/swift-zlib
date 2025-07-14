@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+
 jobs:
   release:
     name: Create Release
@@ -13,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Select Xcode
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app
@@ -23,43 +30,80 @@ jobs:
           swift test
           swift build -c release --product SwiftZlibCLI
 
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # Extract version from tag
+          VERSION=${GITHUB_REF#refs/tags/}
+
+          # Get commits since last tag
+          if git describe --tags --abbrev=0 HEAD~1 >/dev/null 2>&1; then
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1)
+            COMMITS=$(git log --oneline --no-merges $PREVIOUS_TAG..HEAD | head -20)
+          else
+            COMMITS=$(git log --oneline --no-merges | head -20)
+          fi
+
+          # Generate release notes
+          cat << EOF > release_notes.md
+          # SwiftZlib v$VERSION
+
+          ## What's Changed
+
+          ### Features
+          - Swift wrapper for zlib compression library
+          - Cross-platform support (macOS, Linux)
+          - Comprehensive API coverage (Data, String, File operations)
+          - Async/Combine support for modern Swift concurrency
+          - Streaming compression/decompression
+          - Gzip file format support
+          - Command-line interface with benchmarking
+          - Performance profiling and optimization
+
+          ### Bug Fixes
+          - Fixed cross-platform random byte generation in CLI
+          - Resolved debug output interference in tests
+          - Corrected zlib dictionary inflation patterns
+
+          ### Performance
+          - Optimized memory usage with configurable levels
+          - Efficient streaming for large files
+          - Fast compression/decompression algorithms
+
+          ### Documentation
+          - Comprehensive API documentation
+          - CLI usage examples and benchmarks
+          - Architecture and testing guides
+
+          ## Installation
+
+          \`\`\`swift
+          dependencies: [
+              .package(url: "https://github.com/Kosikowski/swift-zlib.git", from: "$VERSION")
+          ]
+          \`\`\`
+
+          ## Breaking Changes
+
+          No breaking changes in this initial release.
+
+          ## Recent Commits
+
+          \`\`\`
+          $COMMITS
+          \`\`\`
+          EOF
+
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            ## What's Changed
-
-            ### Features
-            - [List new features]
-
-            ### Bug Fixes
-            - [List bug fixes]
-
-            ### Performance
-            - [List performance improvements]
-
-            ### Documentation
-            - [List documentation updates]
-
-            ## Installation
-
-            ```swift
-            dependencies: [
-                .package(url: "https://github.com/your-org/swift-zlib.git", from: "${{ github.ref_name }}")
-            ]
-            ```
-
-            ## Breaking Changes
-
-            [List any breaking changes or note "No breaking changes"]
-
-            ## Migration Guide
-
-            [If needed, provide migration steps]
-
+          name: SwiftZlib ${{ github.ref_name }}
+          body: ${{ steps.release_notes.outputs.notes }}
           draft: false
           prerelease: false
+          generate_release_notes: false
