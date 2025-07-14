@@ -43,50 +43,20 @@ jobs:
           }
         shell: pwsh
 
-      - name: Use system zlib (no installation needed)
+      - name: Install vcpkg and zlib
         run: |
-          # Windows SDK includes zlib, we just need to find it
-          $windowsSdkDir = "$env:WindowsSdkDir"
-          $windowsSdkVersion = "$env:WindowsSDKVersion"
+          # Install vcpkg
+          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
 
-          echo "Windows SDK Dir: $windowsSdkDir"
-          echo "Windows SDK Version: $windowsSdkVersion"
+          # Install zlib using vcpkg
+          C:\vcpkg\vcpkg.exe install zlib:x64-windows
 
-          # Try to find zlib in Windows SDK
-          $possiblePaths = @(
-            "$windowsSdkDir\include\$windowsSdkVersion\um",
-            "$windowsSdkDir\include\$windowsSdkVersion\shared",
-            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
-          )
-
-          $found = $false
-          foreach ($path in $possiblePaths) {
-            echo "Checking path: $path"
-            if (Test-Path "$path\zlib.h") {
-              echo "Found zlib.h at $path"
-              echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
-              echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
-              $found = $true
-              break
-            }
-          }
-
-          if (-not $found) {
-            echo "zlib.h not found in any expected location"
-            echo "Creating minimal zlib.h to avoid conflicts"
-
-            # Create a minimal zlib.h that doesn't conflict
-            $minimalZlibDir = "C:\minimal-zlib"
-            New-Item -ItemType Directory -Force -Path $minimalZlibDir
-
-            # Create minimal zlib.h content
-            $content = "typedef unsigned char Bytef;`ntypedef unsigned int uInt;`ntypedef unsigned long uLong;`ntypedef long z_off_t;`n`n#define Z_OK 0`n#define Z_STREAM_END 1`n#define Z_NEED_DICT 2`n#define Z_ERRNO (-1)`n#define Z_STREAM_ERROR (-2)`n#define Z_DATA_ERROR (-3)`n#define Z_MEM_ERROR (-4)`n#define Z_BUF_ERROR (-5)`n#define Z_VERSION_ERROR (-6)`n`n#define Z_NO_FLUSH 0`n#define Z_PARTIAL_FLUSH 1`n#define Z_SYNC_FLUSH 2`n#define Z_FULL_FLUSH 3`n#define Z_FINISH 4`n#define Z_BLOCK 5`n#define Z_TREES 6`n`n#define Z_FILTERED 1`n#define Z_HUFFMAN_ONLY 2`n#define Z_RLE 3`n#define Z_FIXED 4`n#define Z_DEFAULT_STRATEGY 0`n`n#define Z_DEFAULT_COMPRESSION (-1)`n#define Z_DEFAULT_LEVEL (-2)`n`n#define Z_NULL 0`n`ntypedef struct z_stream_s {`n    const Bytef *next_in;`n    uInt avail_in;`n    uLong total_in;`n    Bytef *next_out;`n    uInt avail_out;`n    uLong total_out;`n    const char *msg;`n    struct internal_state *state;`n    void *zalloc;`n    void *zfree;`n    void *opaque;`n    int data_type;`n    uLong adler;`n    uLong reserved;`n} z_stream;`n`ntypedef z_stream *z_streamp;`n`nint compress(Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen);`nint uncompress(Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen);`nint compress2(Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen, int level);`n`nint deflateInit(z_streamp strm, int level);`nint deflate(z_streamp strm, int flush);`nint deflateEnd(z_streamp strm);`nint deflateInit2(z_streamp strm, int level, int method, int windowBits, int memLevel, int strategy);`n`nint inflateInit(z_streamp strm);`nint inflate(z_streamp strm, int flush);`nint inflateEnd(z_streamp strm);`nint inflateInit2(z_streamp strm, int windowBits);`n`nuLong adler32(uLong adler, const Bytef *buf, uInt len);`nuLong crc32(uLong crc, const Bytef *buf, uInt len);`nuLong compressBound(uLong sourceLen);`n`nconst char* zlibVersion(void);`nconst char* zError(int err);"
-
-            $content | Out-File -FilePath "$minimalZlibDir\zlib.h" -Encoding ASCII
-            echo "Created minimal zlib.h at $minimalZlibDir"
-            echo "C_INCLUDE_PATH=$minimalZlibDir" >> $env:GITHUB_ENV
-            echo "CPLUS_INCLUDE_PATH=$minimalZlibDir" >> $env:GITHUB_ENV
-          }
+          # Set environment variables to point to vcpkg installation
+          $vcpkgInstalled = "C:\vcpkg\installed\x64-windows"
+          echo "C_INCLUDE_PATH=$vcpkgInstalled\include" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=$vcpkgInstalled\include" >> $env:GITHUB_ENV
+          echo "LIB=$env:LIB;$vcpkgInstalled\lib" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -163,60 +133,20 @@ jobs:
           }
         shell: pwsh
 
-      - name: Use system zlib (no installation needed)
+      - name: Install vcpkg and zlib
         run: |
-          # Windows SDK includes zlib, we just need to find it
-          $windowsSdkDir = "$env:WindowsSdkDir"
-          $windowsSdkVersion = "$env:WindowsSDKVersion"
+          # Install vcpkg
+          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
 
-          echo "Windows SDK Dir: $windowsSdkDir"
-          echo "Windows SDK Version: $windowsSdkVersion"
+          # Install zlib using vcpkg
+          C:\vcpkg\vcpkg.exe install zlib:x64-windows
 
-          # Try to find zlib in Windows SDK
-          $possiblePaths = @(
-            "$windowsSdkDir\include\$windowsSdkVersion\um",
-            "$windowsSdkDir\include\$windowsSdkVersion\shared",
-            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
-          )
-
-          $found = $false
-          foreach ($path in $possiblePaths) {
-            echo "Checking path: $path"
-            if (Test-Path "$path\zlib.h") {
-              echo "Found zlib.h at $path"
-              echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
-              echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
-              $found = $true
-              break
-            }
-          }
-
-          if (-not $found) {
-            echo "zlib.h not found in any expected location"
-            echo "Downloading zlib source and building manually"
-
-            # Download zlib source from GitHub (more reliable)
-            $zlibUrl = "https://github.com/madler/zlib/archive/refs/tags/v1.3.tar.gz"
-            $zlibDir = "C:\zlib-src"
-
-            New-Item -ItemType Directory -Force -Path $zlibDir
-            Invoke-WebRequest -Uri $zlibUrl -OutFile "$zlibDir\zlib.tar.gz"
-
-            # Extract using tar (available on Windows)
-            tar -xzf "$zlibDir\zlib.tar.gz" -C $zlibDir
-
-            # Find the extracted directory
-            $extractedDir = Get-ChildItem -Path $zlibDir -Directory | Where-Object { $_.Name -like "zlib-*" } | Select-Object -First 1
-            if ($extractedDir) {
-              $zlibSrcDir = $extractedDir.FullName
-              echo "Found zlib source at $zlibSrcDir"
-              echo "C_INCLUDE_PATH=$zlibSrcDir" >> $env:GITHUB_ENV
-              echo "CPLUS_INCLUDE_PATH=$zlibSrcDir" >> $env:GITHUB_ENV
-            } else {
-              echo "Failed to extract zlib source"
-              exit 1
-            }
-          }
+          # Set environment variables to point to vcpkg installation
+          $vcpkgInstalled = "C:\vcpkg\installed\x64-windows"
+          echo "C_INCLUDE_PATH=$vcpkgInstalled\include" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=$vcpkgInstalled\include" >> $env:GITHUB_ENV
+          echo "LIB=$env:LIB;$vcpkgInstalled\lib" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -271,60 +201,20 @@ jobs:
           }
         shell: pwsh
 
-      - name: Use system zlib (no installation needed)
+      - name: Install vcpkg and zlib
         run: |
-          # Windows SDK includes zlib, we just need to find it
-          $windowsSdkDir = "$env:WindowsSdkDir"
-          $windowsSdkVersion = "$env:WindowsSDKVersion"
+          # Install vcpkg
+          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
 
-          echo "Windows SDK Dir: $windowsSdkDir"
-          echo "Windows SDK Version: $windowsSdkVersion"
+          # Install zlib using vcpkg
+          C:\vcpkg\vcpkg.exe install zlib:x64-windows
 
-          # Try to find zlib in Windows SDK
-          $possiblePaths = @(
-            "$windowsSdkDir\include\$windowsSdkVersion\um",
-            "$windowsSdkDir\include\$windowsSdkVersion\shared",
-            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
-          )
-
-          $found = $false
-          foreach ($path in $possiblePaths) {
-            echo "Checking path: $path"
-            if (Test-Path "$path\zlib.h") {
-              echo "Found zlib.h at $path"
-              echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
-              echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
-              $found = $true
-              break
-            }
-          }
-
-          if (-not $found) {
-            echo "zlib.h not found in any expected location"
-            echo "Downloading zlib source and building manually"
-
-            # Download zlib source from GitHub (more reliable)
-            $zlibUrl = "https://github.com/madler/zlib/archive/refs/tags/v1.3.tar.gz"
-            $zlibDir = "C:\zlib-src"
-
-            New-Item -ItemType Directory -Force -Path $zlibDir
-            Invoke-WebRequest -Uri $zlibUrl -OutFile "$zlibDir\zlib.tar.gz"
-
-            # Extract using tar (available on Windows)
-            tar -xzf "$zlibDir\zlib.tar.gz" -C $zlibDir
-
-            # Find the extracted directory
-            $extractedDir = Get-ChildItem -Path $zlibDir -Directory | Where-Object { $_.Name -like "zlib-*" } | Select-Object -First 1
-            if ($extractedDir) {
-              $zlibSrcDir = $extractedDir.FullName
-              echo "Found zlib source at $zlibSrcDir"
-              echo "C_INCLUDE_PATH=$zlibSrcDir" >> $env:GITHUB_ENV
-              echo "CPLUS_INCLUDE_PATH=$zlibSrcDir" >> $env:GITHUB_ENV
-            } else {
-              echo "Failed to extract zlib source"
-              exit 1
-            }
-          }
+          # Set environment variables to point to vcpkg installation
+          $vcpkgInstalled = "C:\vcpkg\installed\x64-windows"
+          echo "C_INCLUDE_PATH=$vcpkgInstalled\include" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=$vcpkgInstalled\include" >> $env:GITHUB_ENV
+          echo "LIB=$env:LIB;$vcpkgInstalled\lib" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
