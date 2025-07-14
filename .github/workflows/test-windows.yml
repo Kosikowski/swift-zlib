@@ -8,51 +8,43 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Swift 6.1 via Docker)
+    name: Windows (Swift 5.10.1 via Docker Action)
     runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set Docker-compatible workspace path
-        run: |
-          $cleanPath = "${{ github.workspace }}" -replace '\\','/'
-          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
-        shell: pwsh
-
-      - name: Show resolved Docker path
-        run: echo "DOCKER_WORKSPACE=$env:DOCKER_WORKSPACE"
-        shell: pwsh
-
-      - name: Install zlib in Docker container
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
-
-      - name: Show Swift version
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift --version
-
-      - name: Build package
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift build
-
-      - name: Run all tests
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --verbose
+      - name: Run Swift 5.10.1 in Docker (Windows Server 2022)
+        uses: addnab/docker-run-action@v3
+        with:
+          image: swift:5.10.1-windowsservercore-ltsc2022
+          run: |
+            choco install zlib -y
+            swift --version
+            swift build
+            swift test --parallel
 
       - name: Run specific test groups
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter CoreTests
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter ExtensionsTests
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter FileOperationsTests
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter ErrorHandlingTests
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter StreamingTests
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter ConcurrencyTests
+        uses: addnab/docker-run-action@v3
+        with:
+          image: swift:5.10.1-windowsservercore-ltsc2022
+          run: |
+            choco install zlib -y
+            swift test --filter CoreTests
+            swift test --filter ExtensionsTests
+            swift test --filter FileOperationsTests
+            swift test --filter ErrorHandlingTests
+            swift test --filter StreamingTests
+            swift test --filter ConcurrencyTests
 
       - name: Build CLI tool
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift build --product SwiftZlibCLI
+        uses: addnab/docker-run-action@v3
+        with:
+          image: swift:5.10.1-windowsservercore-ltsc2022
+          run: |
+            choco install zlib -y
+            swift build --product SwiftZlibCLI
 
   # Build verification - Windows
   build-verification-windows:
@@ -65,31 +57,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set Docker-compatible workspace path
-        run: |
-          $cleanPath = "${{ github.workspace }}" -replace '\\','/'
-          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
-        shell: pwsh
-
-      - name: Show resolved Docker path
-        run: echo "DOCKER_WORKSPACE=$env:DOCKER_WORKSPACE"
-        shell: pwsh
-
-      - name: Install zlib in Docker container
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
-
-      - name: Build package
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift build -c ${{ matrix.configuration }}
-
-      - name: Test package
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test -c ${{ matrix.configuration }}
-
-      - name: Build CLI tool
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+      - name: Build and test package
+        uses: addnab/docker-run-action@v3
+        with:
+          image: swift:5.10.1-windowsservercore-ltsc2022
+          run: |
+            choco install zlib -y
+            swift build -c ${{ matrix.configuration }}
+            swift test -c ${{ matrix.configuration }}
+            swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
 
   # Performance benchmarks - Windows
   benchmark-windows:
@@ -100,23 +76,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set Docker-compatible workspace path
-        run: |
-          $cleanPath = "${{ github.workspace }}" -replace '\\','/'
-          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
-        shell: pwsh
-
-      - name: Show resolved Docker path
-        run: echo "DOCKER_WORKSPACE=$env:DOCKER_WORKSPACE"
-        shell: pwsh
-
-      - name: Install zlib in Docker container
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
-
       - name: Run performance tests
-        run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter PerformanceTests --verbose
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter "testCompressionPerformance" --verbose
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter "testDecompressionPerformance" --verbose
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter "testMemoryEfficiency" --verbose
+        uses: addnab/docker-run-action@v3
+        with:
+          image: swift:5.10.1-windowsservercore-ltsc2022
+          run: |
+            choco install zlib -y
+            swift test --filter PerformanceTests --verbose
+            swift test --filter "testCompressionPerformance" --verbose
+            swift test --filter "testDecompressionPerformance" --verbose
+            swift test --filter "testMemoryEfficiency" --verbose
