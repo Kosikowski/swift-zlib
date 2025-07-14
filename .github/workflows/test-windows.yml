@@ -66,6 +66,12 @@ jobs:
           echo "LIB=$lib" >> $env:GITHUB_ENV
         shell: pwsh
 
+      - name: Add MSVC lib path to LIB
+        run: |
+          $msvcLib = "$env:VCINSTALLDIR" + "Tools\MSVC\$env:VCToolsVersion\lib\x64"
+          echo "LIB=$env:LIB;$msvcLib" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Verify Swift installation
         run: |
           swift --version
@@ -150,6 +156,12 @@ jobs:
           echo "LIB=$lib" >> $env:GITHUB_ENV
         shell: pwsh
 
+      - name: Add MSVC lib path to LIB
+        run: |
+          $msvcLib = "$env:VCINSTALLDIR" + "Tools\MSVC\$env:VCToolsVersion\lib\x64"
+          echo "LIB=$env:LIB;$msvcLib" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Build and test package
         run: |
           swift build -c ${{ matrix.configuration }}
@@ -210,6 +222,12 @@ jobs:
           $lib = "C:\vcpkg\installed\x64-windows\lib"
           echo "C_INCLUDE_PATH=$inc" >> $env:GITHUB_ENV
           echo "LIB=$lib" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Add MSVC lib path to LIB
+        run: |
+          $msvcLib = "$env:VCINSTALLDIR" + "Tools\MSVC\$env:VCToolsVersion\lib\x64"
+          echo "LIB=$env:LIB;$msvcLib" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Run performance tests
