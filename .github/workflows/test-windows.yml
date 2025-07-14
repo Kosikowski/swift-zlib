@@ -15,10 +15,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Convert workspace path for Docker
-        id: vars
+      - name: Set Docker-compatible workspace path
         run: |
-          echo "DOCKER_WORKSPACE=${env:GITHUB_WORKSPACE -replace '\\','/'}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $cleanPath = "${{ github.workspace }}" -replace '\\','/'
+          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Show resolved Docker path
+        run: echo "DOCKER_WORKSPACE=$env:DOCKER_WORKSPACE"
         shell: pwsh
 
       - name: Install zlib in Docker container
@@ -61,10 +65,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Convert workspace path for Docker
-        id: vars
+      - name: Set Docker-compatible workspace path
         run: |
-          echo "DOCKER_WORKSPACE=${env:GITHUB_WORKSPACE -replace '\\','/'}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $cleanPath = "${{ github.workspace }}" -replace '\\','/'
+          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Show resolved Docker path
+        run: echo "DOCKER_WORKSPACE=$env:DOCKER_WORKSPACE"
         shell: pwsh
 
       - name: Install zlib in Docker container
@@ -92,10 +100,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Convert workspace path for Docker
-        id: vars
+      - name: Set Docker-compatible workspace path
         run: |
-          echo "DOCKER_WORKSPACE=${env:GITHUB_WORKSPACE -replace '\\','/'}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $cleanPath = "${{ github.workspace }}" -replace '\\','/'
+          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Show resolved Docker path
+        run: echo "DOCKER_WORKSPACE=$env:DOCKER_WORKSPACE"
         shell: pwsh
 
       - name: Install zlib in Docker container
