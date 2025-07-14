@@ -3,6 +3,9 @@
 import Foundation
 import SwiftZlib
 @_spi(SwiftZLibTime) import SwiftZlib
+#if canImport(Security)
+    import Security
+#endif
 
 // MARK: - Command Line Interface
 
@@ -311,17 +314,8 @@ func handleLargeFile(_ args: [String]) {
         if !FileManager.default.fileExists(atPath: randomTestFile) {
             print("📁 Creating random test file...")
             var randomData = Data(count: 10 * 1024 * 1024) // 10MB
-            let result = randomData.withUnsafeMutableBytes { bytes in
-                SecRandomCopyBytes(kSecRandomDefault, bytes.count, bytes.baseAddress!)
-            }
-            if result != errSecSuccess {
-                print("⚠️ Warning: Could not generate secure random data, using fallback")
-                // Fallback: use arc4random for each byte
-                randomData.withUnsafeMutableBytes { bytes in
-                    for i in 0 ..< bytes.count {
-                        bytes[i] = UInt8(arc4random_uniform(256))
-                    }
-                }
+            randomData.withUnsafeMutableBytes { bytes in
+                fillRandomBytes(bytes)
             }
             try randomData.write(to: URL(fileURLWithPath: randomTestFile))
         }
@@ -579,4 +573,18 @@ func updateProgressBar(percentage: Double, processed: Int, total: Int, speed: Do
 
     print("\r📦 [\(bar)] \(String(format: "%.1f", percentage))% (\(String(format: "%.1f", processedMB))/\(String(format: "%.1f", totalMB)) MB) \(String(format: "%.1f", speedMB)) MB/s ETA: \(etaString)", terminator: "")
     fflush(stdout)
+}
+
+func fillRandomBytes(_ bytes: UnsafeMutableRawBufferPointer) {
+    #if canImport(Security)
+        let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, bytes.baseAddress!)
+        if result != errSecSuccess {
+            fatalError("Failed to generate random bytes")
+        }
+    #else
+        var rng = SystemRandomNumberGenerator()
+        for i in 0 ..< bytes.count {
+            bytes[i] = UInt8.random(in: 0 ... 255, using: &rng)
+        }
+    #endif
 }
