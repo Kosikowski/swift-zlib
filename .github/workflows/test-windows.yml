@@ -1,0 +1,137 @@
+name: Windows Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test-windows:
+    name: Windows (Windows Server 2022, Swift 5.9.2)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift for Windows
+        run: |
+          # Download and install Swift
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+          Remove-Item "swift-installer.exe"
+
+          # Add Swift to PATH
+          $env:PATH += ";C:\swift\bin"
+
+      - name: Install zlib
+        run: |
+          # Install vcpkg
+          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
+
+          # Install zlib
+          C:\vcpkg\vcpkg install zlib:x64-windows
+
+      - name: Show Swift version
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift --version
+
+      - name: Build package
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift build
+
+      - name: Run all tests
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift test --verbose
+
+      - name: Run specific test groups
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
+
+      - name: Build CLI tool
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift build --product SwiftZlibCLI
+
+  # Build verification - Windows
+  build-verification-windows:
+    name: Build Verification (Windows)
+    strategy:
+      matrix:
+        configuration: [debug, release]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift for Windows
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+          Remove-Item "swift-installer.exe"
+          $env:PATH += ";C:\swift\bin"
+
+      - name: Install zlib
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
+          C:\vcpkg\vcpkg install zlib:x64-windows
+
+      - name: Build package
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift build -c ${{ matrix.configuration }}
+
+      - name: Test package
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift test -c ${{ matrix.configuration }}
+
+      - name: Build CLI tool
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+
+  # Performance benchmarks - Windows
+  benchmark-windows:
+    name: Performance Benchmarks (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift for Windows
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+          Remove-Item "swift-installer.exe"
+          $env:PATH += ";C:\swift\bin"
+
+      - name: Install zlib
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
+          C:\vcpkg\vcpkg install zlib:x64-windows
+
+      - name: Run performance tests
+        run: |
+          $env:PATH += ";C:\swift\bin"
+          swift test --filter PerformanceTests --verbose
+          swift test --filter "testCompressionPerformance" --verbose
+          swift test --filter "testDecompressionPerformance" --verbose
+          swift test --filter "testMemoryEfficiency" --verbose
