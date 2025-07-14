@@ -8,70 +8,44 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Swift 5.10.1 via Installer)
+    name: Windows (Swift 6.1.1 via Docker)
     runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Visual Studio Build Tools
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install zlib in Docker container
         run: |
-          # Install Visual Studio Build Tools 2022
-          winget install --id Microsoft.VisualStudio.2022.BuildTools --exact --force --custom "--add Microsoft.VisualStudio.Component.Windows11SDK.22000 --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64"
-
-      - name: Install Swift
-        run: |
-          # Download and install Swift 5.10.1
-          $swiftVersion = "5.10.1"
-          $swiftUrl = "https://download.swift.org/swift-$swiftVersion-release/windows10/swift-$swiftVersion-RELEASE-msvc2022.exe"
-          $swiftInstaller = "swift-installer.exe"
-
-          Write-Host "Downloading Swift $swiftVersion..."
-          Invoke-WebRequest -Uri $swiftUrl -OutFile $swiftInstaller
-
-          Write-Host "Installing Swift..."
-          Start-Process -FilePath $swiftInstaller -ArgumentList "/quiet" -Wait
-
-          # Add Swift to PATH
-          $env:PATH = "C:\Program Files\Swift\bin;" + $env:PATH
-
-          # Verify installation
-          swift --version
-
-      - name: Install zlib
-        run: |
-          # Install vcpkg
-          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat
-
-          # Install zlib
-          C:\vcpkg\vcpkg install zlib:x64-windows
-
-          # Set environment variables for zlib
-          $env:ZLIB_ROOT = "C:\vcpkg\installed\x64-windows"
-          $env:PATH = "$env:ZLIB_ROOT\bin;$env:PATH"
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
 
       - name: Show Swift version
-        run: swift --version
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift --version
 
       - name: Build package
-        run: swift build
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift build
 
       - name: Run all tests
-        run: swift test --verbose
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --verbose
 
       - name: Run specific test groups
         run: |
-          swift test --filter CoreTests
-          swift test --filter ExtensionsTests
-          swift test --filter FileOperationsTests
-          swift test --filter ErrorHandlingTests
-          swift test --filter StreamingTests
-          swift test --filter ConcurrencyTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter CoreTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter ExtensionsTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter FileOperationsTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter ErrorHandlingTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter StreamingTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter ConcurrencyTests
 
       - name: Build CLI tool
-        run: swift build --product SwiftZlibCLI
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift build --product SwiftZlibCLI
 
   # Build verification - Windows
   build-verification-windows:
@@ -84,36 +58,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Visual Studio Build Tools
-        run: |
-          winget install --id Microsoft.VisualStudio.2022.BuildTools --exact --force --custom "--add Microsoft.VisualStudio.Component.Windows11SDK.22000 --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install Swift
+      - name: Install zlib in Docker container
         run: |
-          $swiftVersion = "5.10.1"
-          $swiftUrl = "https://download.swift.org/swift-$swiftVersion-release/windows10/swift-$swiftVersion-RELEASE-msvc2022.exe"
-          $swiftInstaller = "swift-installer.exe"
-
-          Invoke-WebRequest -Uri $swiftUrl -OutFile $swiftInstaller
-          Start-Process -FilePath $swiftInstaller -ArgumentList "/quiet" -Wait
-          $env:PATH = "C:\Program Files\Swift\bin;" + $env:PATH
-
-      - name: Install zlib
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat
-          C:\vcpkg\vcpkg install zlib:x64-windows
-          $env:ZLIB_ROOT = "C:\vcpkg\installed\x64-windows"
-          $env:PATH = "$env:ZLIB_ROOT\bin;$env:PATH"
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
 
       - name: Build package
-        run: swift build -c ${{ matrix.configuration }}
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift build -c ${{ matrix.configuration }}
 
       - name: Test package
-        run: swift test -c ${{ matrix.configuration }}
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test -c ${{ matrix.configuration }}
 
       - name: Build CLI tool
-        run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
 
   # Performance benchmarks - Windows
   benchmark-windows:
@@ -124,31 +86,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Visual Studio Build Tools
-        run: |
-          winget install --id Microsoft.VisualStudio.2022.BuildTools --exact --force --custom "--add Microsoft.VisualStudio.Component.Windows11SDK.22000 --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install Swift
+      - name: Install zlib in Docker container
         run: |
-          $swiftVersion = "5.10.1"
-          $swiftUrl = "https://download.swift.org/swift-$swiftVersion-release/windows10/swift-$swiftVersion-RELEASE-msvc2022.exe"
-          $swiftInstaller = "swift-installer.exe"
-
-          Invoke-WebRequest -Uri $swiftUrl -OutFile $swiftInstaller
-          Start-Process -FilePath $swiftInstaller -ArgumentList "/quiet" -Wait
-          $env:PATH = "C:\Program Files\Swift\bin;" + $env:PATH
-
-      - name: Install zlib
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat
-          C:\vcpkg\vcpkg install zlib:x64-windows
-          $env:ZLIB_ROOT = "C:\vcpkg\installed\x64-windows"
-          $env:PATH = "$env:ZLIB_ROOT\bin;$env:PATH"
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
 
       - name: Run performance tests
         run: |
-          swift test --filter PerformanceTests --verbose
-          swift test --filter "testCompressionPerformance" --verbose
-          swift test --filter "testDecompressionPerformance" --verbose
-          swift test --filter "testMemoryEfficiency" --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter PerformanceTests --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter "testCompressionPerformance" --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter "testDecompressionPerformance" --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter "testMemoryEfficiency" --verbose
