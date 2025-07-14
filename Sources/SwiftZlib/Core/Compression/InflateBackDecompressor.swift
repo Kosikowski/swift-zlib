@@ -75,7 +75,7 @@ final class InflateBackDecompressor {
 
             // Process input data with valid pointer
             try inputData.withUnsafeBytes { inputPtr in
-                stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress)
+                stream.next_in = inputPtr.bindMemory(to: Bytef.self).baseAddress
                 stream.avail_in = uInt(inputData.count)
 
                 // Process input
