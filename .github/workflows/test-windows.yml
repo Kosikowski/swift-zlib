@@ -18,7 +18,7 @@ jobs:
       - name: Run Swift in Docker
         run: |
           docker pull swift:5.10.1-windowsservercore-ltsc2022
-          docker run --rm -v "D:/a/swift-zlib/swift-zlib:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift --version; swift build; swift test --parallel }"
+          docker run --rm -v "D:\\a\\swift-zlib\\swift-zlib:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift --version; swift build; swift test --parallel }"
 
       - name: Run specific test groups
         run: |
