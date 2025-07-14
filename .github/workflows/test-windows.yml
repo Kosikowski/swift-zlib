@@ -38,6 +38,14 @@ jobs:
           echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
         shell: pwsh
 
+      - name: Set zlib include and lib paths
+        run: |
+          $inc = "C:\vcpkg\installed\x64-windows\include"
+          $lib = "C:\vcpkg\installed\x64-windows\lib"
+          echo "C_INCLUDE_PATH=$inc" >> $env:GITHUB_ENV
+          echo "LIB=$lib" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Verify Swift installation
         run: |
           swift --version
@@ -134,6 +142,14 @@ jobs:
           C:\vcpkg\vcpkg install zlib:x64-windows
           $env:VCPKG_ROOT = "C:\vcpkg"
           echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Set zlib include and lib paths
+        run: |
+          $inc = "C:\vcpkg\installed\x64-windows\include"
+          $lib = "C:\vcpkg\installed\x64-windows\lib"
+          echo "C_INCLUDE_PATH=$inc" >> $env:GITHUB_ENV
+          echo "LIB=$lib" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Run performance tests
