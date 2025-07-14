@@ -69,7 +69,9 @@ jobs:
       - name: Add MSVC lib path to LIB
         run: |
           $msvcLib = "$env:VCINSTALLDIR" + "Tools\MSVC\$env:VCToolsVersion\lib\x64"
-          echo "LIB=$env:LIB;$msvcLib" >> $env:GITHUB_ENV
+          $windowsSdkLib = "$env:WindowsSdkDir" + "lib\$env:WindowsSDKLibVersion\um\x64"
+          $windowsSdkUcrt = "$env:WindowsSdkDir" + "lib\$env:WindowsSDKLibVersion\ucrt\x64"
+          echo "LIB=$env:LIB;$msvcLib;$windowsSdkLib;$windowsSdkUcrt" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Verify Swift installation
@@ -159,7 +161,9 @@ jobs:
       - name: Add MSVC lib path to LIB
         run: |
           $msvcLib = "$env:VCINSTALLDIR" + "Tools\MSVC\$env:VCToolsVersion\lib\x64"
-          echo "LIB=$env:LIB;$msvcLib" >> $env:GITHUB_ENV
+          $windowsSdkLib = "$env:WindowsSdkDir" + "lib\$env:WindowsSDKLibVersion\um\x64"
+          $windowsSdkUcrt = "$env:WindowsSdkDir" + "lib\$env:WindowsSDKLibVersion\ucrt\x64"
+          echo "LIB=$env:LIB;$msvcLib;$windowsSdkLib;$windowsSdkUcrt" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Build and test package
@@ -227,7 +231,9 @@ jobs:
       - name: Add MSVC lib path to LIB
         run: |
           $msvcLib = "$env:VCINSTALLDIR" + "Tools\MSVC\$env:VCToolsVersion\lib\x64"
-          echo "LIB=$env:LIB;$msvcLib" >> $env:GITHUB_ENV
+          $windowsSdkLib = "$env:WindowsSdkDir" + "lib\$env:WindowsSDKLibVersion\um\x64"
+          $windowsSdkUcrt = "$env:WindowsSdkDir" + "lib\$env:WindowsSDKLibVersion\ucrt\x64"
+          echo "LIB=$env:LIB;$msvcLib;$windowsSdkLib;$windowsSdkUcrt" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Run performance tests
