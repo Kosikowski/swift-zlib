@@ -25,6 +25,9 @@ let package = Package(
                 .define("WIN32_LEAN_AND_MEAN"),
                 .define("__NO_INTRINSICS__"),
                 .define("_NO_CRT_STDIO_INLINE"),
+                .define("_CRT_NO_POSIX_ERROR_CODES"),
+                .define("_NO_CRT_RAND_S"),
+                .define("_NO_CRT_TIME_INLINE"),
             ],
             linkerSettings: [
                 .linkedLibrary("z"),

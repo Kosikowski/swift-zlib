@@ -1,6 +1,22 @@
 #ifndef ZLIB_SHIM_H
 #define ZLIB_SHIM_H
 
+// Windows-specific guards to prevent cyclic dependencies
+#ifdef _WIN32
+#ifndef _CRT_NO_POSIX_ERROR_CODES
+#define _CRT_NO_POSIX_ERROR_CODES
+#endif
+#ifndef _NO_CRT_RAND_S
+#define _NO_CRT_RAND_S
+#endif
+#ifndef _NO_CRT_TIME_INLINE
+#define _NO_CRT_TIME_INLINE
+#endif
+#ifndef __NO_INTRINSICS__
+#define __NO_INTRINSICS__
+#endif
+#endif
+
 // Ensure z_const is defined as const for proper Swift interop
 #ifndef z_const
 #define z_const const
