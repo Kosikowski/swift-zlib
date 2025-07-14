@@ -61,7 +61,23 @@ typedef unsigned long uLong;
 typedef unsigned long uLongf;
 typedef long z_off_t;
 
-// No custom function declarations - let system headers handle them
+// Essential declarations for Windows build without system headers
+#ifdef _WIN32
+// Basic types and constants
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+// Essential function declarations
+void* malloc(unsigned long long size);
+void free(void* ptr);
+
+// Variable argument support
+typedef __builtin_va_list va_list;
+#define va_start(v,l) __builtin_va_start(v,l)
+#define va_end(v) __builtin_va_end(v)
+#define va_arg(v,l) __builtin_va_arg(v,l)
+#endif
 
 #define Z_OK 0
 #define Z_STREAM_END 1
