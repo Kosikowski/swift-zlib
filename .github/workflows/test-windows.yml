@@ -8,43 +8,25 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Swift 5.10.1 via Docker Action)
+    name: Windows (Swift 5.10.1 via Docker)
     runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Swift 5.10.1 in Docker (Windows Server 2022)
-        uses: addnab/docker-run-action@v3
-        with:
-          image: swift:5.10.1-windowsservercore-ltsc2022
-          run: |
-            choco install zlib -y
-            swift --version
-            swift build
-            swift test --parallel
+      - name: Run Swift in Docker
+        run: |
+          docker pull swift:5.10.1-windowsservercore-ltsc2022
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift --version; swift build; swift test --parallel }"
 
       - name: Run specific test groups
-        uses: addnab/docker-run-action@v3
-        with:
-          image: swift:5.10.1-windowsservercore-ltsc2022
-          run: |
-            choco install zlib -y
-            swift test --filter CoreTests
-            swift test --filter ExtensionsTests
-            swift test --filter FileOperationsTests
-            swift test --filter ErrorHandlingTests
-            swift test --filter StreamingTests
-            swift test --filter ConcurrencyTests
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift test --filter CoreTests; swift test --filter ExtensionsTests; swift test --filter FileOperationsTests; swift test --filter ErrorHandlingTests; swift test --filter StreamingTests; swift test --filter ConcurrencyTests }"
 
       - name: Build CLI tool
-        uses: addnab/docker-run-action@v3
-        with:
-          image: swift:5.10.1-windowsservercore-ltsc2022
-          run: |
-            choco install zlib -y
-            swift build --product SwiftZlibCLI
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift build --product SwiftZlibCLI }"
 
   # Build verification - Windows
   build-verification-windows:
@@ -58,14 +40,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build and test package
-        uses: addnab/docker-run-action@v3
-        with:
-          image: swift:5.10.1-windowsservercore-ltsc2022
-          run: |
-            choco install zlib -y
-            swift build -c ${{ matrix.configuration }}
-            swift test -c ${{ matrix.configuration }}
-            swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift build -c ${{ matrix.configuration }}; swift test -c ${{ matrix.configuration }}; swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI }"
 
   # Performance benchmarks - Windows
   benchmark-windows:
@@ -77,12 +53,5 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run performance tests
-        uses: addnab/docker-run-action@v3
-        with:
-          image: swift:5.10.1-windowsservercore-ltsc2022
-          run: |
-            choco install zlib -y
-            swift test --filter PerformanceTests --verbose
-            swift test --filter "testCompressionPerformance" --verbose
-            swift test --filter "testDecompressionPerformance" --verbose
-            swift test --filter "testMemoryEfficiency" --verbose
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift test --filter PerformanceTests --verbose; swift test --filter 'testCompressionPerformance' --verbose; swift test --filter 'testDecompressionPerformance' --verbose; swift test --filter 'testMemoryEfficiency' --verbose }"
