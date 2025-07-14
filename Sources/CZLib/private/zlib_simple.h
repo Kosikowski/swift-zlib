@@ -72,7 +72,7 @@ typedef struct gz_header_s {
 } gz_header;
 
 typedef gz_header *gz_headerp;
-typedef int (*in_func)(void *, unsigned char **);
+typedef unsigned (*in_func)(void *, unsigned char **);
 typedef int (*out_func)(void *, unsigned char *, unsigned int);
 
 int compress(Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen);
