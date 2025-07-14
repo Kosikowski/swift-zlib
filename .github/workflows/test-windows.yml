@@ -18,7 +18,7 @@ jobs:
       - name: Install Swift for Windows
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe" -OutFile "swift-installer.exe"
           Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
           Remove-Item "swift-installer.exe"
           $env:PATH += ";C:\swift\bin"
@@ -76,7 +76,7 @@ jobs:
       - name: Install Swift for Windows
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe" -OutFile "swift-installer.exe"
           Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
           Remove-Item "swift-installer.exe"
           $env:PATH += ";C:\swift\bin"
@@ -114,7 +114,7 @@ jobs:
       - name: Install Swift for Windows
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe" -OutFile "swift-installer.exe"
           Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
           Remove-Item "swift-installer.exe"
           $env:PATH += ";C:\swift\bin"
