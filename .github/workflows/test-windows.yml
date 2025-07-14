@@ -8,25 +8,62 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Swift 5.10.1 via Docker)
+    name: Windows (Swift 5.10.1)
     runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Swift in Docker
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "5.10.1"
+
+      - name: Install Visual Studio Build Tools
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Install zlib via vcpkg
         run: |
-          docker pull swift:5.10.1-windowsservercore-ltsc2022
-          docker run --rm -v "D:\\a\\swift-zlib\\swift-zlib:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift --version; swift build; swift test --parallel }"
+          # Install vcpkg if not present
+          if (-not (Test-Path "C:\vcpkg")) {
+            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          }
+
+          # Install zlib
+          C:\vcpkg\vcpkg install zlib:x64-windows
+
+          # Set environment variables
+          $env:VCPKG_ROOT = "C:\vcpkg"
+          echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Verify Swift installation
+        run: |
+          swift --version
+          swift build --help
+        shell: pwsh
+
+      - name: Build and test
+        run: |
+          swift build
+          swift test --parallel
+        shell: pwsh
 
       - name: Run specific test groups
         run: |
-          docker run --rm -v "D:/a/swift-zlib/swift-zlib:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift test --filter CoreTests; swift test --filter ExtensionsTests; swift test --filter FileOperationsTests; swift test --filter ErrorHandlingTests; swift test --filter StreamingTests; swift test --filter ConcurrencyTests }"
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
+        shell: pwsh
 
       - name: Build CLI tool
         run: |
-          docker run --rm -v "D:/a/swift-zlib/swift-zlib:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift build --product SwiftZlibCLI }"
+          swift build --product SwiftZlibCLI
+        shell: pwsh
 
   # Build verification - Windows
   build-verification-windows:
@@ -39,9 +76,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "5.10.1"
+
+      - name: Install Visual Studio Build Tools
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Install zlib via vcpkg
+        run: |
+          if (-not (Test-Path "C:\vcpkg")) {
+            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          }
+          C:\vcpkg\vcpkg install zlib:x64-windows
+          $env:VCPKG_ROOT = "C:\vcpkg"
+          echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Build and test package
         run: |
-          docker run --rm -v "D:/a/swift-zlib/swift-zlib:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift build -c ${{ matrix.configuration }}; swift test -c ${{ matrix.configuration }}; swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI }"
+          swift build -c ${{ matrix.configuration }}
+          swift test -c ${{ matrix.configuration }}
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+        shell: pwsh
 
   # Performance benchmarks - Windows
   benchmark-windows:
@@ -52,6 +110,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "5.10.1"
+
+      - name: Install Visual Studio Build Tools
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Install zlib via vcpkg
+        run: |
+          if (-not (Test-Path "C:\vcpkg")) {
+            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          }
+          C:\vcpkg\vcpkg install zlib:x64-windows
+          $env:VCPKG_ROOT = "C:\vcpkg"
+          echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Run performance tests
         run: |
-          docker run --rm -v "D:/a/swift-zlib/swift-zlib:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift test --filter PerformanceTests --verbose; swift test --filter 'testCompressionPerformance' --verbose; swift test --filter 'testDecompressionPerformance' --verbose; swift test --filter 'testMemoryEfficiency' --verbose }"
+          swift test --filter PerformanceTests --verbose
+          swift test --filter 'testCompressionPerformance' --verbose
+          swift test --filter 'testDecompressionPerformance' --verbose
+          swift test --filter 'testMemoryEfficiency' --verbose
+        shell: pwsh
