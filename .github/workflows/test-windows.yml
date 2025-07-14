@@ -23,6 +23,26 @@ jobs:
       - name: Install Visual Studio Build Tools
         uses: microsoft/setup-msbuild@v1
 
+      - name: Setup Visual Studio environment
+        run: |
+          # Get the Visual Studio installation path
+          $vsPath = & "C:\ProgramData\Chocolatey\bin\vswhere.exe" -products * -requires Microsoft.Component.MSBuild -property installationPath -latest
+
+          # Set up Visual Studio environment
+          $vcvarsall = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
+          if (Test-Path $vcvarsall) {
+            # Run vcvarsall to set up environment variables
+            cmd /c "`"$vcvarsall`" x64 && set" | ForEach-Object {
+              if ($_ -match "^([^=]+)=(.*)$") {
+                $name = $matches[1]
+                $value = $matches[2]
+                [Environment]::SetEnvironmentVariable($name, $value, "Process")
+                echo "$name=$value" >> $env:GITHUB_ENV
+              }
+            }
+          }
+        shell: pwsh
+
       - name: Install zlib via vcpkg
         run: |
           # Install vcpkg if not present
@@ -92,6 +112,26 @@ jobs:
       - name: Install Visual Studio Build Tools
         uses: microsoft/setup-msbuild@v1
 
+      - name: Setup Visual Studio environment
+        run: |
+          # Get the Visual Studio installation path
+          $vsPath = & "C:\ProgramData\Chocolatey\bin\vswhere.exe" -products * -requires Microsoft.Component.MSBuild -property installationPath -latest
+
+          # Set up Visual Studio environment
+          $vcvarsall = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
+          if (Test-Path $vcvarsall) {
+            # Run vcvarsall to set up environment variables
+            cmd /c "`"$vcvarsall`" x64 && set" | ForEach-Object {
+              if ($_ -match "^([^=]+)=(.*)$") {
+                $name = $matches[1]
+                $value = $matches[2]
+                [Environment]::SetEnvironmentVariable($name, $value, "Process")
+                echo "$name=$value" >> $env:GITHUB_ENV
+              }
+            }
+          }
+        shell: pwsh
+
       - name: Install zlib via vcpkg
         run: |
           if (-not (Test-Path "C:\vcpkg")) {
@@ -133,6 +173,26 @@ jobs:
 
       - name: Install Visual Studio Build Tools
         uses: microsoft/setup-msbuild@v1
+
+      - name: Setup Visual Studio environment
+        run: |
+          # Get the Visual Studio installation path
+          $vsPath = & "C:\ProgramData\Chocolatey\bin\vswhere.exe" -products * -requires Microsoft.Component.MSBuild -property installationPath -latest
+
+          # Set up Visual Studio environment
+          $vcvarsall = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
+          if (Test-Path $vcvarsall) {
+            # Run vcvarsall to set up environment variables
+            cmd /c "`"$vcvarsall`" x64 && set" | ForEach-Object {
+              if ($_ -match "^([^=]+)=(.*)$") {
+                $name = $matches[1]
+                $value = $matches[2]
+                [Environment]::SetEnvironmentVariable($name, $value, "Process")
+                echo "$name=$value" >> $env:GITHUB_ENV
+              }
+            }
+          }
+        shell: pwsh
 
       - name: Install zlib via vcpkg
         run: |
