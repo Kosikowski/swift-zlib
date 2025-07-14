@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Windows Server 2022, Swift 5.9.2)
+    name: Windows (Windows Server 2022, Swift 5.10.1)
     runs-on: windows-latest
 
     steps:
@@ -17,13 +17,10 @@ jobs:
 
       - name: Install Swift for Windows
         run: |
-          # Download and install Swift
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
           Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
           Remove-Item "swift-installer.exe"
-
-          # Add Swift to PATH
           $env:PATH += ";C:\swift\bin"
 
       - name: Install zlib
@@ -79,7 +76,7 @@ jobs:
       - name: Install Swift for Windows
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
           Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
           Remove-Item "swift-installer.exe"
           $env:PATH += ";C:\swift\bin"
@@ -117,7 +114,7 @@ jobs:
       - name: Install Swift for Windows
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
+          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe" -OutFile "swift-installer.exe"
           Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
           Remove-Item "swift-installer.exe"
           $env:PATH += ";C:\swift\bin"
