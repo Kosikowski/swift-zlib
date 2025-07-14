@@ -81,7 +81,7 @@ public enum ZLib {
 
     /// Get ZLib compile flags
     public static var compileFlags: UInt {
-        swift_zlibCompileFlags()
+        UInt(swift_zlibCompileFlags())
     }
 
     /// Get detailed ZLib compile flags information
