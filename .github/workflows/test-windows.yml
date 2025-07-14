@@ -82,8 +82,8 @@ jobs:
 
       - name: Build and test
         run: |
-          swift build
-          swift test --parallel
+          swift build -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --parallel -Xcc -I"C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
 
       - name: Run specific test groups
@@ -168,9 +168,9 @@ jobs:
 
       - name: Build and test package
         run: |
-          swift build -c ${{ matrix.configuration }}
-          swift test -c ${{ matrix.configuration }}
-          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+          swift build -c ${{ matrix.configuration }} -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test -c ${{ matrix.configuration }} -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI -Xcc -I"C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
 
   # Performance benchmarks - Windows
@@ -238,8 +238,8 @@ jobs:
 
       - name: Run performance tests
         run: |
-          swift test --filter PerformanceTests --verbose
-          swift test --filter 'testCompressionPerformance' --verbose
-          swift test --filter 'testDecompressionPerformance' --verbose
-          swift test --filter 'testMemoryEfficiency' --verbose
+          swift test --filter PerformanceTests --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter 'testCompressionPerformance' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter 'testDecompressionPerformance' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter 'testMemoryEfficiency' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
