@@ -8,28 +8,20 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Windows Server 2022, Swift 6.1.1)
+    name: Windows (Windows Server 2022, Swift via WinGet)
     runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Swift 6.1.1
+      - name: Install Visual Studio 2022 Community
         run: |
-          $ErrorActionPreference = "Stop"
-          $version = "6.1.1"
-          $url = "https://download.swift.org/swift-$version-release/windows10/swift-$version-RELEASE-msvc2022.exe"
-          $installer = "$env:TEMP\swift-$version.exe"
+          winget install --id Microsoft.VisualStudio.2022.Community --exact --force --custom "--add Microsoft.VisualStudio.Component.Windows11SDK.22000 --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64"
 
-          Invoke-WebRequest -Uri $url -OutFile $installer
-          Start-Process -FilePath $installer -ArgumentList '/quiet' -Wait
-
-          echo "Installed Swift $version"
-
-      - name: Add Swift to PATH
+      - name: Install Swift Toolchain
         run: |
-          echo "C:\Library\Developer\Toolchains\unknown-Asserts-development.xctoolchain\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          winget install --id Swift.Toolchain -e
 
       - name: Install zlib
         run: |
@@ -72,21 +64,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Swift 6.1.1
+      - name: Install Visual Studio 2022 Community
         run: |
-          $ErrorActionPreference = "Stop"
-          $version = "6.1.1"
-          $url = "https://download.swift.org/swift-$version-release/windows10/swift-$version-RELEASE-msvc2022.exe"
-          $installer = "$env:TEMP\swift-$version.exe"
+          winget install --id Microsoft.VisualStudio.2022.Community --exact --force --custom "--add Microsoft.VisualStudio.Component.Windows11SDK.22000 --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64"
 
-          Invoke-WebRequest -Uri $url -OutFile $installer
-          Start-Process -FilePath $installer -ArgumentList '/quiet' -Wait
-
-          echo "Installed Swift $version"
-
-      - name: Add Swift to PATH
+      - name: Install Swift Toolchain
         run: |
-          echo "C:\Library\Developer\Toolchains\unknown-Asserts-development.xctoolchain\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          winget install --id Swift.Toolchain -e
 
       - name: Install zlib
         run: |
@@ -112,21 +96,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Swift 6.1.1
+      - name: Install Visual Studio 2022 Community
         run: |
-          $ErrorActionPreference = "Stop"
-          $version = "6.1.1"
-          $url = "https://download.swift.org/swift-$version-release/windows10/swift-$version-RELEASE-msvc2022.exe"
-          $installer = "$env:TEMP\swift-$version.exe"
+          winget install --id Microsoft.VisualStudio.2022.Community --exact --force --custom "--add Microsoft.VisualStudio.Component.Windows11SDK.22000 --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64"
 
-          Invoke-WebRequest -Uri $url -OutFile $installer
-          Start-Process -FilePath $installer -ArgumentList '/quiet' -Wait
-
-          echo "Installed Swift $version"
-
-      - name: Add Swift to PATH
+      - name: Install Swift Toolchain
         run: |
-          echo "C:\Library\Developer\Toolchains\unknown-Asserts-development.xctoolchain\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          winget install --id Swift.Toolchain -e
 
       - name: Install zlib
         run: |
