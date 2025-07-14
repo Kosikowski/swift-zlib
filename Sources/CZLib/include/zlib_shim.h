@@ -12,6 +12,39 @@
 #ifndef _NO_CRT_TIME_INLINE
 #define _NO_CRT_TIME_INLINE
 #endif
+#ifndef _NO_CRT_MATH_INLINE
+#define _NO_CRT_MATH_INLINE
+#endif
+#ifndef _NO_CRT_STRING_INLINE
+#define _NO_CRT_STRING_INLINE
+#endif
+#ifndef _NO_CRT_WCTYPE_INLINE
+#define _NO_CRT_WCTYPE_INLINE
+#endif
+#ifndef _NO_CRT_LOCALE_INLINE
+#define _NO_CRT_LOCALE_INLINE
+#endif
+#ifndef _NO_CRT_STDLIB_INLINE
+#define _NO_CRT_STDLIB_INLINE
+#endif
+#ifndef _NO_CRT_CTYPE_INLINE
+#define _NO_CRT_CTYPE_INLINE
+#endif
+#ifndef _NO_CRT_ERRNO_INLINE
+#define _NO_CRT_ERRNO_INLINE
+#endif
+#ifndef _NO_CRT_SETJMP_INLINE
+#define _NO_CRT_SETJMP_INLINE
+#endif
+#ifndef _NO_CRT_SIGNAL_INLINE
+#define _NO_CRT_SIGNAL_INLINE
+#endif
+#ifndef _NO_CRT_ASSERT_INLINE
+#define _NO_CRT_ASSERT_INLINE
+#endif
+#ifndef _NO_CRT_MEMORY_INLINE
+#define _NO_CRT_MEMORY_INLINE
+#endif
 #ifndef __NO_INTRINSICS__
 #define __NO_INTRINSICS__
 #endif
