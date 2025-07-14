@@ -43,17 +43,20 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install zlib via Chocolatey
+      - name: Install zlib via vcpkg
         run: |
-          choco install zlib -y
+          if (-not (Test-Path "C:\vcpkg")) {
+            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          }
+          C:\vcpkg\vcpkg install zlib:x64-windows
         shell: pwsh
 
       - name: Set zlib paths
         run: |
-          # Use Chocolatey-installed zlib
-          echo "C_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
-          echo "LIB=C:\ProgramData\chocolatey\lib\zlib\tools\lib" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
+          # Use vcpkg-installed zlib
+          echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+          echo "LIB=C:\vcpkg\installed\x64-windows\lib" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -72,23 +75,23 @@ jobs:
 
       - name: Build and test
         run: |
-          swift build -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --parallel -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift build -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --parallel -Xcc -I"C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
 
       - name: Run specific test groups
         run: |
-          swift test --filter CoreTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --filter ExtensionsTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --filter FileOperationsTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --filter ErrorHandlingTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --filter StreamingTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --filter ConcurrencyTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter CoreTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter ExtensionsTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter FileOperationsTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter ErrorHandlingTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter StreamingTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter ConcurrencyTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
 
       - name: Build CLI tool
         run: |
-          swift build --product SwiftZlibCLI -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift build --product SwiftZlibCLI -Xcc -I"C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
 
   # Build verification - Windows
@@ -130,17 +133,20 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install zlib via Chocolatey
+      - name: Install zlib via vcpkg
         run: |
-          choco install zlib -y
+          if (-not (Test-Path "C:\vcpkg")) {
+            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          }
+          C:\vcpkg\vcpkg install zlib:x64-windows
         shell: pwsh
 
       - name: Set zlib paths
         run: |
-          # Use Chocolatey-installed zlib
-          echo "C_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
-          echo "LIB=C:\ProgramData\chocolatey\lib\zlib\tools\lib" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
+          # Use vcpkg-installed zlib
+          echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+          echo "LIB=C:\vcpkg\installed\x64-windows\lib" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -153,9 +159,9 @@ jobs:
 
       - name: Build and test package
         run: |
-          swift build -c ${{ matrix.configuration }} -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test -c ${{ matrix.configuration }} -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift build -c ${{ matrix.configuration }} -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test -c ${{ matrix.configuration }} -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI -Xcc -I"C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
 
   # Performance benchmarks - Windows
@@ -195,17 +201,20 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install zlib via Chocolatey
+      - name: Install zlib via vcpkg
         run: |
-          choco install zlib -y
+          if (-not (Test-Path "C:\vcpkg")) {
+            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          }
+          C:\vcpkg\vcpkg install zlib:x64-windows
         shell: pwsh
 
       - name: Set zlib paths
         run: |
-          # Use Chocolatey-installed zlib
-          echo "C_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
-          echo "LIB=C:\ProgramData\chocolatey\lib\zlib\tools\lib" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
+          # Use vcpkg-installed zlib
+          echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+          echo "LIB=C:\vcpkg\installed\x64-windows\lib" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -218,8 +227,8 @@ jobs:
 
       - name: Run performance tests
         run: |
-          swift test --filter PerformanceTests --verbose -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --filter 'testCompressionPerformance' --verbose -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --filter 'testDecompressionPerformance' --verbose -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
-          swift test --filter 'testMemoryEfficiency' --verbose -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter PerformanceTests --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter 'testCompressionPerformance' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter 'testDecompressionPerformance' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter 'testMemoryEfficiency' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
