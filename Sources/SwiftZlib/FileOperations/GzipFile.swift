@@ -102,7 +102,7 @@ public final class GzipFile {
 
     public func seek(offset: Int, whence: Int32 = SEEK_SET) throws {
         guard let ptr = filePtr else { throw GzipFileError.seekFailed("File not open") }
-        let result = swift_gzseek(ptr, offset, whence)
+        let result = swift_gzseek(ptr, CLong(offset), whence)
         if result < 0 {
             throw GzipFileError.seekFailed(errorMessage())
         }
