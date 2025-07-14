@@ -43,14 +43,17 @@ jobs:
           }
         shell: pwsh
 
-      - name: Set Windows SDK zlib paths
+      - name: Install zlib via Chocolatey
         run: |
-          # Use Windows SDK's built-in zlib instead of vcpkg
-          $windowsSdkDir = "$env:WindowsSdkDir"
-          $windowsSdkVersion = "$env:WindowsSDKVersion"
-          echo "C_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
-          echo "LIB=$windowsSdkDir\lib\$windowsSdkVersion\um\x64" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
+          choco install zlib -y
+        shell: pwsh
+
+      - name: Set zlib paths
+        run: |
+          # Use Chocolatey-installed zlib
+          echo "C_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
+          echo "LIB=C:\ProgramData\chocolatey\lib\zlib\tools\lib" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -69,23 +72,23 @@ jobs:
 
       - name: Build and test
         run: |
-          swift build -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --parallel -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift build -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --parallel -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
         shell: pwsh
 
       - name: Run specific test groups
         run: |
-          swift test --filter CoreTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --filter ExtensionsTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --filter FileOperationsTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --filter ErrorHandlingTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --filter StreamingTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --filter ConcurrencyTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter CoreTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter ExtensionsTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter FileOperationsTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter ErrorHandlingTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter StreamingTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter ConcurrencyTests -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
         shell: pwsh
 
       - name: Build CLI tool
         run: |
-          swift build --product SwiftZlibCLI -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift build --product SwiftZlibCLI -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
         shell: pwsh
 
   # Build verification - Windows
@@ -127,14 +130,17 @@ jobs:
           }
         shell: pwsh
 
-      - name: Set Windows SDK zlib paths
+      - name: Install zlib via Chocolatey
         run: |
-          # Use Windows SDK's built-in zlib instead of vcpkg
-          $windowsSdkDir = "$env:WindowsSdkDir"
-          $windowsSdkVersion = "$env:WindowsSDKVersion"
-          echo "C_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
-          echo "LIB=$windowsSdkDir\lib\$windowsSdkVersion\um\x64" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
+          choco install zlib -y
+        shell: pwsh
+
+      - name: Set zlib paths
+        run: |
+          # Use Chocolatey-installed zlib
+          echo "C_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
+          echo "LIB=C:\ProgramData\chocolatey\lib\zlib\tools\lib" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -147,9 +153,9 @@ jobs:
 
       - name: Build and test package
         run: |
-          swift build -c ${{ matrix.configuration }} -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test -c ${{ matrix.configuration }} -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift build -c ${{ matrix.configuration }} -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test -c ${{ matrix.configuration }} -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
         shell: pwsh
 
   # Performance benchmarks - Windows
@@ -189,14 +195,17 @@ jobs:
           }
         shell: pwsh
 
-      - name: Set Windows SDK zlib paths
+      - name: Install zlib via Chocolatey
         run: |
-          # Use Windows SDK's built-in zlib instead of vcpkg
-          $windowsSdkDir = "$env:WindowsSdkDir"
-          $windowsSdkVersion = "$env:WindowsSDKVersion"
-          echo "C_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
-          echo "LIB=$windowsSdkDir\lib\$windowsSdkVersion\um\x64" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
+          choco install zlib -y
+        shell: pwsh
+
+      - name: Set zlib paths
+        run: |
+          # Use Chocolatey-installed zlib
+          echo "C_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
+          echo "LIB=C:\ProgramData\chocolatey\lib\zlib\tools\lib" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=C:\ProgramData\chocolatey\lib\zlib\tools\include" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -209,8 +218,8 @@ jobs:
 
       - name: Run performance tests
         run: |
-          swift test --filter PerformanceTests --verbose -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --filter 'testCompressionPerformance' --verbose -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --filter 'testDecompressionPerformance' --verbose -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
-          swift test --filter 'testMemoryEfficiency' --verbose -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter PerformanceTests --verbose -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter 'testCompressionPerformance' --verbose -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter 'testDecompressionPerformance' --verbose -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
+          swift test --filter 'testMemoryEfficiency' --verbose -Xcc -I"C:\ProgramData\chocolatey\lib\zlib\tools\include"
         shell: pwsh
