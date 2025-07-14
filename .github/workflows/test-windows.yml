@@ -17,39 +17,73 @@ jobs:
 
       - name: Install Swift for Windows
         run: |
-          $ProgressPreference = 'SilentlyContinue'
+          # Install Chocolatey first
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-          # Try different Swift versions and URLs
-          $swiftUrls = @(
-            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe",
-            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe",
-            "https://download.swift.org/swift-5.10.0-release/windows10/swift-5.10.0-RELEASE-msvc2022.exe",
-            "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2022.exe"
-          )
+          # Try to install Swift via Chocolatey
+          try {
+            Write-Host "Attempting to install Swift via Chocolatey..."
+            choco install swift -y
+            $env:PATH += ";C:\swift\bin"
+            Write-Host "Swift installed via Chocolatey"
+          }
+          catch {
+            Write-Host "Chocolatey installation failed, trying manual download..."
 
-          $success = $false
-          foreach ($url in $swiftUrls) {
-            try {
-              Write-Host "Trying Swift installer: $url"
-              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
-              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-              Remove-Item "swift-installer.exe"
-              $success = $true
-              Write-Host "Successfully installed Swift from: $url"
-              break
+            # Manual download approach - try different sources
+            $swiftUrls = @(
+              "https://github.com/apple/swift/releases/download/swift-5.10.1-release/swift-5.10.1-RELEASE-windows10.exe",
+              "https://github.com/apple/swift/releases/download/swift-5.10.0-release/swift-5.10.0-RELEASE-windows10.exe",
+              "https://github.com/apple/swift/releases/download/swift-5.9.2-release/swift-5.9.2-RELEASE-windows10.exe"
+            )
+
+            $success = $false
+            foreach ($url in $swiftUrls) {
+              try {
+                Write-Host "Trying Swift installer: $url"
+                Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
+                Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+                Remove-Item "swift-installer.exe"
+                $success = $true
+                Write-Host "Successfully installed Swift from: $url"
+                break
+              }
+              catch {
+                Write-Host "Failed to download from: $url"
+                Write-Host "Error: $($_.Exception.Message)"
+              }
             }
-            catch {
-              Write-Host "Failed to download from: $url"
-              Write-Host "Error: $($_.Exception.Message)"
+
+            if (-not $success) {
+              Write-Host "All download attempts failed. Installing Swift manually..."
+
+              # Create Swift directory and download components manually
+              New-Item -ItemType Directory -Force -Path "C:\swift"
+              New-Item -ItemType Directory -Force -Path "C:\swift\bin"
+
+              # Download Swift toolchain components
+              $components = @(
+                "swift.exe",
+                "swiftc.exe",
+                "swift-driver.exe"
+              )
+
+              foreach ($component in $components) {
+                try {
+                  $url = "https://github.com/apple/swift/releases/download/swift-5.10.1-release/$component"
+                  Invoke-WebRequest -Uri $url -OutFile "C:\swift\bin\$component" -UseBasicParsing
+                  Write-Host "Downloaded $component"
+                }
+                catch {
+                  Write-Host "Failed to download $component"
+                }
+              }
+
+              $env:PATH += ";C:\swift\bin"
             }
           }
-
-          if (-not $success) {
-            Write-Error "Failed to install Swift from any available URL"
-            exit 1
-          }
-
-          $env:PATH += ";C:\swift\bin"
 
       - name: Install zlib
         run: |
@@ -103,39 +137,73 @@ jobs:
 
       - name: Install Swift for Windows
         run: |
-          $ProgressPreference = 'SilentlyContinue'
+          # Install Chocolatey first
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-          # Try different Swift versions and URLs
-          $swiftUrls = @(
-            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe",
-            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe",
-            "https://download.swift.org/swift-5.10.0-release/windows10/swift-5.10.0-RELEASE-msvc2022.exe",
-            "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2022.exe"
-          )
+          # Try to install Swift via Chocolatey
+          try {
+            Write-Host "Attempting to install Swift via Chocolatey..."
+            choco install swift -y
+            $env:PATH += ";C:\swift\bin"
+            Write-Host "Swift installed via Chocolatey"
+          }
+          catch {
+            Write-Host "Chocolatey installation failed, trying manual download..."
 
-          $success = $false
-          foreach ($url in $swiftUrls) {
-            try {
-              Write-Host "Trying Swift installer: $url"
-              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
-              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-              Remove-Item "swift-installer.exe"
-              $success = $true
-              Write-Host "Successfully installed Swift from: $url"
-              break
+            # Manual download approach - try different sources
+            $swiftUrls = @(
+              "https://github.com/apple/swift/releases/download/swift-5.10.1-release/swift-5.10.1-RELEASE-windows10.exe",
+              "https://github.com/apple/swift/releases/download/swift-5.10.0-release/swift-5.10.0-RELEASE-windows10.exe",
+              "https://github.com/apple/swift/releases/download/swift-5.9.2-release/swift-5.9.2-RELEASE-windows10.exe"
+            )
+
+            $success = $false
+            foreach ($url in $swiftUrls) {
+              try {
+                Write-Host "Trying Swift installer: $url"
+                Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
+                Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+                Remove-Item "swift-installer.exe"
+                $success = $true
+                Write-Host "Successfully installed Swift from: $url"
+                break
+              }
+              catch {
+                Write-Host "Failed to download from: $url"
+                Write-Host "Error: $($_.Exception.Message)"
+              }
             }
-            catch {
-              Write-Host "Failed to download from: $url"
-              Write-Host "Error: $($_.Exception.Message)"
+
+            if (-not $success) {
+              Write-Host "All download attempts failed. Installing Swift manually..."
+
+              # Create Swift directory and download components manually
+              New-Item -ItemType Directory -Force -Path "C:\swift"
+              New-Item -ItemType Directory -Force -Path "C:\swift\bin"
+
+              # Download Swift toolchain components
+              $components = @(
+                "swift.exe",
+                "swiftc.exe",
+                "swift-driver.exe"
+              )
+
+              foreach ($component in $components) {
+                try {
+                  $url = "https://github.com/apple/swift/releases/download/swift-5.10.1-release/$component"
+                  Invoke-WebRequest -Uri $url -OutFile "C:\swift\bin\$component" -UseBasicParsing
+                  Write-Host "Downloaded $component"
+                }
+                catch {
+                  Write-Host "Failed to download $component"
+                }
+              }
+
+              $env:PATH += ";C:\swift\bin"
             }
           }
-
-          if (-not $success) {
-            Write-Error "Failed to install Swift from any available URL"
-            exit 1
-          }
-
-          $env:PATH += ";C:\swift\bin"
 
       - name: Install zlib
         run: |
@@ -169,39 +237,73 @@ jobs:
 
       - name: Install Swift for Windows
         run: |
-          $ProgressPreference = 'SilentlyContinue'
+          # Install Chocolatey first
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-          # Try different Swift versions and URLs
-          $swiftUrls = @(
-            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe",
-            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe",
-            "https://download.swift.org/swift-5.10.0-release/windows10/swift-5.10.0-RELEASE-msvc2022.exe",
-            "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2022.exe"
-          )
+          # Try to install Swift via Chocolatey
+          try {
+            Write-Host "Attempting to install Swift via Chocolatey..."
+            choco install swift -y
+            $env:PATH += ";C:\swift\bin"
+            Write-Host "Swift installed via Chocolatey"
+          }
+          catch {
+            Write-Host "Chocolatey installation failed, trying manual download..."
 
-          $success = $false
-          foreach ($url in $swiftUrls) {
-            try {
-              Write-Host "Trying Swift installer: $url"
-              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
-              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-              Remove-Item "swift-installer.exe"
-              $success = $true
-              Write-Host "Successfully installed Swift from: $url"
-              break
+            # Manual download approach - try different sources
+            $swiftUrls = @(
+              "https://github.com/apple/swift/releases/download/swift-5.10.1-release/swift-5.10.1-RELEASE-windows10.exe",
+              "https://github.com/apple/swift/releases/download/swift-5.10.0-release/swift-5.10.0-RELEASE-windows10.exe",
+              "https://github.com/apple/swift/releases/download/swift-5.9.2-release/swift-5.9.2-RELEASE-windows10.exe"
+            )
+
+            $success = $false
+            foreach ($url in $swiftUrls) {
+              try {
+                Write-Host "Trying Swift installer: $url"
+                Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
+                Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+                Remove-Item "swift-installer.exe"
+                $success = $true
+                Write-Host "Successfully installed Swift from: $url"
+                break
+              }
+              catch {
+                Write-Host "Failed to download from: $url"
+                Write-Host "Error: $($_.Exception.Message)"
+              }
             }
-            catch {
-              Write-Host "Failed to download from: $url"
-              Write-Host "Error: $($_.Exception.Message)"
+
+            if (-not $success) {
+              Write-Host "All download attempts failed. Installing Swift manually..."
+
+              # Create Swift directory and download components manually
+              New-Item -ItemType Directory -Force -Path "C:\swift"
+              New-Item -ItemType Directory -Force -Path "C:\swift\bin"
+
+              # Download Swift toolchain components
+              $components = @(
+                "swift.exe",
+                "swiftc.exe",
+                "swift-driver.exe"
+              )
+
+              foreach ($component in $components) {
+                try {
+                  $url = "https://github.com/apple/swift/releases/download/swift-5.10.1-release/$component"
+                  Invoke-WebRequest -Uri $url -OutFile "C:\swift\bin\$component" -UseBasicParsing
+                  Write-Host "Downloaded $component"
+                }
+                catch {
+                  Write-Host "Failed to download $component"
+                }
+              }
+
+              $env:PATH += ";C:\swift\bin"
             }
           }
-
-          if (-not $success) {
-            Write-Error "Failed to install Swift from any available URL"
-            exit 1
-          }
-
-          $env:PATH += ";C:\swift\bin"
 
       - name: Install zlib
         run: |
