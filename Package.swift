@@ -23,6 +23,8 @@ let package = Package(
                 .define("_CRT_SECURE_NO_WARNINGS"),
                 .define("_WIN32_WINNT", to: "0x0601"),
                 .define("WIN32_LEAN_AND_MEAN"),
+                .define("__NO_INTRINSICS__"),
+                .define("_NO_CRT_STDIO_INLINE"),
             ],
             linkerSettings: [
                 .linkedLibrary("z"),

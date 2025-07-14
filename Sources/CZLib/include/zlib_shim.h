@@ -1,6 +1,11 @@
 #ifndef ZLIB_SHIM_H
 #define ZLIB_SHIM_H
 
+// Disable intrinsic headers to avoid cyclic dependency
+#ifndef __NO_INTRINSICS__
+#define __NO_INTRINSICS__
+#endif
+
 #include <zlib.h>
 
 // Basic compression/decompression wrappers
