@@ -49,6 +49,9 @@ jobs:
           $windowsSdkDir = "$env:WindowsSdkDir"
           $windowsSdkVersion = "$env:WindowsSDKVersion"
 
+          echo "Windows SDK Dir: $windowsSdkDir"
+          echo "Windows SDK Version: $windowsSdkVersion"
+
           # Try to find zlib in Windows SDK
           $possiblePaths = @(
             "$windowsSdkDir\include\$windowsSdkVersion\um",
@@ -56,13 +59,27 @@ jobs:
             "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
           )
 
+          $found = $false
           foreach ($path in $possiblePaths) {
+            echo "Checking path: $path"
             if (Test-Path "$path\zlib.h") {
               echo "Found zlib.h at $path"
               echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
               echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              $found = $true
               break
             }
+          }
+
+          if (-not $found) {
+            echo "zlib.h not found in any expected location"
+            echo "Installing zlib via vcpkg as fallback"
+            if (-not (Test-Path "C:\vcpkg")) {
+              git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+            }
+            C:\vcpkg\vcpkg install zlib:x64-windows
+            echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+            echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
           }
         shell: pwsh
 
@@ -146,6 +163,9 @@ jobs:
           $windowsSdkDir = "$env:WindowsSdkDir"
           $windowsSdkVersion = "$env:WindowsSDKVersion"
 
+          echo "Windows SDK Dir: $windowsSdkDir"
+          echo "Windows SDK Version: $windowsSdkVersion"
+
           # Try to find zlib in Windows SDK
           $possiblePaths = @(
             "$windowsSdkDir\include\$windowsSdkVersion\um",
@@ -153,13 +173,27 @@ jobs:
             "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
           )
 
+          $found = $false
           foreach ($path in $possiblePaths) {
+            echo "Checking path: $path"
             if (Test-Path "$path\zlib.h") {
               echo "Found zlib.h at $path"
               echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
               echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              $found = $true
               break
             }
+          }
+
+          if (-not $found) {
+            echo "zlib.h not found in any expected location"
+            echo "Installing zlib via vcpkg as fallback"
+            if (-not (Test-Path "C:\vcpkg")) {
+              git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+            }
+            C:\vcpkg\vcpkg install zlib:x64-windows
+            echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+            echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
           }
         shell: pwsh
 
@@ -221,6 +255,9 @@ jobs:
           $windowsSdkDir = "$env:WindowsSdkDir"
           $windowsSdkVersion = "$env:WindowsSDKVersion"
 
+          echo "Windows SDK Dir: $windowsSdkDir"
+          echo "Windows SDK Version: $windowsSdkVersion"
+
           # Try to find zlib in Windows SDK
           $possiblePaths = @(
             "$windowsSdkDir\include\$windowsSdkVersion\um",
@@ -228,13 +265,27 @@ jobs:
             "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
           )
 
+          $found = $false
           foreach ($path in $possiblePaths) {
+            echo "Checking path: $path"
             if (Test-Path "$path\zlib.h") {
               echo "Found zlib.h at $path"
               echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
               echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              $found = $true
               break
             }
+          }
+
+          if (-not $found) {
+            echo "zlib.h not found in any expected location"
+            echo "Installing zlib via vcpkg as fallback"
+            if (-not (Test-Path "C:\vcpkg")) {
+              git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+            }
+            C:\vcpkg\vcpkg install zlib:x64-windows
+            echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+            echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
           }
         shell: pwsh
 
