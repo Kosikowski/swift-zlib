@@ -263,3 +263,47 @@ The recommended approach is to:
 4. Consider WSL2 for comprehensive Windows testing
 
 This approach ensures reliable CI/CD while maintaining full functionality across all supported platforms.
+
+---
+
+## Update: Swift 6.1.1 Results (June 2024)
+
+### New Error: Module Redefinition in Windows SDK
+
+Testing with Swift 6.1.1 on Windows results in a new class of toolchain error:
+
+```
+error: redefinition of module '_malloc'
+error: redefinition of module 'ucrt'
+error: redefinition of module 'corecrt'
+error: redefinition of module 'WinSDK'
+error: could not build C module 'SwiftShims'
+```
+
+#### Explanation
+
+- The Swift 6.1.1 toolchain for Windows now encounters **duplicate module definitions** for core Windows SDK modules.
+- This is due to multiple `module.modulemap` files for the same SDKs (one in the Windows Kits, one in the Swift toolchain's SDK overlay).
+- This is a new, fundamental toolchain/environment bug, not a project-level issue.
+
+### Summary Table
+
+| Swift Version | Error Type                                       | Root Cause                        |
+| ------------- | ------------------------------------------------ | --------------------------------- |
+| 5.9.x, 5.10.x | Cyclic dependency in overlay shims (`ucrt`)      | Swift overlays + Windows SDK      |
+| 6.1.1         | Redefinition of modules (`_malloc`, `ucrt`, ...) | Duplicate modulemaps in toolchain |
+
+### What Does This Mean?
+
+- The Swift 6.1.1 Windows toolchain is currently **broken** due to conflicting modulemaps.
+- This is not fixable in your project or by changing build flags.
+
+### Recommendations (Updated)
+
+- **You can only build/test the C target (`CZLib`) on Windows.**
+- **Run all Swift code/tests on macOS/Linux.**
+- **Use WSL2 (Linux on Windows) for full Swift CI.**
+- **Monitor Swift releases for a fix to the modulemap conflict.**
+- **Consider filing a bug with the Swift project, referencing the duplicate modulemap errors.**
+
+---
