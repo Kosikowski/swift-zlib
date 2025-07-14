@@ -61,22 +61,7 @@ typedef unsigned long uLong;
 typedef unsigned long uLongf;
 typedef long z_off_t;
 
-// Basic function declarations to avoid system headers
-#ifdef _WIN32
-void* malloc(unsigned long size);
-void free(void* ptr);
-void* memcpy(void* dest, const void* src, unsigned long count);
-void* memset(void* dest, int c, unsigned long count);
-int memcmp(const void* ptr1, const void* ptr2, unsigned long count);
-unsigned long strlen(const char* str);
-char* strcpy(char* dest, const char* src);
-char* strcat(char* dest, const char* src);
-int strcmp(const char* str1, const char* str2);
-int sprintf(char* buffer, const char* format, ...);
-int vsprintf(char* buffer, const char* format, void* args);
-int printf(const char* format, ...);
-void fflush(void* stream);
-#endif
+// No custom function declarations - let system headers handle them
 
 #define Z_OK 0
 #define Z_STREAM_END 1
