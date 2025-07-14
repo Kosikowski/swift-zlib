@@ -15,25 +15,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Convert workspace path for Docker
-        run: |
-          $cleanPath = "${{ github.workspace }}" -replace '\\','/' -replace '^[A-Z]:', ''
-          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
-          echo "Workspace path: $cleanPath"
-        shell: pwsh
-
       - name: Run Swift in Docker
         run: |
           docker pull swift:5.10.1-windowsservercore-ltsc2022
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift --version; swift build; swift test --parallel }"
+          docker run --rm -v "${{ github.workspace }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift --version; swift build; swift test --parallel }"
 
       - name: Run specific test groups
         run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift test --filter CoreTests; swift test --filter ExtensionsTests; swift test --filter FileOperationsTests; swift test --filter ErrorHandlingTests; swift test --filter StreamingTests; swift test --filter ConcurrencyTests }"
+          docker run --rm -v "${{ github.workspace }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift test --filter CoreTests; swift test --filter ExtensionsTests; swift test --filter FileOperationsTests; swift test --filter ErrorHandlingTests; swift test --filter StreamingTests; swift test --filter ConcurrencyTests }"
 
       - name: Build CLI tool
         run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift build --product SwiftZlibCLI }"
+          docker run --rm -v "${{ github.workspace }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift build --product SwiftZlibCLI }"
 
   # Build verification - Windows
   build-verification-windows:
@@ -46,16 +39,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Convert workspace path for Docker
-        run: |
-          $cleanPath = "${{ github.workspace }}" -replace '\\','/' -replace '^[A-Z]:', ''
-          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
-          echo "Workspace path: $cleanPath"
-        shell: pwsh
-
       - name: Build and test package
         run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift build -c ${{ matrix.configuration }}; swift test -c ${{ matrix.configuration }}; swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI }"
+          docker run --rm -v "${{ github.workspace }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift build -c ${{ matrix.configuration }}; swift test -c ${{ matrix.configuration }}; swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI }"
 
   # Performance benchmarks - Windows
   benchmark-windows:
@@ -66,13 +52,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Convert workspace path for Docker
-        run: |
-          $cleanPath = "${{ github.workspace }}" -replace '\\','/' -replace '^[A-Z]:', ''
-          echo "DOCKER_WORKSPACE=$cleanPath" >> $env:GITHUB_ENV
-          echo "Workspace path: $cleanPath"
-        shell: pwsh
-
       - name: Run performance tests
         run: |
-          docker run --rm -v "${{ env.DOCKER_WORKSPACE }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift test --filter PerformanceTests --verbose; swift test --filter 'testCompressionPerformance' --verbose; swift test --filter 'testDecompressionPerformance' --verbose; swift test --filter 'testMemoryEfficiency' --verbose }"
+          docker run --rm -v "${{ github.workspace }}:/workspace" -w /workspace swift:5.10.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y; swift test --filter PerformanceTests --verbose; swift test --filter 'testCompressionPerformance' --verbose; swift test --filter 'testDecompressionPerformance' --verbose; swift test --filter 'testMemoryEfficiency' --verbose }"
