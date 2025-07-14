@@ -8,68 +8,28 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Windows Server 2022, Swift 5.10.1)
-    runs-on: windows-latest
+    name: Windows (Windows Server 2022, Swift 6.1.1)
+    runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Swift for Windows
+      - name: Install Swift 6.1.1
         run: |
-          Write-Host "Installing Swift for Windows..."
+          $ErrorActionPreference = "Stop"
+          $version = "6.1.1"
+          $url = "https://download.swift.org/swift-$version-release/windows10/swift-$version-RELEASE-msvc2022.exe"
+          $installer = "$env:TEMP\swift-$version.exe"
 
-          # Try different Swift download URLs
-          $swiftUrls = @(
-            "https://github.com/apple/swift/releases/download/swift-5.10.1-release/swift-5.10.1-RELEASE-windows10.exe",
-            "https://github.com/apple/swift/releases/download/swift-5.10.0-release/swift-5.10.0-RELEASE-windows10.exe",
-            "https://github.com/apple/swift/releases/download/swift-5.9.2-release/swift-5.9.2-RELEASE-windows10.exe"
-          )
+          Invoke-WebRequest -Uri $url -OutFile $installer
+          Start-Process -FilePath $installer -ArgumentList '/quiet' -Wait
 
-          $success = $false
-          foreach ($url in $swiftUrls) {
-            try {
-              Write-Host "Trying Swift installer: $url"
-              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
-              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-              Remove-Item "swift-installer.exe"
-              $success = $true
-              Write-Host "Successfully installed Swift from: $url"
-              break
-            }
-            catch {
-              Write-Host "Failed to download from: $url"
-              Write-Host "Error: $($_.Exception.Message)"
-            }
-          }
+          echo "Installed Swift $version"
 
-          if (-not $success) {
-            Write-Host "All download attempts failed. Installing Swift manually..."
-
-            # Create Swift directory and download components manually
-            New-Item -ItemType Directory -Force -Path "C:\swift"
-            New-Item -ItemType Directory -Force -Path "C:\swift\bin"
-
-            # Download Swift toolchain components
-            $components = @(
-              "swift.exe",
-              "swiftc.exe",
-              "swift-driver.exe"
-            )
-
-            foreach ($component in $components) {
-              try {
-                $url = "https://github.com/apple/swift/releases/download/swift-5.10.1-release/$component"
-                Invoke-WebRequest -Uri $url -OutFile "C:\swift\bin\$component" -UseBasicParsing
-                Write-Host "Downloaded $component"
-              }
-              catch {
-                Write-Host "Failed to download $component"
-              }
-            }
-          }
-
-          $env:PATH += ";C:\swift\bin"
+      - name: Add Swift to PATH
+        run: |
+          echo "C:\Library\Developer\Toolchains\unknown-Asserts-development.xctoolchain\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install zlib
         run: |
@@ -81,23 +41,16 @@ jobs:
           C:\vcpkg\vcpkg install zlib:x64-windows
 
       - name: Show Swift version
-        run: |
-          $env:PATH += ";C:\swift\bin"
-          swift --version
+        run: swift --version
 
       - name: Build package
-        run: |
-          $env:PATH += ";C:\swift\bin"
-          swift build
+        run: swift build
 
       - name: Run all tests
-        run: |
-          $env:PATH += ";C:\swift\bin"
-          swift test --verbose
+        run: swift test --verbose
 
       - name: Run specific test groups
         run: |
-          $env:PATH += ";C:\swift\bin"
           swift test --filter CoreTests
           swift test --filter ExtensionsTests
           swift test --filter FileOperationsTests
@@ -106,9 +59,7 @@ jobs:
           swift test --filter ConcurrencyTests
 
       - name: Build CLI tool
-        run: |
-          $env:PATH += ";C:\swift\bin"
-          swift build --product SwiftZlibCLI
+        run: swift build --product SwiftZlibCLI
 
   # Build verification - Windows
   build-verification-windows:
@@ -116,66 +67,26 @@ jobs:
     strategy:
       matrix:
         configuration: [debug, release]
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Swift for Windows
+      - name: Install Swift 6.1.1
         run: |
-          Write-Host "Installing Swift for Windows..."
+          $ErrorActionPreference = "Stop"
+          $version = "6.1.1"
+          $url = "https://download.swift.org/swift-$version-release/windows10/swift-$version-RELEASE-msvc2022.exe"
+          $installer = "$env:TEMP\swift-$version.exe"
 
-          # Try different Swift download URLs
-          $swiftUrls = @(
-            "https://github.com/apple/swift/releases/download/swift-5.10.1-release/swift-5.10.1-RELEASE-windows10.exe",
-            "https://github.com/apple/swift/releases/download/swift-5.10.0-release/swift-5.10.0-RELEASE-windows10.exe",
-            "https://github.com/apple/swift/releases/download/swift-5.9.2-release/swift-5.9.2-RELEASE-windows10.exe"
-          )
+          Invoke-WebRequest -Uri $url -OutFile $installer
+          Start-Process -FilePath $installer -ArgumentList '/quiet' -Wait
 
-          $success = $false
-          foreach ($url in $swiftUrls) {
-            try {
-              Write-Host "Trying Swift installer: $url"
-              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
-              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-              Remove-Item "swift-installer.exe"
-              $success = $true
-              Write-Host "Successfully installed Swift from: $url"
-              break
-            }
-            catch {
-              Write-Host "Failed to download from: $url"
-              Write-Host "Error: $($_.Exception.Message)"
-            }
-          }
+          echo "Installed Swift $version"
 
-          if (-not $success) {
-            Write-Host "All download attempts failed. Installing Swift manually..."
-
-            # Create Swift directory and download components manually
-            New-Item -ItemType Directory -Force -Path "C:\swift"
-            New-Item -ItemType Directory -Force -Path "C:\swift\bin"
-
-            # Download Swift toolchain components
-            $components = @(
-              "swift.exe",
-              "swiftc.exe",
-              "swift-driver.exe"
-            )
-
-            foreach ($component in $components) {
-              try {
-                $url = "https://github.com/apple/swift/releases/download/swift-5.10.1-release/$component"
-                Invoke-WebRequest -Uri $url -OutFile "C:\swift\bin\$component" -UseBasicParsing
-                Write-Host "Downloaded $component"
-              }
-              catch {
-                Write-Host "Failed to download $component"
-              }
-            }
-          }
-
-          $env:PATH += ";C:\swift\bin"
+      - name: Add Swift to PATH
+        run: |
+          echo "C:\Library\Developer\Toolchains\unknown-Asserts-development.xctoolchain\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install zlib
         run: |
@@ -184,84 +95,38 @@ jobs:
           C:\vcpkg\vcpkg install zlib:x64-windows
 
       - name: Build package
-        run: |
-          $env:PATH += ";C:\swift\bin"
-          swift build -c ${{ matrix.configuration }}
+        run: swift build -c ${{ matrix.configuration }}
 
       - name: Test package
-        run: |
-          $env:PATH += ";C:\swift\bin"
-          swift test -c ${{ matrix.configuration }}
+        run: swift test -c ${{ matrix.configuration }}
 
       - name: Build CLI tool
-        run: |
-          $env:PATH += ";C:\swift\bin"
-          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+        run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
 
   # Performance benchmarks - Windows
   benchmark-windows:
     name: Performance Benchmarks (Windows)
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Swift for Windows
+      - name: Install Swift 6.1.1
         run: |
-          Write-Host "Installing Swift for Windows..."
+          $ErrorActionPreference = "Stop"
+          $version = "6.1.1"
+          $url = "https://download.swift.org/swift-$version-release/windows10/swift-$version-RELEASE-msvc2022.exe"
+          $installer = "$env:TEMP\swift-$version.exe"
 
-          # Try different Swift download URLs
-          $swiftUrls = @(
-            "https://github.com/apple/swift/releases/download/swift-5.10.1-release/swift-5.10.1-RELEASE-windows10.exe",
-            "https://github.com/apple/swift/releases/download/swift-5.10.0-release/swift-5.10.0-RELEASE-windows10.exe",
-            "https://github.com/apple/swift/releases/download/swift-5.9.2-release/swift-5.9.2-RELEASE-windows10.exe"
-          )
+          Invoke-WebRequest -Uri $url -OutFile $installer
+          Start-Process -FilePath $installer -ArgumentList '/quiet' -Wait
 
-          $success = $false
-          foreach ($url in $swiftUrls) {
-            try {
-              Write-Host "Trying Swift installer: $url"
-              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
-              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-              Remove-Item "swift-installer.exe"
-              $success = $true
-              Write-Host "Successfully installed Swift from: $url"
-              break
-            }
-            catch {
-              Write-Host "Failed to download from: $url"
-              Write-Host "Error: $($_.Exception.Message)"
-            }
-          }
+          echo "Installed Swift $version"
 
-          if (-not $success) {
-            Write-Host "All download attempts failed. Installing Swift manually..."
-
-            # Create Swift directory and download components manually
-            New-Item -ItemType Directory -Force -Path "C:\swift"
-            New-Item -ItemType Directory -Force -Path "C:\swift\bin"
-
-            # Download Swift toolchain components
-            $components = @(
-              "swift.exe",
-              "swiftc.exe",
-              "swift-driver.exe"
-            )
-
-            foreach ($component in $components) {
-              try {
-                $url = "https://github.com/apple/swift/releases/download/swift-5.10.1-release/$component"
-                Invoke-WebRequest -Uri $url -OutFile "C:\swift\bin\$component" -UseBasicParsing
-                Write-Host "Downloaded $component"
-              }
-              catch {
-                Write-Host "Failed to download $component"
-              }
-            }
-          }
-
-          $env:PATH += ";C:\swift\bin"
+      - name: Add Swift to PATH
+        run: |
+          echo "C:\Library\Developer\Toolchains\unknown-Asserts-development.xctoolchain\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install zlib
         run: |
@@ -271,7 +136,6 @@ jobs:
 
       - name: Run performance tests
         run: |
-          $env:PATH += ";C:\swift\bin"
           swift test --filter PerformanceTests --verbose
           swift test --filter "testCompressionPerformance" --verbose
           swift test --filter "testDecompressionPerformance" --verbose
