@@ -18,9 +18,37 @@ jobs:
       - name: Install Swift for Windows
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe" -OutFile "swift-installer.exe"
-          Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-          Remove-Item "swift-installer.exe"
+
+          # Try different Swift versions and URLs
+          $swiftUrls = @(
+            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe",
+            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe",
+            "https://download.swift.org/swift-5.10.0-release/windows10/swift-5.10.0-RELEASE-msvc2022.exe",
+            "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2022.exe"
+          )
+
+          $success = $false
+          foreach ($url in $swiftUrls) {
+            try {
+              Write-Host "Trying Swift installer: $url"
+              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
+              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+              Remove-Item "swift-installer.exe"
+              $success = $true
+              Write-Host "Successfully installed Swift from: $url"
+              break
+            }
+            catch {
+              Write-Host "Failed to download from: $url"
+              Write-Host "Error: $($_.Exception.Message)"
+            }
+          }
+
+          if (-not $success) {
+            Write-Error "Failed to install Swift from any available URL"
+            exit 1
+          }
+
           $env:PATH += ";C:\swift\bin"
 
       - name: Install zlib
@@ -76,9 +104,37 @@ jobs:
       - name: Install Swift for Windows
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe" -OutFile "swift-installer.exe"
-          Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-          Remove-Item "swift-installer.exe"
+
+          # Try different Swift versions and URLs
+          $swiftUrls = @(
+            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe",
+            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe",
+            "https://download.swift.org/swift-5.10.0-release/windows10/swift-5.10.0-RELEASE-msvc2022.exe",
+            "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2022.exe"
+          )
+
+          $success = $false
+          foreach ($url in $swiftUrls) {
+            try {
+              Write-Host "Trying Swift installer: $url"
+              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
+              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+              Remove-Item "swift-installer.exe"
+              $success = $true
+              Write-Host "Successfully installed Swift from: $url"
+              break
+            }
+            catch {
+              Write-Host "Failed to download from: $url"
+              Write-Host "Error: $($_.Exception.Message)"
+            }
+          }
+
+          if (-not $success) {
+            Write-Error "Failed to install Swift from any available URL"
+            exit 1
+          }
+
           $env:PATH += ";C:\swift\bin"
 
       - name: Install zlib
@@ -114,9 +170,37 @@ jobs:
       - name: Install Swift for Windows
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe" -OutFile "swift-installer.exe"
-          Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
-          Remove-Item "swift-installer.exe"
+
+          # Try different Swift versions and URLs
+          $swiftUrls = @(
+            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2022.exe",
+            "https://download.swift.org/swift-5.10.1-release/windows10/swift-5.10.1-RELEASE-msvc2019.exe",
+            "https://download.swift.org/swift-5.10.0-release/windows10/swift-5.10.0-RELEASE-msvc2022.exe",
+            "https://download.swift.org/swift-5.9.2-release/windows10/swift-5.9.2-RELEASE-msvc2022.exe"
+          )
+
+          $success = $false
+          foreach ($url in $swiftUrls) {
+            try {
+              Write-Host "Trying Swift installer: $url"
+              Invoke-WebRequest -Uri $url -OutFile "swift-installer.exe" -UseBasicParsing
+              Start-Process -FilePath "swift-installer.exe" -ArgumentList "/S" -Wait
+              Remove-Item "swift-installer.exe"
+              $success = $true
+              Write-Host "Successfully installed Swift from: $url"
+              break
+            }
+            catch {
+              Write-Host "Failed to download from: $url"
+              Write-Host "Error: $($_.Exception.Message)"
+            }
+          }
+
+          if (-not $success) {
+            Write-Error "Failed to install Swift from any available URL"
+            exit 1
+          }
+
           $env:PATH += ";C:\swift\bin"
 
       - name: Install zlib
