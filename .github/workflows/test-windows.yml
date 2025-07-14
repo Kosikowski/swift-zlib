@@ -50,6 +50,7 @@ jobs:
           $windowsSdkVersion = "$env:WindowsSDKVersion"
           echo "C_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
           echo "LIB=$windowsSdkDir\lib\$windowsSdkVersion\um\x64" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -68,23 +69,23 @@ jobs:
 
       - name: Build and test
         run: |
-          swift build
-          swift test --parallel
+          swift build -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --parallel -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
         shell: pwsh
 
       - name: Run specific test groups
         run: |
-          swift test --filter CoreTests
-          swift test --filter ExtensionsTests
-          swift test --filter FileOperationsTests
-          swift test --filter ErrorHandlingTests
-          swift test --filter StreamingTests
-          swift test --filter ConcurrencyTests
+          swift test --filter CoreTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter ExtensionsTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter FileOperationsTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter ErrorHandlingTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter StreamingTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter ConcurrencyTests -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
         shell: pwsh
 
       - name: Build CLI tool
         run: |
-          swift build --product SwiftZlibCLI
+          swift build --product SwiftZlibCLI -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
         shell: pwsh
 
   # Build verification - Windows
@@ -133,6 +134,7 @@ jobs:
           $windowsSdkVersion = "$env:WindowsSDKVersion"
           echo "C_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
           echo "LIB=$windowsSdkDir\lib\$windowsSdkVersion\um\x64" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -145,9 +147,9 @@ jobs:
 
       - name: Build and test package
         run: |
-          swift build -c ${{ matrix.configuration }}
-          swift test -c ${{ matrix.configuration }}
-          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+          swift build -c ${{ matrix.configuration }} -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test -c ${{ matrix.configuration }} -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
         shell: pwsh
 
   # Performance benchmarks - Windows
@@ -194,6 +196,7 @@ jobs:
           $windowsSdkVersion = "$env:WindowsSDKVersion"
           echo "C_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
           echo "LIB=$windowsSdkDir\lib\$windowsSdkVersion\um\x64" >> $env:GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -206,8 +209,8 @@ jobs:
 
       - name: Run performance tests
         run: |
-          swift test --filter PerformanceTests --verbose
-          swift test --filter 'testCompressionPerformance' --verbose
-          swift test --filter 'testDecompressionPerformance' --verbose
-          swift test --filter 'testMemoryEfficiency' --verbose
+          swift test --filter PerformanceTests --verbose -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter 'testCompressionPerformance' --verbose -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter 'testDecompressionPerformance' --verbose -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
+          swift test --filter 'testMemoryEfficiency' --verbose -Xcc -I"$env:WindowsSdkDir\include\$env:WindowsSDKVersion\um"
         shell: pwsh

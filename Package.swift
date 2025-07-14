@@ -20,6 +20,7 @@ let package = Package(
             path: "Sources/CZLib",
             cSettings: [
                 .headerSearchPath("include"),
+                .define("_CRT_SECURE_NO_WARNINGS"),
             ],
             linkerSettings: [
                 .linkedLibrary("z"),
