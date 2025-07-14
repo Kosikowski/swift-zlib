@@ -8,44 +8,41 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Swift 6.1.1 via Docker)
+    name: Windows (Swift 6.1 via Docker)
     runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Install zlib in Docker container
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
 
       - name: Show Swift version
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift --version
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift --version
 
       - name: Build package
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift build
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift build
 
       - name: Run all tests
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --verbose
 
       - name: Run specific test groups
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter CoreTests
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter ExtensionsTests
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter FileOperationsTests
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter ErrorHandlingTests
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter StreamingTests
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter ConcurrencyTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter CoreTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter ExtensionsTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter FileOperationsTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter ErrorHandlingTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter StreamingTests
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter ConcurrencyTests
 
       - name: Build CLI tool
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift build --product SwiftZlibCLI
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift build --product SwiftZlibCLI
 
   # Build verification - Windows
   build-verification-windows:
@@ -58,24 +55,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Install zlib in Docker container
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
 
       - name: Build package
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift build -c ${{ matrix.configuration }}
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift build -c ${{ matrix.configuration }}
 
       - name: Test package
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test -c ${{ matrix.configuration }}
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test -c ${{ matrix.configuration }}
 
       - name: Build CLI tool
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
 
   # Performance benchmarks - Windows
   benchmark-windows:
@@ -86,16 +80,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Install zlib in Docker container
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 powershell -Command "& { choco install zlib -y }"
 
       - name: Run performance tests
         run: |
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter PerformanceTests --verbose
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter "testCompressionPerformance" --verbose
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter "testDecompressionPerformance" --verbose
-          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1.1-windowsservercore-ltsc2022 swift test --filter "testMemoryEfficiency" --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter PerformanceTests --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter "testCompressionPerformance" --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter "testDecompressionPerformance" --verbose
+          docker run --rm -v ${PWD}:/workspace -w /workspace swift:6.1-windowsservercore-ltsc2022 swift test --filter "testMemoryEfficiency" --verbose
