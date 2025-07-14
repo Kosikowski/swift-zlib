@@ -30,6 +30,7 @@ typedef long z_off_t;
 #define Z_RLE 3
 #define Z_FIXED 4
 #define Z_DEFAULT_STRATEGY 0
+#define Z_DEFLATED 8
 
 #define Z_DEFAULT_COMPRESSION (-1)
 #define Z_DEFAULT_LEVEL (-2)
@@ -98,6 +99,8 @@ int inflateCopy(z_streamp dest, z_streamp source);
 int inflatePrime(z_streamp strm, int bits, int value);
 int inflateGetHeader(z_streamp strm, gz_headerp head);
 int inflateBack(z_streamp strm, in_func in, void *in_desc, out_func out, void *out_desc);
+int inflateBackInit(z_streamp strm, int windowBits, unsigned char *window);
+int inflateBackEnd(z_streamp strm);
 
 uLong adler32(uLong adler, const Bytef *buf, uInt len);
 uLong crc32(uLong crc, const Bytef *buf, uInt len);
@@ -105,5 +108,41 @@ uLong compressBound(uLong sourceLen);
 
 const char* zlibVersion(void);
 const char* zError(int err);
+
+// Additional missing functions
+int inflateMark(z_streamp strm);
+unsigned long inflateCodesUsed(z_streamp strm);
+int deflateSetDictionary(z_streamp strm, const Bytef *dictionary, uInt dictLength);
+int inflateSetDictionary(z_streamp strm, const Bytef *dictionary, uInt dictLength);
+int deflatePending(z_streamp strm, unsigned *pending, int *bits);
+int deflateTune(z_streamp strm, int good_length, int max_lazy, int nice_length, int max_chain);
+int inflateSync(z_streamp strm);
+int inflateSyncPoint(z_streamp strm);
+int deflateGetDictionary(z_streamp strm, Bytef *dictionary, uInt *dictLength);
+int inflateGetDictionary(z_streamp strm, Bytef *dictionary, uInt *dictLength);
+int inflatePending(z_streamp strm, unsigned *pending, int *bits);
+uLong adler32_combine(uLong adler1, uLong adler2, z_off_t len2);
+uLong crc32_combine(uLong crc1, uLong crc2, z_off_t len2);
+uLong zlibCompileFlags(void);
+
+// Gzip file operations
+typedef struct gzFile_s *gzFile;
+gzFile gzopen(const char* path, const char* mode);
+int gzclose(gzFile file);
+int gzread(gzFile file, void* buf, unsigned int len);
+int gzwrite(gzFile file, void* buf, unsigned int len);
+long gzseek(gzFile file, long offset, int whence);
+long gztell(gzFile file);
+int gzflush(gzFile file, int flush);
+int gzrewind(gzFile file);
+int gzeof(gzFile file);
+int gzsetparams(gzFile file, int level, int strategy);
+int gzprintf(gzFile file, const char* format, ...);
+char* gzgets(gzFile file, char* buf, int len);
+int gzputc(gzFile file, int c);
+int gzgetc(gzFile file);
+int gzungetc(int c, gzFile file);
+void gzclearerr(gzFile file);
+const char* gzerror(gzFile file, int* errnum);
 
 #endif /* ZLIB_SIMPLE_H */

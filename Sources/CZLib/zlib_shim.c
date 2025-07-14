@@ -262,7 +262,7 @@ static unsigned int debug_in_wrapper(void* desc, unsigned char** buf) {
     swift_inflateback_context_t* context = (swift_inflateback_context_t*)desc;
     unsigned int result = 0;
     if (context && context->swift_in_func) {
-        result = context->swift_in_func(context->swift_context, buf, NULL);
+        result = (unsigned int)context->swift_in_func(context->swift_context, buf, NULL);
 #if ZLIB_DEBUG
         if (result == 0) {
             printf("[C shim] input callback returned 0 (no data)\n");

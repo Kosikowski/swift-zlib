@@ -281,7 +281,7 @@ final class Decompressor {
 
         // Set input data
         try input.withUnsafeBytes { inputPtr in
-            stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress!)
+            stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress)
             stream.avail_in = uInt(input.count)
 
             // Process all input data

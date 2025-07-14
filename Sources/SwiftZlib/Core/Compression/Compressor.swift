@@ -316,7 +316,9 @@ public final class Compressor {
         var inputBuffer = [Bytef](input)
 
         // Set input data
-        stream.next_in = inputBuffer.withUnsafeMutableBufferPointer { $0.baseAddress }
+        stream.next_in = inputBuffer.withUnsafeMutableBufferPointer { ptr in
+            ptr.baseAddress
+        }
         stream.avail_in = uInt(input.count)
 
         // Process all input data
