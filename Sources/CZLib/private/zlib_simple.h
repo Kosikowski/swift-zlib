@@ -1,11 +1,82 @@
 #ifndef ZLIB_SIMPLE_H
 #define ZLIB_SIMPLE_H
 
+// Windows-specific guards to prevent cyclic dependencies
+#ifdef _WIN32
+#ifndef _CRT_NO_POSIX_ERROR_CODES
+#define _CRT_NO_POSIX_ERROR_CODES
+#endif
+#ifndef _NO_CRT_RAND_S
+#define _NO_CRT_RAND_S
+#endif
+#ifndef _NO_CRT_TIME_INLINE
+#define _NO_CRT_TIME_INLINE
+#endif
+#ifndef _NO_CRT_MATH_INLINE
+#define _NO_CRT_MATH_INLINE
+#endif
+#ifndef _NO_CRT_STRING_INLINE
+#define _NO_CRT_STRING_INLINE
+#endif
+#ifndef _NO_CRT_WCTYPE_INLINE
+#define _NO_CRT_WCTYPE_INLINE
+#endif
+#ifndef _NO_CRT_LOCALE_INLINE
+#define _NO_CRT_LOCALE_INLINE
+#endif
+#ifndef _NO_CRT_STDLIB_INLINE
+#define _NO_CRT_STDLIB_INLINE
+#endif
+#ifndef _NO_CRT_CTYPE_INLINE
+#define _NO_CRT_CTYPE_INLINE
+#endif
+#ifndef _NO_CRT_ERRNO_INLINE
+#define _NO_CRT_ERRNO_INLINE
+#endif
+#ifndef _NO_CRT_SETJMP_INLINE
+#define _NO_CRT_SETJMP_INLINE
+#endif
+#ifndef _NO_CRT_SIGNAL_INLINE
+#define _NO_CRT_SIGNAL_INLINE
+#endif
+#ifndef _NO_CRT_ASSERT_INLINE
+#define _NO_CRT_ASSERT_INLINE
+#endif
+#ifndef _NO_CRT_MEMORY_INLINE
+#define _NO_CRT_MEMORY_INLINE
+#endif
+#ifndef __NO_INTRINSICS__
+#define __NO_INTRINSICS__
+#endif
+// Prevent any system header inclusion that could cause cyclic dependencies
+#define _CRT_SECURE_NO_WARNINGS
+#define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x0601
+#endif
+
+// Basic type definitions without system headers
 typedef unsigned char Bytef;
 typedef unsigned int uInt;
 typedef unsigned long uLong;
 typedef unsigned long uLongf;
 typedef long z_off_t;
+
+// Basic function declarations to avoid system headers
+#ifdef _WIN32
+void* malloc(unsigned long size);
+void free(void* ptr);
+void* memcpy(void* dest, const void* src, unsigned long count);
+void* memset(void* dest, int c, unsigned long count);
+int memcmp(const void* ptr1, const void* ptr2, unsigned long count);
+unsigned long strlen(const char* str);
+char* strcpy(char* dest, const char* src);
+char* strcat(char* dest, const char* src);
+int strcmp(const char* str1, const char* str2);
+int sprintf(char* buffer, const char* format, ...);
+int vsprintf(char* buffer, const char* format, void* args);
+int printf(const char* format, ...);
+void fflush(void* stream);
+#endif
 
 #define Z_OK 0
 #define Z_STREAM_END 1
