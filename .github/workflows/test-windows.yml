@@ -43,27 +43,13 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install zlib via vcpkg
+      - name: Set Windows SDK zlib paths
         run: |
-          # Install vcpkg if not present
-          if (-not (Test-Path "C:\vcpkg")) {
-            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          }
-
-          # Install zlib
-          C:\vcpkg\vcpkg install zlib:x64-windows
-
-          # Set environment variables
-          $env:VCPKG_ROOT = "C:\vcpkg"
-          echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
-        shell: pwsh
-
-      - name: Set zlib include and lib paths
-        run: |
-          $inc = "C:\vcpkg\installed\x64-windows\include"
-          $lib = "C:\vcpkg\installed\x64-windows\lib"
-          echo "C_INCLUDE_PATH=$inc" >> $env:GITHUB_ENV
-          echo "LIB=$lib" >> $env:GITHUB_ENV
+          # Use Windows SDK's built-in zlib instead of vcpkg
+          $windowsSdkDir = "$env:WindowsSdkDir"
+          $windowsSdkVersion = "$env:WindowsSDKVersion"
+          echo "C_INCLUDE_PATH=$windowsSdkDir\include\$windowsSdkVersion\um" >> $env:GITHUB_ENV
+          echo "LIB=$windowsSdkDir\lib\$windowsSdkVersion\um\x64" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -82,8 +68,8 @@ jobs:
 
       - name: Build and test
         run: |
-          swift build -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --parallel -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift build
+          swift test --parallel
         shell: pwsh
 
       - name: Run specific test groups
@@ -168,9 +154,9 @@ jobs:
 
       - name: Build and test package
         run: |
-          swift build -c ${{ matrix.configuration }} -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test -c ${{ matrix.configuration }} -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift build -c ${{ matrix.configuration }}
+          swift test -c ${{ matrix.configuration }}
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
         shell: pwsh
 
   # Performance benchmarks - Windows
@@ -238,8 +224,8 @@ jobs:
 
       - name: Run performance tests
         run: |
-          swift test --filter PerformanceTests --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter 'testCompressionPerformance' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter 'testDecompressionPerformance' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter 'testMemoryEfficiency' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter PerformanceTests --verbose
+          swift test --filter 'testCompressionPerformance' --verbose
+          swift test --filter 'testDecompressionPerformance' --verbose
+          swift test --filter 'testMemoryEfficiency' --verbose
         shell: pwsh
