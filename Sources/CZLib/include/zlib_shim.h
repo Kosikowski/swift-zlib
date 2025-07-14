@@ -6,7 +6,11 @@
 #define z_const const
 #endif
 
+#ifdef _WIN32
+#include "../private/zlib_simple.h"
+#else
 #include <zlib.h>
+#endif
 
 // Type definitions for callback functions
 typedef int (*swift_in_func)(void *, unsigned char **, int *);
