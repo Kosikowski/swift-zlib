@@ -21,6 +21,8 @@ let package = Package(
             cSettings: [
                 .headerSearchPath("include"),
                 .define("_CRT_SECURE_NO_WARNINGS"),
+                .define("_WIN32_WINNT", to: "0x0601"),
+                .define("WIN32_LEAN_AND_MEAN"),
             ],
             linkerSettings: [
                 .linkedLibrary("z"),

@@ -43,20 +43,27 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install zlib via vcpkg
+      - name: Use system zlib (no installation needed)
         run: |
-          if (-not (Test-Path "C:\vcpkg")) {
-            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          }
-          C:\vcpkg\vcpkg install zlib:x64-windows
-        shell: pwsh
+          # Windows SDK includes zlib, we just need to find it
+          $windowsSdkDir = "$env:WindowsSdkDir"
+          $windowsSdkVersion = "$env:WindowsSDKVersion"
 
-      - name: Set zlib paths
-        run: |
-          # Use vcpkg-installed zlib
-          echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
-          echo "LIB=C:\vcpkg\installed\x64-windows\lib" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+          # Try to find zlib in Windows SDK
+          $possiblePaths = @(
+            "$windowsSdkDir\include\$windowsSdkVersion\um",
+            "$windowsSdkDir\include\$windowsSdkVersion\shared",
+            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
+          )
+
+          foreach ($path in $possiblePaths) {
+            if (Test-Path "$path\zlib.h") {
+              echo "Found zlib.h at $path"
+              echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              break
+            }
+          }
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -75,23 +82,23 @@ jobs:
 
       - name: Build and test
         run: |
-          swift build -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --parallel -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift build
+          swift test --parallel
         shell: pwsh
 
       - name: Run specific test groups
         run: |
-          swift test --filter CoreTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter ExtensionsTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter FileOperationsTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter ErrorHandlingTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter StreamingTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter ConcurrencyTests -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
         shell: pwsh
 
       - name: Build CLI tool
         run: |
-          swift build --product SwiftZlibCLI -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift build --product SwiftZlibCLI
         shell: pwsh
 
   # Build verification - Windows
@@ -133,20 +140,27 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install zlib via vcpkg
+      - name: Use system zlib (no installation needed)
         run: |
-          if (-not (Test-Path "C:\vcpkg")) {
-            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          }
-          C:\vcpkg\vcpkg install zlib:x64-windows
-        shell: pwsh
+          # Windows SDK includes zlib, we just need to find it
+          $windowsSdkDir = "$env:WindowsSdkDir"
+          $windowsSdkVersion = "$env:WindowsSDKVersion"
 
-      - name: Set zlib paths
-        run: |
-          # Use vcpkg-installed zlib
-          echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
-          echo "LIB=C:\vcpkg\installed\x64-windows\lib" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+          # Try to find zlib in Windows SDK
+          $possiblePaths = @(
+            "$windowsSdkDir\include\$windowsSdkVersion\um",
+            "$windowsSdkDir\include\$windowsSdkVersion\shared",
+            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
+          )
+
+          foreach ($path in $possiblePaths) {
+            if (Test-Path "$path\zlib.h") {
+              echo "Found zlib.h at $path"
+              echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              break
+            }
+          }
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -159,9 +173,9 @@ jobs:
 
       - name: Build and test package
         run: |
-          swift build -c ${{ matrix.configuration }} -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test -c ${{ matrix.configuration }} -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift build -c ${{ matrix.configuration }}
+          swift test -c ${{ matrix.configuration }}
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
         shell: pwsh
 
   # Performance benchmarks - Windows
@@ -201,20 +215,27 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install zlib via vcpkg
+      - name: Use system zlib (no installation needed)
         run: |
-          if (-not (Test-Path "C:\vcpkg")) {
-            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          }
-          C:\vcpkg\vcpkg install zlib:x64-windows
-        shell: pwsh
+          # Windows SDK includes zlib, we just need to find it
+          $windowsSdkDir = "$env:WindowsSdkDir"
+          $windowsSdkVersion = "$env:WindowsSDKVersion"
 
-      - name: Set zlib paths
-        run: |
-          # Use vcpkg-installed zlib
-          echo "C_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
-          echo "LIB=C:\vcpkg\installed\x64-windows\lib" >> $env:GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=C:\vcpkg\installed\x64-windows\include" >> $env:GITHUB_ENV
+          # Try to find zlib in Windows SDK
+          $possiblePaths = @(
+            "$windowsSdkDir\include\$windowsSdkVersion\um",
+            "$windowsSdkDir\include\$windowsSdkVersion\shared",
+            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\$env:VCToolsVersion\include"
+          )
+
+          foreach ($path in $possiblePaths) {
+            if (Test-Path "$path\zlib.h") {
+              echo "Found zlib.h at $path"
+              echo "C_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              echo "CPLUS_INCLUDE_PATH=$path" >> $env:GITHUB_ENV
+              break
+            }
+          }
         shell: pwsh
 
       - name: Add MSVC lib path to LIB
@@ -227,8 +248,8 @@ jobs:
 
       - name: Run performance tests
         run: |
-          swift test --filter PerformanceTests --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter 'testCompressionPerformance' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter 'testDecompressionPerformance' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
-          swift test --filter 'testMemoryEfficiency' --verbose -Xcc -I"C:\vcpkg\installed\x64-windows\include"
+          swift test --filter PerformanceTests --verbose
+          swift test --filter 'testCompressionPerformance' --verbose
+          swift test --filter 'testDecompressionPerformance' --verbose
+          swift test --filter 'testMemoryEfficiency' --verbose
         shell: pwsh
