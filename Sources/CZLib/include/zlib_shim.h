@@ -11,7 +11,7 @@ int swift_uncompress(Bytef *dest, uLongf *destLen,
                      const Bytef *source, uLong sourceLen);
 
 int swift_uncompress2(Bytef *dest, uLongf *destLen,
-                      const Bytef *source, uLong sourceLen);
+                      const Bytef *source, uLong *sourceLen);
 
 // Stream management functions
 int swift_deflateInit(z_streamp strm, int level);

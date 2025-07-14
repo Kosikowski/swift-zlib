@@ -83,12 +83,19 @@ int deflate(z_streamp strm, int flush);
 int deflateEnd(z_streamp strm);
 int deflateInit2(z_streamp strm, int level, int method, int windowBits, int memLevel, int strategy);
 int deflateParams(z_streamp strm, int level, int strategy);
+int deflateReset(z_streamp strm);
+int deflateCopy(z_streamp dest, z_streamp source);
+int deflatePrime(z_streamp strm, int bits, int value);
+int deflateBound(z_streamp strm, unsigned long sourceLen);
 int deflateSetHeader(z_streamp strm, gz_headerp head);
 
 int inflateInit(z_streamp strm);
 int inflate(z_streamp strm, int flush);
 int inflateEnd(z_streamp strm);
 int inflateInit2(z_streamp strm, int windowBits);
+int inflateReset(z_streamp strm);
+int inflateCopy(z_streamp dest, z_streamp source);
+int inflatePrime(z_streamp strm, int bits, int value);
 int inflateGetHeader(z_streamp strm, gz_headerp head);
 int inflateBack(z_streamp strm, in_func in, void *in_desc, out_func out, void *out_desc);
 

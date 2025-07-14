@@ -1,5 +1,4 @@
 #include "zlib_shim.h"
-#include <zlib.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
