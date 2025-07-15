@@ -12,6 +12,14 @@
 // Disable debug output for production builds
 #define ZLIB_DEBUG 0
 
+//
+// NOTE: __attribute__((used)) is applied to all exported C functions below.
+// This prevents the linker from dead-stripping these functions in release mode,
+// which can break Swift/C bridging and cause empty or incorrect outputs in release builds.
+// This issue is especially prevalent on macOS with Swift 6.1.2, where aggressive
+// dead code stripping can remove C entry points that are only referenced from Swift.
+//
+
 __attribute__((used)) int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
                    int level) {
