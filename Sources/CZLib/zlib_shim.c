@@ -9,8 +9,8 @@
 #include <stdio.h>
 #endif
 
-// Force ZLIB_DEBUG to always be 0 to prevent debug output in tests
-#define ZLIB_DEBUG 0
+// Enable debug output for release mode debugging
+#define ZLIB_DEBUG 1
 
 #if ZLIB_DEBUG
 #ifdef _WIN32
@@ -41,6 +41,11 @@ int swift_compress(Bytef *dest, uLongf *destLen,
 
 #if ZLIB_DEBUG
     printf("[C] swift_compress: sourceLen=%lu, destLen(before)=%lu, level=%d\n", sourceLen, *destLen, level);
+    printf("[C] swift_compress: first 16 bytes of input: ");
+    for (int i = 0; i < 16 && i < sourceLen; i++) {
+        printf("%02x ", source[i]);
+    }
+    printf("\n");
     fflush(stdout);
 #endif
     int result = compress2(dest, destLen, source, sourceLen, level);
@@ -76,13 +81,30 @@ int swift_uncompress(Bytef *dest, uLongf *destLen,
         return Z_OK;
     }
 
+#if ZLIB_DEBUG
+    printf("[C] swift_uncompress: sourceLen=%lu, destLen(before)=%lu\n", sourceLen, *destLen);
+    printf("[C] swift_uncompress: first 16 bytes of input: ");
+    for (int i = 0; i < 16 && i < sourceLen; i++) {
+        printf("%02x ", source[i]);
+    }
+    printf("\n");
+    fflush(stdout);
+#endif
+
     int result = uncompress(dest, destLen, source, sourceLen);
 #if ZLIB_DEBUG
-    if (result != Z_OK) {
+    printf("[C] swift_uncompress: result=%d, destLen(after)=%lu\n", result, *destLen);
+    if (result == Z_OK) {
+        printf("[C] swift_uncompress: first 16 bytes of output: ");
+        for (int i = 0; i < 16 && i < *destLen; i++) {
+            printf("%02x ", dest[i]);
+        }
+        printf("\n");
+    } else {
         printf("[C] swift_uncompress ERROR: result=%d, sourceLen=%lu, destLen=%lu\n",
                result, sourceLen, *destLen);
-        fflush(stdout);
     }
+    fflush(stdout);
 #endif
     return result;
 }
