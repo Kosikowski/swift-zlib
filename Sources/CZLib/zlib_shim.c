@@ -2,6 +2,7 @@
 #ifdef _WIN32
 // On Windows, avoid system headers that cause cyclic dependencies
 // The zlib_simple.h provides all necessary types and constants
+#include <stdlib.h>
 #else
 #include <stdlib.h>
 #include <stdarg.h>

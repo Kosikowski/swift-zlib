@@ -50,11 +50,6 @@
 #endif
 #endif
 
-// Ensure z_const is defined as const for proper Swift interop
-#ifndef z_const
-#define z_const const
-#endif
-
 #ifdef _WIN32
 #include "../zlib.h"
 #else
