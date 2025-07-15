@@ -9,8 +9,8 @@
 #include <stdio.h>
 #endif
 
-// Enable debug output for release mode debugging
-#define ZLIB_DEBUG 1
+// Disable debug output for production builds
+#define ZLIB_DEBUG 0
 
 int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
