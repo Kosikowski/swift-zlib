@@ -169,12 +169,13 @@ final class FileOperationsTests: XCTestCase {
 
         // Verify decompressed data matches original
         let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
-        XCTAssertEqual(decompressedData, testData)
+        XCTAssertEqual(decompressedData, testData, "Decompressed data should match original data exactly")
 
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
-        try? FileManager.default.removeItem(atPath: compressedPath)
-        try? FileManager.default.removeItem(atPath: decompressedPath)
+        // Clean up with proper error handling for Windows
+        let fileManager = FileManager.default
+        try? fileManager.removeItem(atPath: sourcePath)
+        try? fileManager.removeItem(atPath: compressedPath)
+        try? fileManager.removeItem(atPath: decompressedPath)
     }
 
     func testFileProcessor() throws {
@@ -201,10 +202,11 @@ final class FileOperationsTests: XCTestCase {
         let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
         XCTAssertEqual(decompressedData, testData)
 
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
-        try? FileManager.default.removeItem(atPath: processedPath)
-        try? FileManager.default.removeItem(atPath: decompressedPath)
+        // Clean up with proper error handling for Windows
+        let fileManager = FileManager.default
+        try? fileManager.removeItem(atPath: sourcePath)
+        try? fileManager.removeItem(atPath: processedPath)
+        try? fileManager.removeItem(atPath: decompressedPath)
     }
 
     func testFileCompressionWithProgress() throws {
@@ -431,7 +433,13 @@ final class FileOperationsTests: XCTestCase {
     /// Get a temporary file path for testing
     private func tempFilePath(_ filename: String) -> String {
         let tempDir = FileManager.default.temporaryDirectory
-        return tempDir.appendingPathComponent(filename).path
+        let path = tempDir.appendingPathComponent(filename).path
+
+        // Ensure the file doesn't exist before returning the path
+        // This helps prevent permission issues on Windows
+        try? FileManager.default.removeItem(atPath: path)
+
+        return path
     }
 }
 
