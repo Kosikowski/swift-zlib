@@ -1,0 +1,279 @@
+name: Unified Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # Unified test job with platform and Swift version matrix
+  test:
+    name: Tests (${{ matrix.platform }}, Swift ${{ matrix.swift-version }})
+    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
+    strategy:
+      matrix:
+        platform: [macos, linux, windows]
+        swift-version: [5.9, 6.1.2]
+        exclude:
+          # Exclude Windows with Swift 5.9 if there are known issues
+          - platform: windows
+            swift-version: 5.9
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Swift Environment
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift-version }}
+
+      - name: Setup macOS Dependencies
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          sudo xcode-select -switch /Applications/Xcode_15.2.app
+          brew install zlib
+
+      - name: Setup Linux Dependencies
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Build package
+        shell: bash
+        run: swift build -c debug
+
+      - name: Run all tests
+        shell: bash
+        run: swift test -c debug --verbose
+
+  # CLI Tool Tests
+  test-cli:
+    name: CLI Tool Tests (${{ matrix.platform }}, Swift ${{ matrix.swift-version }})
+    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
+    strategy:
+      matrix:
+        platform: [macos, linux, windows]
+        swift-version: [5.9, 6.1.2]
+        exclude:
+          - platform: windows
+            swift-version: 5.9
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Swift Environment
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift-version }}
+
+      - name: Setup macOS Dependencies
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          sudo xcode-select -switch /Applications/Xcode_15.2.app
+          brew install zlib
+
+      - name: Setup Linux Dependencies
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Build CLI tool (Unix)
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: swift build -c release --product SwiftZlibCLI
+
+      - name: Build CLI tool (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: swift build -c release --product SwiftZlibCLI
+
+      - name: Test CLI functionality (Unix)
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          # Test help command
+          .build/release/SwiftZlibCLI --help
+
+          # Test info command
+          .build/release/SwiftZlibCLI info
+
+          # Create test file in a writable location
+          echo "test data for SwiftZlib CLI testing" > /tmp/test.txt
+
+          # Test compression
+          .build/release/SwiftZlibCLI compress /tmp/test.txt /tmp/test.txt.gz
+
+          # Test decompression
+          .build/release/SwiftZlibCLI decompress /tmp/test.txt.gz /tmp/test_decompressed.txt
+
+          # Verify round-trip
+          diff /tmp/test.txt /tmp/test_decompressed.txt
+
+          # Show file sizes for debugging
+          echo "File sizes:"
+          ls -la /tmp/test*.txt*
+
+          # Clean up
+          rm -f /tmp/test.txt /tmp/test.txt.gz /tmp/test_decompressed.txt
+
+      - name: Test CLI functionality (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          # Test help command
+          .build/release/SwiftZlibCLI --help
+
+          # Test info command
+          .build/release/SwiftZlibCLI info
+
+          # Create test file in a writable location
+          echo "test data for SwiftZlib CLI testing" > $env:TEMP\test.txt
+
+          # Test compression
+          .build/release/SwiftZlibCLI compress $env:TEMP\test.txt $env:TEMP\test.txt.gz
+
+          # Test decompression
+          .build/release/SwiftZlibCLI decompress $env:TEMP\test.txt.gz $env:TEMP\test_decompressed.txt
+
+          # Verify round-trip
+          Compare-Object (Get-Content $env:TEMP\test.txt) (Get-Content $env:TEMP\test_decompressed.txt)
+
+          # Show file sizes for debugging
+          echo "File sizes:"
+          Get-ChildItem $env:TEMP\test*.txt* | Select-Object Name, Length
+
+          # Clean up
+          Remove-Item -Force $env:TEMP\test.txt -ErrorAction SilentlyContinue
+          Remove-Item -Force $env:TEMP\test.txt.gz -ErrorAction SilentlyContinue
+          Remove-Item -Force $env:TEMP\test_decompressed.txt -ErrorAction SilentlyContinue
+
+  # Performance Tests (only latest Swift version)
+  performance:
+    name: Performance Tests (${{ matrix.platform }}, Swift ${{ matrix.swift-version }})
+    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
+    strategy:
+      matrix:
+        platform: [macos, linux, windows]
+        swift-version: [6.1.2] # Only test latest for performance
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Swift Environment
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift-version }}
+
+      - name: Setup macOS Dependencies
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          sudo xcode-select -switch /Applications/Xcode_15.2.app
+          brew install zlib
+
+      - name: Setup Linux Dependencies
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Run Performance Tests (Unix)
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          swift test --filter PerformanceTests --verbose
+          swift test --filter "testCompressionPerformance" --verbose
+          swift test --filter "testDecompressionPerformance" --verbose
+          swift test --filter "testMemoryEfficiency" --verbose
+
+      - name: Run Performance Tests (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          swift test --filter PerformanceTests --verbose
+          swift test --filter "testCompressionPerformance" --verbose
+          swift test --filter "testDecompressionPerformance" --verbose
+          swift test --filter "testMemoryEfficiency" --verbose
+
+  # Memory Leak Tests (Linux only)
+  memory-leak:
+    name: Memory Leak Tests (Linux, Swift ${{ matrix.swift-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        swift-version: [5.9, 6.1.2]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Swift Environment
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift-version }}
+
+      - name: Run Memory Leak Tests
+        run: swift test --filter MemoryLeakTests --verbose
+
+  # C zlib C API tests (Linux only)
+  test-c-zlib:
+    name: C zlib C API tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools and zlib
+        run: sudo apt-get update && sudo apt-get install -y build-essential zlib1g-dev
+
+      - name: Build and run C zlib tests
+        run: |
+          cd Tests/CZLibC
+          make clean all run
+
+  # Code Quality Checks
+  code-quality:
+    name: Code Quality Checks
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Run Code Quality Checks
+        uses: ./.github/actions/code-quality
+
+  # Security Checks
+  security:
+    name: Security Checks
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Check for known vulnerabilities
+        run: |
+          # This would integrate with security scanning tools
+          echo "Security checks would run here"
+          echo "Consider integrating with tools like:"
+          echo "- GitHub CodeQL"
+          echo "- Snyk"
+          echo "- OWASP ZAP"
+
+      - name: Check package dependencies
+        run: |
+          swift package show-dependencies
+          swift package resolve

@@ -1,0 +1,38 @@
+name: "Setup Swift Environment"
+description: "Install Swift and platform-specific dependencies"
+inputs:
+  swift-version:
+    description: "Swift version to install"
+    required: true
+  platform:
+    description: "Platform (macos, linux, windows)"
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Swift
+      uses: SwiftyLab/setup-swift@v1
+      with:
+        swift-version: ${{ inputs.swift-version }}
+
+    - name: Setup macOS Dependencies
+      if: inputs.platform == 'macos'
+      shell: bash
+      run: |
+        sudo xcode-select -switch /Applications/Xcode_15.2.app
+        brew install zlib
+
+    - name: Setup Linux Dependencies
+      if: inputs.platform == 'linux'
+      shell: bash
+      run: |
+        sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+    - name: Verify Swift Installation
+      shell: bash
+      run: |
+        swift --version
+        swift build --help
