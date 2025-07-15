@@ -342,7 +342,7 @@ public enum ZLib {
             var destLen = swift_compressBound(sourceLen)
 
             logMemoryUsage("Compression output buffer", bytes: Int(destLen))
-            var compressedData = Data(count: Int(destLen))
+            var compressedData = Data(repeating: 0, count: Int(destLen))
 
             let result = compressedData.withUnsafeMutableBytes { destPtr in
                 data.withUnsafeBytes { sourcePtr in
@@ -389,7 +389,7 @@ public enum ZLib {
             // Start with a reasonable guess and grow if needed
             var destLen = uLong(data.count * 4) // Initial guess
             logMemoryUsage("Decompression output buffer", bytes: Int(destLen))
-            var decompressedData = Data(count: Int(destLen))
+            var decompressedData = Data(repeating: 0, count: Int(destLen))
 
             let result = decompressedData.withUnsafeMutableBytes { destPtr in
                 data.withUnsafeBytes { sourcePtr in
@@ -414,7 +414,7 @@ public enum ZLib {
                 while retryResult == Z_BUF_ERROR, bufferMultiplier <= maxMultiplier {
                     destLen = uLong(data.count * bufferMultiplier)
                     logMemoryUsage("Decompression retry buffer (multiplier: \(bufferMultiplier))", bytes: Int(destLen))
-                    decompressedData = Data(count: Int(destLen))
+                    decompressedData = Data(repeating: 0, count: Int(destLen))
 
                     retryResult = decompressedData.withUnsafeMutableBytes { destPtr in
                         data.withUnsafeBytes { sourcePtr in
@@ -460,7 +460,7 @@ public enum ZLib {
 
         var destLen = uLong(maxOutputSize)
         var sourceLen = uLong(data.count)
-        var decompressedData = Data(count: maxOutputSize)
+        var decompressedData = Data(repeating: 0, count: maxOutputSize)
 
         let result = decompressedData.withUnsafeMutableBytes { destPtr in
             data.withUnsafeBytes { sourcePtr in
@@ -481,7 +481,7 @@ public enum ZLib {
 
             while retryResult == Z_BUF_ERROR, bufferMultiplier <= 16 {
                 destLen = uLong(maxOutputSize * bufferMultiplier)
-                decompressedData = Data(count: Int(destLen))
+                decompressedData = Data(repeating: 0, count: Int(destLen))
 
                 retryResult = decompressedData.withUnsafeMutableBytes { destPtr in
                     data.withUnsafeBytes { sourcePtr in

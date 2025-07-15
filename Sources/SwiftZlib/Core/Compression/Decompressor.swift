@@ -276,7 +276,7 @@ final class Decompressor {
         logStreamState(stream, operation: "Decompression start")
 
         var output = Data()
-        var outputBuffer = Data(count: 1024) // 1KB chunks
+        var outputBuffer = Data(repeating: 0, count: 1024) // 1KB chunks
         var dictWasSet = false
 
         // Set input data
