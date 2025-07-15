@@ -63,32 +63,29 @@ final class DataExtensionsTests: XCTestCase {
         }
     }
 
-    func testConcurrentDataExtensions() throws {
+    func testConcurrentDataExtensions() async throws {
         let testData = "Concurrent data extensions test data".data(using: .utf8)!
         let iterations = 100
-        let queue = DispatchQueue(label: "test.concurrent.data.extensions", attributes: .concurrent)
-        let group = DispatchGroup()
-        var results: [Data] = []
-        let lock = NSLock()
+        let results = ResultsBox<Data>()
 
-        for _ in 0 ..< iterations {
-            queue.async(group: group) {
-                do {
-                    let compressed = try testData.compressed()
-                    lock.lock()
-                    results.append(compressed)
-                    lock.unlock()
-                } catch {
-                    XCTFail("Concurrent data extension compression failed: \(error)")
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0 ..< iterations {
+                group.addTask {
+                    do {
+                        let compressed = try testData.compressed()
+                        await results.append(compressed)
+                    } catch {
+                        XCTFail("Concurrent data extension compression failed: \(error)")
+                    }
                 }
             }
         }
 
-        group.wait()
-        XCTAssertEqual(results.count, iterations)
+        let allResults = await results.getAll()
+        XCTAssertEqual(allResults.count, iterations)
 
         // Verify all compressed data can be decompressed
-        for compressed in results {
+        for compressed in allResults {
             let decompressed = try compressed.decompressed()
             XCTAssertEqual(decompressed, testData)
         }

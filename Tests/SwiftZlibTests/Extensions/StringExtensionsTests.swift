@@ -65,32 +65,29 @@ final class StringExtensionsTests: XCTestCase {
         }
     }
 
-    func testConcurrentStringOperations() throws {
+    func testConcurrentStringOperations() async throws {
         let testString = "Concurrent string operations test string"
         let iterations = 100
-        let queue = DispatchQueue(label: "test.concurrent.string", attributes: .concurrent)
-        let group = DispatchGroup()
-        var results: [Data] = []
-        let lock = NSLock()
+        let results = ResultsBox<Data>()
 
-        for _ in 0 ..< iterations {
-            queue.async(group: group) {
-                do {
-                    let compressed = try testString.compressed()
-                    lock.lock()
-                    results.append(compressed)
-                    lock.unlock()
-                } catch {
-                    XCTFail("Concurrent string compression failed: \(error)")
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0 ..< iterations {
+                group.addTask {
+                    do {
+                        let compressed = try testString.compressed()
+                        await results.append(compressed)
+                    } catch {
+                        XCTFail("Concurrent string compression failed: \(error)")
+                    }
                 }
             }
         }
 
-        group.wait()
-        XCTAssertEqual(results.count, iterations)
+        let allResults = await results.getAll()
+        XCTAssertEqual(allResults.count, iterations)
 
         // Verify all compressed data can be decompressed to original string
-        for compressed in results {
+        for compressed in allResults {
             let decompressedString = try String.decompressed(from: compressed)
             XCTAssertEqual(decompressedString, testString)
         }
