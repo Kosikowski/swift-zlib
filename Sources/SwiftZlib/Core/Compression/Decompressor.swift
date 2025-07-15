@@ -220,7 +220,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        return swift_inflateCodesUsed(&stream)
+        return UInt(swift_inflateCodesUsed(&stream))
     }
 
     /// Get stream information
@@ -281,7 +281,7 @@ final class Decompressor {
 
         // Set input data
         try input.withUnsafeBytes { inputPtr in
-            stream.next_in = UnsafeMutablePointer(mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress!)
+            stream.next_in = inputPtr.bindMemory(to: Bytef.self).baseAddress.map { UnsafeMutablePointer(mutating: $0) }
             stream.avail_in = uInt(input.count)
 
             // Process all input data

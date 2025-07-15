@@ -313,10 +313,10 @@ public final class Compressor {
         var outputBuffer = [Bytef](repeating: 0, count: outputBufferSize)
 
         // Copy input data to ensure it remains valid throughout compression
-        var inputBuffer = [Bytef](input)
+        let inputBuffer = [Bytef](input)
 
         // Set input data
-        stream.next_in = inputBuffer.withUnsafeMutableBufferPointer { $0.baseAddress }
+        stream.next_in = inputBuffer.withUnsafeBufferPointer { ptr in ptr.baseAddress.map { UnsafeMutablePointer(mutating: $0) } }
         stream.avail_in = uInt(input.count)
 
         // Process all input data

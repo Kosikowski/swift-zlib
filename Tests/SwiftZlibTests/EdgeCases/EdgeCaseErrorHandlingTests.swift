@@ -59,7 +59,7 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
 
         // Test FileChunkedCompressor
         let compressor = FileChunkedCompressor()
-        XCTAssertThrowsError(try compressor.compressFile(from: nonExistentPath, to: "/tmp/test.gz")) { error in
+        XCTAssertThrowsError(try compressor.compressFile(from: nonExistentPath, to: tempFilePath("test.gz"))) { error in
             // Should be a ZLibError.fileError, but the underlying error should NOT be another ZLibError
             if case let .fileError(underlyingError) = error as? ZLibError {
                 // The underlying error should be a Foundation error (like NSError), not another ZLibError
@@ -71,7 +71,7 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
 
         // Test FileChunkedDecompressor
         let decompressor = FileChunkedDecompressor()
-        XCTAssertThrowsError(try decompressor.decompressFile(from: nonExistentPath, to: "/tmp/test.txt")) { error in
+        XCTAssertThrowsError(try decompressor.decompressFile(from: nonExistentPath, to: tempFilePath("test.txt"))) { error in
             // Should be a ZLibError.fileError, but the underlying error should NOT be another ZLibError
             if case let .fileError(underlyingError) = error as? ZLibError {
                 // The underlying error should be a Foundation error (like NSError), not another ZLibError
@@ -88,7 +88,7 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
 
         // Test compressFileProgressStream
         let compressor = FileChunkedCompressor()
-        let compressionStream = compressor.compressFileProgressStream(from: nonExistentPath, to: "/tmp/test.gz")
+        let compressionStream = compressor.compressFileProgressStream(from: nonExistentPath, to: tempFilePath("test.gz"))
 
         do {
             for try await _ in compressionStream {
@@ -106,7 +106,7 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
 
         // Test decompressFileProgressStream
         let decompressor = FileChunkedDecompressor()
-        let decompressionStream = decompressor.decompressFileProgressStream(from: nonExistentPath, to: "/tmp/test.txt")
+        let decompressionStream = decompressor.decompressFileProgressStream(from: nonExistentPath, to: tempFilePath("test.txt"))
 
         do {
             for try await _ in decompressionStream {
@@ -153,6 +153,12 @@ final class EdgeCaseErrorHandlingTests: XCTestCase {
         let decompressedData = try ZLib.decompress(compressedData)
 
         XCTAssertEqual(decompressedData, binaryData)
+    }
+
+    /// Get a temporary file path for testing
+    private func tempFilePath(_ filename: String) -> String {
+        let tempDir = FileManager.default.temporaryDirectory
+        return tempDir.appendingPathComponent(filename).path
     }
 
     /// Helper function to check that ZLibErrors are not double-wrapped

@@ -81,7 +81,7 @@ public enum ZLib {
 
     /// Get ZLib compile flags
     public static var compileFlags: UInt {
-        swift_zlibCompileFlags()
+        UInt(swift_zlibCompileFlags())
     }
 
     /// Get detailed ZLib compile flags information
@@ -571,7 +571,7 @@ public enum ZLib {
     ///   - len2: Length of the second data block
     /// - Returns: Combined Adler-32 checksum
     public static func adler32Combine(_ adler1: uLong, _ adler2: uLong, len2: Int) -> uLong {
-        swift_adler32_combine(adler1, adler2, len2)
+        swift_adler32_combine(adler1, adler2, CLong(len2))
     }
 
     /// Combine two CRC-32 checksums
@@ -581,7 +581,7 @@ public enum ZLib {
     ///   - len2: Length of the second data block
     /// - Returns: Combined CRC-32 checksum
     public static func crc32Combine(_ crc1: uLong, _ crc2: uLong, len2: Int) -> uLong {
-        swift_crc32_combine(crc1, crc2, len2)
+        swift_crc32_combine(crc1, crc2, CLong(len2))
     }
 
     /// Compress data with advanced options

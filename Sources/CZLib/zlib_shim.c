@@ -1,14 +1,23 @@
 #include "zlib_shim.h"
-#include <zlib.h>
+#ifdef _WIN32
+// On Windows, avoid system headers that cause cyclic dependencies
+// The zlib_simple.h provides all necessary types and constants
+#include <stdlib.h>
+#else
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#endif
 
 // Force ZLIB_DEBUG to always be 0 to prevent debug output in tests
 #define ZLIB_DEBUG 0
 
 #if ZLIB_DEBUG
+#ifdef _WIN32
+// On Windows, avoid system headers that cause cyclic dependencies
+#else
 #include <stdio.h>
+#endif
 #endif
 
 int swift_compress(Bytef *dest, uLongf *destLen,
@@ -263,7 +272,7 @@ static unsigned int debug_in_wrapper(void* desc, unsigned char** buf) {
     swift_inflateback_context_t* context = (swift_inflateback_context_t*)desc;
     unsigned int result = 0;
     if (context && context->swift_in_func) {
-        result = context->swift_in_func(context->swift_context, buf, NULL);
+        result = (unsigned int)context->swift_in_func(context->swift_context, buf, NULL);
 #if ZLIB_DEBUG
         if (result == 0) {
             printf("[C shim] input callback returned 0 (no data)\n");

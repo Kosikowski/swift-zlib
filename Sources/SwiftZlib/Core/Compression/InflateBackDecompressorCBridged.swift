@@ -80,7 +80,7 @@ public final class InflateBackDecompressorCBridged {
             ctx.inputBuffer = data // Hold reference so pointer stays valid
             availPtr?.pointee = Int32(data.count)
             if let bufPtr {
-                bufPtr.pointee = UnsafeMutablePointer<UInt8>(mutating: data.withUnsafeBytes { $0.baseAddress!.assumingMemoryBound(to: UInt8.self) })
+                bufPtr.pointee = UnsafeMutablePointer<UInt8>(mutating: data.withUnsafeBytes { $0.bindMemory(to: UInt8.self).baseAddress! })
             }
             return Int32(data.count)
         }

@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:swift-zlib}",
+            "name": "Debug SwiftZlibCLI",
+            "program": "${workspaceFolder:swift-zlib}/.build/debug/SwiftZlibCLI",
+            "preLaunchTask": "swift: Build Debug SwiftZlibCLI"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:swift-zlib}",
+            "name": "Release SwiftZlibCLI",
+            "program": "${workspaceFolder:swift-zlib}/.build/release/SwiftZlibCLI",
+            "preLaunchTask": "swift: Build Release SwiftZlibCLI"
+        }
+    ]
+}

@@ -127,8 +127,8 @@ final class FileOperationsTests: XCTestCase {
 
     func testFileCompression() throws {
         let testData = "Hello, World! This is a test file for compression.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_source.txt"
-        let destPath = "/tmp/test_compressed.gz"
+        let sourcePath = tempFilePath("test_source.txt")
+        let destPath = tempFilePath("test_compressed.gz")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -152,9 +152,9 @@ final class FileOperationsTests: XCTestCase {
 
     func testFileDecompression() throws {
         let testData = "Hello, World! This is a test file for decompression.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_source.txt"
-        let compressedPath = "/tmp/test_compressed.gz"
-        let decompressedPath = "/tmp/test_decompressed.txt"
+        let sourcePath = tempFilePath("test_source.txt")
+        let compressedPath = tempFilePath("test_compressed.gz")
+        let decompressedPath = tempFilePath("test_decompressed.txt")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -179,9 +179,9 @@ final class FileOperationsTests: XCTestCase {
 
     func testFileProcessor() throws {
         let testData = "Hello, World! This is a test file for processing.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_source.txt"
-        let processedPath = "/tmp/test_processed.gz"
-        let decompressedPath = "/tmp/test_decompressed.txt"
+        let sourcePath = tempFilePath("test_source.txt")
+        let processedPath = tempFilePath("test_processed.gz")
+        let decompressedPath = tempFilePath("test_decompressed.txt")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -209,8 +209,8 @@ final class FileOperationsTests: XCTestCase {
 
     func testFileCompressionWithProgress() throws {
         let testData = String(repeating: "Hello, World! ", count: 1000).data(using: .utf8)!
-        let sourcePath = "/tmp/test_source_large.txt"
-        let destPath = "/tmp/test_compressed_large.gz"
+        let sourcePath = tempFilePath("test_source_large.txt")
+        let destPath = tempFilePath("test_compressed_large.gz")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -268,9 +268,9 @@ final class FileOperationsTests: XCTestCase {
 
     func testConvenienceFileMethods() throws {
         let testData = "Hello, World! This is a test for convenience methods.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_convenience.txt"
-        let compressedPath = "/tmp/test_convenience.gz"
-        let decompressedPath = "/tmp/test_convenience_decompressed.txt"
+        let sourcePath = tempFilePath("test_convenience.txt")
+        let compressedPath = tempFilePath("test_convenience.gz")
+        let decompressedPath = tempFilePath("test_convenience_decompressed.txt")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -293,7 +293,7 @@ final class FileOperationsTests: XCTestCase {
 
     func testFileCompressionToMemory() throws {
         let testData = "Hello, World! This is a test for memory compression.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_memory.txt"
+        let sourcePath = tempFilePath("test_memory.txt")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -313,8 +313,8 @@ final class FileOperationsTests: XCTestCase {
 
     func testFileDecompressionToMemory() throws {
         let testData = "Hello, World! This is a test for memory decompression.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_memory.txt"
-        let compressedPath = "/tmp/test_memory.gz"
+        let sourcePath = tempFilePath("test_memory.txt")
+        let compressedPath = tempFilePath("test_memory.gz")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -358,8 +358,8 @@ final class FileOperationsTests: XCTestCase {
 
     func testFileChunkedCompression() throws {
         let testData = "Hello, World! This is a test for true chunked streaming compression.".data(using: .utf8)!
-        let sourcePath = "/tmp/test_chunked_source.txt"
-        let destPath = "/tmp/test_chunked_compressed.gz"
+        let sourcePath = tempFilePath("test_chunked_source.txt")
+        let destPath = tempFilePath("test_chunked_compressed.gz")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -374,7 +374,7 @@ final class FileOperationsTests: XCTestCase {
 
         // Decompress and verify round-trip
         let decompressor = FileChunkedDecompressor(bufferSize: 1024)
-        let decompressedPath = "/tmp/test_chunked_decompressed.txt"
+        let decompressedPath = tempFilePath("test_chunked_decompressed.txt")
         try decompressor.decompressFile(from: destPath, to: decompressedPath)
 
         let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
@@ -395,7 +395,7 @@ final class FileOperationsTests: XCTestCase {
 
     func testFileChunkedCompressionWithDifferentBufferSizes() throws {
         let testData = String(repeating: "Hello, World! ", count: 1000).data(using: .utf8)!
-        let sourcePath = "/tmp/test_buffer_source.txt"
+        let sourcePath = tempFilePath("test_buffer_source.txt")
 
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
@@ -405,7 +405,7 @@ final class FileOperationsTests: XCTestCase {
 
         for bufferSize in bufferSizes {
             let compressor = FileChunkedCompressor(bufferSize: bufferSize)
-            let specificDestPath = "/tmp/test_buffer_\(bufferSize).gz"
+            let specificDestPath = tempFilePath("test_buffer_\(bufferSize).gz")
             try compressor.compressFile(from: sourcePath, to: specificDestPath)
 
             let compressedData = try Data(contentsOf: URL(fileURLWithPath: specificDestPath))
@@ -413,7 +413,7 @@ final class FileOperationsTests: XCTestCase {
 
             // Decompress and verify
             let decompressor = FileChunkedDecompressor(bufferSize: bufferSize)
-            let decompressedPath = "/tmp/test_buffer_\(bufferSize)_decompressed.txt"
+            let decompressedPath = tempFilePath("test_buffer_\(bufferSize)_decompressed.txt")
             try decompressor.decompressFile(from: specificDestPath, to: decompressedPath)
 
             let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
@@ -427,15 +427,21 @@ final class FileOperationsTests: XCTestCase {
         // Clean up
         try? FileManager.default.removeItem(atPath: sourcePath)
     }
+
+    /// Get a temporary file path for testing
+    private func tempFilePath(_ filename: String) -> String {
+        let tempDir = FileManager.default.temporaryDirectory
+        return tempDir.appendingPathComponent(filename).path
+    }
 }
 
 #if canImport(Combine)
     extension FileOperationsTests {
         func testCombineFileCompressionDecompression() throws {
             let testData = "Hello, Combine! This is a test file for Combine compression.".data(using: .utf8)!
-            let sourcePath = "/tmp/test_combine_source.txt"
-            let compressedPath = "/tmp/test_combine_compressed.gz"
-            let decompressedPath = "/tmp/test_combine_decompressed.txt"
+            let sourcePath = tempFilePath("test_combine_source.txt")
+            let compressedPath = tempFilePath("test_combine_compressed.gz")
+            let decompressedPath = tempFilePath("test_combine_decompressed.txt")
             try testData.write(to: URL(fileURLWithPath: sourcePath))
 
             let compressExpectation = expectation(description: "Combine file compression completes")
@@ -482,8 +488,8 @@ final class FileOperationsTests: XCTestCase {
 
         func testCombineFileCompressionWithProgress() throws {
             let testData = String(repeating: "Hello, Combine Progress! ", count: 1000).data(using: .utf8)!
-            let sourcePath = "/tmp/test_combine_progress_source.txt"
-            let compressedPath = "/tmp/test_combine_progress_compressed.gz"
+            let sourcePath = tempFilePath("test_combine_progress_source.txt")
+            let compressedPath = tempFilePath("test_combine_progress_compressed.gz")
             try testData.write(to: URL(fileURLWithPath: sourcePath))
 
             let progressExpectation = expectation(description: "Combine file compression with progress completes")
@@ -518,9 +524,9 @@ final class FileOperationsTests: XCTestCase {
 
         func testCombineFileDecompressionWithProgress() throws {
             let testData = String(repeating: "Hello, Combine Decompression Progress! ", count: 1000).data(using: .utf8)!
-            let sourcePath = "/tmp/test_combine_decomp_progress_source.txt"
-            let compressedPath = "/tmp/test_combine_decomp_progress_compressed.gz"
-            let decompressedPath = "/tmp/test_combine_decomp_progress_decompressed.txt"
+            let sourcePath = tempFilePath("test_combine_decomp_progress_source.txt")
+            let compressedPath = tempFilePath("test_combine_decomp_progress_compressed.gz")
+            let decompressedPath = tempFilePath("test_combine_decomp_progress_decompressed.txt")
             try testData.write(to: URL(fileURLWithPath: sourcePath))
 
             // Compress file first
@@ -567,8 +573,8 @@ final class FileOperationsTests: XCTestCase {
         }
 
         func testCombineFileCompressionError() throws {
-            let nonExistentPath = "/tmp/does_not_exist.txt"
-            let destPath = "/tmp/should_not_be_created.gz"
+            let nonExistentPath = tempFilePath("does_not_exist.txt")
+            let destPath = tempFilePath("should_not_be_created.gz")
             let expectation = expectation(description: "Combine compression error")
             var cancellables = Set<AnyCancellable>()
             ZLib.compressFilePublisher(from: nonExistentPath, to: destPath)
@@ -586,8 +592,8 @@ final class FileOperationsTests: XCTestCase {
         }
 
         func testCombineFileDecompressionError() throws {
-            let nonExistentPath = "/tmp/does_not_exist.gz"
-            let destPath = "/tmp/should_not_be_created.txt"
+            let nonExistentPath = tempFilePath("does_not_exist.gz")
+            let destPath = tempFilePath("should_not_be_created.txt")
             let expectation = expectation(description: "Combine decompression error")
             var cancellables = Set<AnyCancellable>()
             ZLib.decompressFilePublisher(from: nonExistentPath, to: destPath)
