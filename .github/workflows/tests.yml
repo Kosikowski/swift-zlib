@@ -9,7 +9,7 @@ on:
 jobs:
   # Test on macOS with latest Xcode (newest runner)
   test-macos-latest:
-    name: macOS (Xcode 15.2)
+    name: macOS (Xcode 15.2, Swift 6.1)
     runs-on: macos-14
 
     steps:
@@ -18,6 +18,11 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Install Swift 6.1.2
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.1.2"
 
       - name: Show Xcode version
         run: xcodebuild -version
@@ -115,7 +120,7 @@ jobs:
 
   # Build and test CLI tool
   test-cli:
-    name: CLI Tool Tests
+    name: CLI Tool Tests (Swift 6.1)
     runs-on: macos-14
 
     steps:
@@ -124,6 +129,11 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Install Swift 6.1
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.1"
 
       - name: Build CLI tool
         run: swift build -c release --product SwiftZlibCLI
@@ -157,7 +167,7 @@ jobs:
 
   # Performance benchmarks
   benchmark:
-    name: Performance Benchmarks
+    name: Performance Benchmarks (Swift 6.1)
     runs-on: macos-14
 
     steps:
@@ -166,6 +176,11 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Install Swift 6.1
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.1"
 
       - name: Run performance tests
         run: |
@@ -176,7 +191,7 @@ jobs:
 
   # Code quality checks
   code-quality:
-    name: Code Quality
+    name: Code Quality (Swift 6.1)
     runs-on: macos-14
 
     steps:
@@ -185,6 +200,11 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Install Swift 6.1
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.1"
 
       - name: Install Python
         uses: actions/setup-python@v5
