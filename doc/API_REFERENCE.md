@@ -1,765 +1,872 @@
 # API Reference
 
-Complete reference for all SwiftZlib public APIs, types, and methods.
+This document provides a comprehensive reference for all public APIs in SwiftZlib.
 
-## Core Types
+## Core APIs
 
-### ZLibError
+### ZLib
 
-```swift
-enum ZLibError: Error, LocalizedError {
-    case invalidData
-    case insufficientMemory
-    case streamError(ZLibStatus)
-    case fileError(String)
-    case unsupportedOperation(String)
-}
-```
-
-**Description**: Main error type for zlib-related operations.
-
-**Cases**:
-
-- `invalidData`: Input data is corrupted or not compressed
-- `insufficientMemory`: System memory is insufficient for operation
-- `streamError(ZLibStatus)`: Internal zlib stream error with status code
-- `fileError(String)`: File operation error with description
-- `unsupportedOperation(String)`: Operation not supported with reason
-
-### ZLibStatus
+The main entry point for compression and decompression operations.
 
 ```swift
-enum ZLibStatus: Int32 {
-    case ok = 0
-    case streamEnd = 1
-    case needDict = 2
-    case errNo = -1
-    case streamError = -2
-    case dataError = -3
-    case memoryError = -4
-    case bufferError = -5
-    case incompatibleVersion = -6
-}
+class ZLib
 ```
 
-**Description**: Detailed status codes from the underlying zlib library.
+#### Static Methods
 
-### CompressionLevel
+##### Compression
 
 ```swift
-enum CompressionLevel: Int32 {
-    case noCompression = 0
-    case bestSpeed = 1
-    case best = 9
-    case default = 6
-}
+static func compress(_ data: Data, level: CompressionLevel = .default) throws -> Data
+static func compress(_ data: Data, level: CompressionLevel, strategy: CompressionStrategy) throws -> Data
+static func compress(_ data: Data, level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits) throws -> Data
 ```
 
-**Description**: Compression level options affecting speed vs. ratio trade-off.
+Compress data using zlib compression.
 
-### CompressionStrategy
+**Parameters:**
+
+- `data`: The data to compress
+- `level`: Compression level (0-9, default is 6)
+- `strategy`: Compression strategy (default, filtered, huffman, rle, fixed)
+- `windowBits`: Window size and format (default, gzip, raw, etc.)
+
+**Returns:** Compressed data
+
+**Throws:** `ZLibError` if compression fails
+
+##### Decompression
 
 ```swift
-enum CompressionStrategy: Int32 {
-    case `default` = 0
-    case filtered = 1
-    case huffman = 2
-    case rle = 3
-    case fixed = 4
-}
+static func decompress(_ data: Data) throws -> Data
+static func decompress(_ data: Data, windowBits: WindowBits) throws -> Data
 ```
 
-**Description**: Compression strategy for different data types.
+Decompress data using zlib decompression.
 
-### MemoryLevel
+**Parameters:**
+
+- `data`: The compressed data to decompress
+- `windowBits`: Window size and format (default, gzip, raw, etc.)
+
+**Returns:** Decompressed data
+
+**Throws:** `ZLibError` if decompression fails
+
+#### Streaming APIs
+
+##### Compressor
 
 ```swift
-enum MemoryLevel: Int32 {
-    case min = 1
-    case `default` = 8
-    case max = 9
-}
+static func createCompressor(level: CompressionLevel = .default) -> Compressor
+static func createCompressor(level: CompressionLevel, strategy: CompressionStrategy) -> Compressor
+static func createCompressor(level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits) -> Compressor
 ```
 
-**Description**: Memory usage level for compression operations.
+Create a streaming compressor for processing large data in chunks.
+
+**Parameters:**
+
+- `level`: Compression level (0-9, default is 6)
+- `strategy`: Compression strategy
+- `windowBits`: Window size and format
+
+**Returns:** A `Compressor` instance
+
+##### Decompressor
+
+```swift
+static func createDecompressor() -> Decompressor
+static func createDecompressor(windowBits: WindowBits) -> Decompressor
+```
+
+Create a streaming decompressor for processing large compressed data in chunks.
+
+**Parameters:**
+
+- `windowBits`: Window size and format
+
+**Returns:** A `Decompressor` instance
+
+#### Fluent Builder APIs
+
+##### ZLibStreamBuilder
+
+```swift
+static func stream() -> ZLibStreamBuilder
+```
+
+Create a fluent builder for configuring and creating zlib streams.
+
+**Returns:** A `ZLibStreamBuilder` instance
+
+**Example:**
+
+```swift
+let stream = ZLib.stream()
+    .compression(level: .best)
+    .strategy(.huffman)
+    .windowBits(.gzip)
+    .build()
+```
+
+##### AsyncZLibStreamBuilder
+
+```swift
+static func asyncStream() -> AsyncZLibStreamBuilder
+```
+
+Create a fluent builder for configuring and creating async zlib streams.
+
+**Returns:** An `AsyncZLibStreamBuilder` instance
+
+**Example:**
+
+```swift
+let asyncStream = ZLib.asyncStream()
+    .compression(level: .best)
+    .strategy(.huffman)
+    .windowBits(.gzip)
+    .build()
+```
+
+### Compression
+
+#### CompressionLevel
+
+```swift
+enum CompressionLevel: Int32, CaseIterable
+```
+
+Compression levels from 0 (no compression) to 9 (best compression).
+
+**Cases:**
+
+- `noCompression = 0`: No compression
+- `bestSpeed = 1`: Best speed
+- `bestCompression = 9`: Best compression
+- `default = 6`: Default compression level
+
+#### CompressionMethod
+
+```swift
+enum CompressionMethod: Int32
+```
+
+Compression methods supported by zlib.
+
+**Cases:**
+
+- `deflate = 8`: Deflate compression method
+
+#### CompressionStrategy
+
+```swift
+enum CompressionStrategy: Int32
+```
+
+Compression strategies for different data types.
+
+**Cases:**
+
+- `default`: Default strategy
+- `filtered`: Filtered strategy for data with small runs
+- `huffman`: Huffman-only strategy
+- `rle`: Run-length encoding strategy
+- `fixed`: Fixed strategy
+
+#### CompressionPhase
+
+```swift
+enum CompressionPhase
+```
+
+Phases of the compression process.
+
+**Cases:**
+
+- `start`: Initialization phase
+- `compress`: Compression phase
+- `finish`: Finalization phase
+
+### WindowBits
+
+```swift
+enum WindowBits: Int32
+```
+
+Window size and format options for compression/decompression.
+
+**Cases:**
+
+- `default = 15`: Default window size (32KB)
+- `gzip = 31`: Gzip format with 32KB window
+- `raw = -15`: Raw deflate format
+- `custom(Int32)`: Custom window size (8-15 for window size, 16 for gzip, 32 for zlib)
 
 ### FlushMode
 
 ```swift
-enum FlushMode: Int32 {
-    case none = 0
-    case partial = 1
-    case sync = 2
-    case full = 3
-    case finish = 4
-    case block = 5
-}
+enum FlushMode: Int32
 ```
 
-**Description**: Flush modes for streaming operations.
+Flush modes for streaming operations.
+
+**Cases:**
+
+- `none = 0`: No flushing
+- `partial = 1`: Partial flush
+- `sync = 2`: Synchronous flush
+- `full = 3`: Full flush
+- `finish = 4`: Finish compression
+- `block = 5`: Block flush
+
+### MemoryLevel
+
+```swift
+enum MemoryLevel: Int32
+```
+
+Memory usage levels for compression.
+
+**Cases:**
+
+- `minimum = 1`: Minimum memory usage
+- `default = 8`: Default memory usage
+- `maximum = 9`: Maximum memory usage
+
+## Streaming APIs
+
+### Compressor
+
+```swift
+class Compressor
+```
+
+A streaming compressor for processing large data in chunks.
+
+#### Initialization
+
+```swift
+init(level: CompressionLevel = .default)
+init(level: CompressionLevel, strategy: CompressionStrategy)
+init(level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits)
+```
+
+#### Methods
+
+```swift
+func compress(_ data: Data, flush: FlushMode = .none) throws -> Data
+func finish() throws -> Data
+func reset()
+```
+
+**Parameters:**
+
+- `data`: Data to compress
+- `flush`: Flush mode for this operation
+
+**Returns:** Compressed data
+
+**Throws:** `ZLibError` if compression fails
+
+### Decompressor
+
+```swift
+class Decompressor
+```
+
+A streaming decompressor for processing large compressed data in chunks.
+
+#### Initialization
+
+```swift
+init()
+init(windowBits: WindowBits)
+```
+
+#### Methods
+
+```swift
+func decompress(_ data: Data, flush: FlushMode = .none) throws -> Data
+func reset()
+```
+
+**Parameters:**
+
+- `data`: Compressed data to decompress
+- `flush`: Flush mode for this operation
+
+**Returns:** Decompressed data
+
+**Throws:** `ZLibError` if decompression fails
+
+### InflateBackDecompressor
+
+```swift
+class InflateBackDecompressor
+```
+
+A specialized decompressor for processing data in reverse order.
+
+#### Initialization
+
+```swift
+init(windowBits: WindowBits = .default)
+```
+
+#### Methods
+
+```swift
+func decompress(_ data: Data, flush: FlushMode = .none) throws -> Data
+func reset()
+```
+
+### EnhancedInflateBackDecompressor
+
+```swift
+class EnhancedInflateBackDecompressor
+```
+
+An enhanced version of the inflate back decompressor with additional features.
+
+#### Initialization
+
+```swift
+init(windowBits: WindowBits = .default)
+```
+
+#### Methods
+
+```swift
+func decompress(_ data: Data, flush: FlushMode = .none) throws -> Data
+func reset()
+```
+
+## File Operations
+
+### FileCompressor
+
+```swift
+class FileCompressor
+```
+
+Compressor for processing files directly.
+
+#### Initialization
+
+```swift
+init(level: CompressionLevel = .default)
+init(level: CompressionLevel, strategy: CompressionStrategy)
+init(level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits)
+```
+
+#### Methods
+
+```swift
+func compressFile(at path: String, to outputPath: String) throws
+func compressFile(at path: String, to outputPath: String, progress: ((Int, Int) -> Void)?) throws
+```
+
+**Parameters:**
+
+- `path`: Path to input file
+- `outputPath`: Path to output file
+- `progress`: Optional progress callback
+
+**Throws:** `ZLibError` if compression fails
+
+### FileDecompressor
+
+```swift
+class FileDecompressor
+```
+
+Decompressor for processing files directly.
+
+#### Initialization
+
+```swift
+init(windowBits: WindowBits = .default)
+```
+
+#### Methods
+
+```swift
+func decompressFile(at path: String, to outputPath: String) throws
+func decompressFile(at path: String, to outputPath: String, progress: ((Int, Int) -> Void)?) throws
+```
+
+**Parameters:**
+
+- `path`: Path to input file
+- `outputPath`: Path to output file
+- `progress`: Optional progress callback
+
+**Throws:** `ZLibError` if decompression fails
+
+### Chunked File Operations
+
+#### FileChunkedCompressor
+
+```swift
+class FileChunkedCompressor
+```
+
+Compressor for processing large files in chunks with memory-efficient streaming.
+
+#### Initialization
+
+```swift
+init(level: CompressionLevel = .default, chunkSize: Int = 64 * 1024)
+init(level: CompressionLevel, strategy: CompressionStrategy, chunkSize: Int = 64 * 1024)
+init(level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits, chunkSize: Int = 64 * 1024)
+```
+
+#### Methods
+
+```swift
+func compressFile(at path: String, to outputPath: String) throws
+func compressFile(at path: String, to outputPath: String, progress: ((Int, Int) -> Void)?) throws
+```
+
+#### FileChunkedDecompressor
+
+```swift
+class FileChunkedDecompressor
+```
+
+Decompressor for processing large compressed files in chunks with memory-efficient streaming.
+
+#### Initialization
+
+```swift
+init(windowBits: WindowBits = .default, chunkSize: Int = 64 * 1024)
+```
+
+#### Methods
+
+```swift
+func decompressFile(at path: String, to outputPath: String) throws
+func decompressFile(at path: String, to outputPath: String, progress: ((Int, Int) -> Void)?) throws
+```
+
+### GzipFile
+
+```swift
+class GzipFile
+```
+
+Specialized class for working with gzip files.
+
+#### Initialization
+
+```swift
+init(path: String, mode: String)
+```
+
+#### Methods
+
+```swift
+func write(_ data: Data) throws
+func read(_ length: Int) throws -> Data
+func close() throws
+```
+
+## Async APIs
+
+### AsyncCompressor
+
+```swift
+class AsyncCompressor
+```
+
+Asynchronous compressor for processing data in background.
+
+#### Initialization
+
+```swift
+init(level: CompressionLevel = .default)
+init(level: CompressionLevel, strategy: CompressionStrategy)
+init(level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits)
+```
+
+#### Methods
+
+```swift
+func compress(_ data: Data, flush: FlushMode = .none) async throws -> Data
+func finish() async throws -> Data
+func reset()
+```
+
+### AsyncDecompressor
+
+```swift
+class AsyncDecompressor
+```
+
+Asynchronous decompressor for processing data in background.
+
+#### Initialization
+
+```swift
+init(windowBits: WindowBits = .default)
+```
+
+#### Methods
+
+```swift
+func decompress(_ data: Data, flush: FlushMode = .none) async throws -> Data
+func reset()
+```
+
+### AsyncZLibStream
+
+```swift
+class AsyncZLibStream
+```
+
+Asynchronous stream for processing data with progress reporting.
+
+#### Initialization
+
+```swift
+init(compression: Compression, windowBits: WindowBits = .default)
+```
+
+#### Methods
+
+```swift
+func process(_ data: Data) async throws -> Data
+func finish() async throws -> Data
+func reset()
+```
+
+## Builder Pattern APIs
+
+### ZLibStreamBuilder
+
+```swift
+class ZLibStreamBuilder
+```
+
+Fluent builder for configuring and creating zlib streams.
+
+#### Configuration Methods
+
+```swift
+func compression(level: CompressionLevel) -> ZLibStreamBuilder
+func compression(level: CompressionLevel, strategy: CompressionStrategy) -> ZLibStreamBuilder
+func decompression() -> ZLibStreamBuilder
+func windowBits(_ windowBits: WindowBits) -> ZLibStreamBuilder
+func memoryLevel(_ memoryLevel: MemoryLevel) -> ZLibStreamBuilder
+func chunkSize(_ chunkSize: Int) -> ZLibStreamBuilder
+```
+
+#### Build Methods
+
+```swift
+func build() -> ZLibStream
+func buildCompressor() -> Compressor
+func buildDecompressor() -> Decompressor
+```
+
+### AsyncZLibStreamBuilder
+
+```swift
+class AsyncZLibStreamBuilder
+```
+
+Fluent builder for configuring and creating async zlib streams.
+
+#### Configuration Methods
+
+```swift
+func compression(level: CompressionLevel) -> AsyncZLibStreamBuilder
+func compression(level: CompressionLevel, strategy: CompressionStrategy) -> AsyncZLibStreamBuilder
+func decompression() -> AsyncZLibStreamBuilder
+func windowBits(_ windowBits: WindowBits) -> AsyncZLibStreamBuilder
+func memoryLevel(_ memoryLevel: MemoryLevel) -> AsyncZLibStreamBuilder
+func chunkSize(_ chunkSize: Int) -> AsyncZLibStreamBuilder
+```
+
+#### Build Methods
+
+```swift
+func build() -> AsyncZLibStream
+func buildCompressor() -> AsyncCompressor
+func buildDecompressor() -> AsyncDecompressor
+```
+
+## Progress Stream APIs
+
+### Progress Reporting
+
+All file operations support optional progress callbacks:
+
+```swift
+func compressFile(at path: String, to outputPath: String, progress: ((Int, Int) -> Void)?) throws
+func decompressFile(at path: String, to outputPath: String, progress: ((Int, Int) -> Void)?) throws
+```
+
+**Progress Callback:**
+
+- First parameter: Bytes processed
+- Second parameter: Total bytes (if known, otherwise 0)
+
+**Example:**
+
+```swift
+try compressor.compressFile(
+    at: "input.txt",
+    to: "output.gz",
+    progress: { processed, total in
+        let percentage = total > 0 ? Double(processed) / Double(total) * 100 : 0
+        print("Progress: \(percentage)%")
+    }
+)
+```
+
+## Error Handling
+
+### ZLibError
+
+```swift
+enum ZLibError: Error, LocalizedError
+```
+
+Errors that can occur during compression or decompression.
+
+**Cases:**
+
+- `invalidParameter`: Invalid parameter provided
+- `bufferError`: Buffer error
+- `dataError`: Corrupted or invalid data
+- `streamError`: Stream error
+- `memoryError`: Memory allocation error
+- `versionError`: Version mismatch
+- `streamEnd`: End of stream reached
+- `needDictionary`: Dictionary needed for decompression
+- `unknownError(Int32)`: Unknown error with code
+
+### ZLibErrorCode
+
+```swift
+enum ZLibErrorCode: Int32
+```
+
+Raw error codes from zlib.
+
+**Cases:**
+
+- `ok = 0`: No error
+- `streamEnd = 1`: End of stream
+- `needDictionary = 2`: Dictionary needed
+- `streamError = -2`: Stream error
+- `dataError = -3`: Data error
+- `memoryError = -4`: Memory error
+- `bufferError = -5`: Buffer error
+- `versionError = -6`: Version error
+
+### GzipFileError
+
+```swift
+enum GzipFileError: Error, LocalizedError
+```
+
+Errors specific to gzip file operations.
+
+**Cases:**
+
+- `fileNotFound`: File not found
+- `permissionDenied`: Permission denied
+- `invalidFormat`: Invalid gzip format
+- `compressionError`: Compression error
+- `decompressionError`: Decompression error
+- `ioError`: I/O error
 
 ## Data Extensions
 
 ### Data+Extensions
 
-#### compress(level:strategy:dictionary:)
-
 ```swift
-func compress(
-    level: CompressionLevel = .default,
-    strategy: CompressionStrategy = .default,
-    dictionary: Data? = nil
-) throws -> Data
+extension Data
 ```
 
-**Description**: Compresses data using zlib DEFLATE algorithm.
-
-**Parameters**:
-
-- `level`: Compression level (default: `.default`)
-- `strategy`: Compression strategy (default: `.default`)
-- `dictionary`: Optional dictionary for compression (default: `nil`)
-
-**Returns**: Compressed data
-
-**Throws**: `ZLibError` on compression failure
-
-**Example**:
+#### Compression Methods
 
 ```swift
-let data = "Hello, World!".data(using: .utf8)!
-let compressed = try data.compress(level: .best)
+func compressed(level: CompressionLevel = .default) throws -> Data
+func compressed(level: CompressionLevel, strategy: CompressionStrategy) throws -> Data
+func compressed(level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits) throws -> Data
 ```
 
-#### compressAsync(level:strategy:dictionary:)
+#### Decompression Methods
 
 ```swift
-func compressAsync(
-    level: CompressionLevel = .default,
-    strategy: CompressionStrategy = .default,
-    dictionary: Data? = nil
-) async throws -> Data
+func decompressed() throws -> Data
+func decompressed(windowBits: WindowBits) throws -> Data
 ```
-
-**Description**: Asynchronously compresses data.
-
-**Parameters**: Same as `compress(level:strategy:dictionary:)`
-
-**Returns**: Compressed data
-
-**Throws**: `ZLibError` on compression failure
-
-#### compressPublisher(level:strategy:dictionary:)
-
-```swift
-func compressPublisher(
-    level: CompressionLevel = .default,
-    strategy: CompressionStrategy = .default,
-    dictionary: Data? = nil
-) -> AnyPublisher<Data, ZLibError>
-```
-
-**Description**: Returns a Combine publisher for compression.
-
-**Parameters**: Same as `compress(level:strategy:dictionary:)`
-
-**Returns**: Publisher that emits compressed data
-
-#### decompress()
-
-```swift
-func decompress() throws -> Data
-```
-
-**Description**: Decompresses data using zlib INFLATE algorithm.
-
-**Returns**: Decompressed data
-
-**Throws**: `ZLibError` on decompression failure
-
-**Example**:
-
-```swift
-let decompressed = try compressedData.decompress()
-```
-
-#### decompressAsync()
-
-```swift
-func decompressAsync() async throws -> Data
-```
-
-**Description**: Asynchronously decompresses data.
-
-**Returns**: Decompressed data
-
-**Throws**: `ZLibError` on decompression failure
-
-#### decompressPublisher()
-
-```swift
-func decompressPublisher() -> AnyPublisher<Data, ZLibError>
-```
-
-**Description**: Returns a Combine publisher for decompression.
-
-**Returns**: Publisher that emits decompressed data
 
 ## String Extensions
 
 ### String+Extensions
 
-#### compress(level:strategy:dictionary:)
-
 ```swift
-func compress(
-    level: CompressionLevel = .default,
-    strategy: CompressionStrategy = .default,
-    dictionary: Data? = nil
-) throws -> Data
+extension String
 ```
 
-**Description**: Compresses string data.
-
-**Parameters**: Same as Data extension
-
-**Returns**: Compressed data
-
-**Throws**: `ZLibError` on compression failure
-
-**Example**:
+#### Compression Methods
 
 ```swift
-let text = "Hello, World!"
-let compressed = try text.compress(level: .best)
+func compressed(level: CompressionLevel = .default) throws -> Data
+func compressed(level: CompressionLevel, strategy: CompressionStrategy) throws -> Data
+func compressed(level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits) throws -> Data
 ```
 
-#### compressAsync(level:strategy:dictionary:)
+#### Decompression Methods
 
 ```swift
-func compressAsync(
-    level: CompressionLevel = .default,
-    strategy: CompressionStrategy = .default,
-    dictionary: Data? = nil
-) async throws -> Data
+func decompressed() throws -> String
+func decompressed(windowBits: WindowBits) throws -> String
 ```
 
-**Description**: Asynchronously compresses string data.
+## Combine Integration
 
-#### compressPublisher(level:strategy:dictionary:)
+### ZLib+Combine
 
 ```swift
-func compressPublisher(
-    level: CompressionLevel = .default,
-    strategy: CompressionStrategy = .default,
-    dictionary: Data? = nil
-) -> AnyPublisher<Data, ZLibError>
+extension ZLib
 ```
 
-**Description**: Returns a Combine publisher for string compression.
-
-#### decompress()
+#### Publishers
 
 ```swift
-func decompress() throws -> String
+static func compressPublisher(_ data: Data, level: CompressionLevel = .default) -> AnyPublisher<Data, ZLibError>
+static func decompressPublisher(_ data: Data) -> AnyPublisher<Data, ZLibError>
 ```
 
-**Description**: Decompresses data to string.
+## AsyncStream Integration
 
-**Returns**: Decompressed string
-
-**Throws**: `ZLibError` on decompression failure
-
-**Example**:
+### ZLib+AsyncStream
 
 ```swift
-let decompressed = try compressedData.decompress()
+extension ZLib
 ```
 
-#### decompressAsync()
+#### AsyncStream Methods
 
 ```swift
-func decompressAsync() async throws -> String
+static func compressStream(_ data: Data, level: CompressionLevel = .default) -> AsyncStream<Data>
+static func decompressStream(_ data: Data) -> AsyncStream<Data>
 ```
 
-**Description**: Asynchronously decompresses data to string.
+## File Operations
 
-#### decompressPublisher()
+### ZLib+File
 
 ```swift
-func decompressPublisher() -> AnyPublisher<String, ZLibError>
+extension ZLib
 ```
 
-**Description**: Returns a Combine publisher for string decompression.
-
-## ZLib Static Methods
-
-### File Operations
-
-#### compressFile(from:to:level:progress:)
+#### File Methods
 
 ```swift
-static func compressFile(
-    from inputPath: String,
-    to outputPath: String,
-    level: CompressionLevel = .default,
-    progress: ((Double) -> Void)? = nil
-) throws
+static func compressFile(at path: String, to outputPath: String, level: CompressionLevel = .default) throws
+static func decompressFile(at path: String, to outputPath: String) throws
 ```
 
-**Description**: Compresses a file with progress reporting.
-
-**Parameters**:
-
-- `inputPath`: Path to input file
-- `outputPath`: Path to output file
-- `level`: Compression level (default: `.default`)
-- `progress`: Optional progress callback (default: `nil`)
-
-**Throws**: `ZLibError` on failure
-
-**Example**:
+### ZLib+FileChunked
 
 ```swift
-try ZLib.compressFile(
-    from: "input.txt",
-    to: "output.gz",
-    level: .best,
-    progress: { progress in
-        print("Compression: \(Int(progress * 100))%")
-    }
-)
+extension ZLib
 ```
 
-#### compressFileAsync(from:to:level:progress:)
+#### Chunked File Methods
 
 ```swift
-static func compressFileAsync(
-    from inputPath: String,
-    to outputPath: String,
-    level: CompressionLevel = .default,
-    progress: ((Double) -> Void)? = nil
-) async throws
+static func compressFileChunked(at path: String, to outputPath: String, level: CompressionLevel = .default, chunkSize: Int = 64 * 1024) throws
+static func decompressFileChunked(at path: String, to outputPath: String, chunkSize: Int = 64 * 1024) throws
 ```
 
-**Description**: Asynchronously compresses a file.
+## Stream Operations
 
-#### compressFilePublisher(from:to:level:)
+### ZLib+Stream
 
 ```swift
-static func compressFilePublisher(
-    from inputPath: String,
-    to outputPath: String,
-    level: CompressionLevel = .default
-) -> AnyPublisher<Void, ZLibError>
+extension ZLib
 ```
 
-**Description**: Returns a Combine publisher for file compression.
-
-#### decompressFile(from:to:progress:)
+#### Stream Methods
 
 ```swift
-static func decompressFile(
-    from inputPath: String,
-    to outputPath: String,
-    progress: ((Double) -> Void)? = nil
-) throws
+static func createStream(compression: Compression, windowBits: WindowBits = .default) -> ZLibStream
+static func createAsyncStream(compression: Compression, windowBits: WindowBits = .default) -> AsyncZLibStream
 ```
 
-**Description**: Decompresses a file with progress reporting.
-
-**Parameters**:
-
-- `inputPath`: Path to compressed file
-- `outputPath`: Path to output file
-- `progress`: Optional progress callback (default: `nil`)
-
-**Throws**: `ZLibError` on failure
-
-**Example**:
-
-```swift
-try ZLib.decompressFile(
-    from: "output.gz",
-    to: "decompressed.txt",
-    progress: { progress in
-        print("Decompression: \(Int(progress * 100))%")
-    }
-)
-```
-
-#### decompressFileAsync(from:to:progress:)
-
-```swift
-static func decompressFileAsync(
-    from inputPath: String,
-    to outputPath: String,
-    progress: ((Double) -> Void)? = nil
-) async throws
-```
-
-**Description**: Asynchronously decompresses a file.
-
-#### decompressFilePublisher(from:to:)
-
-```swift
-static func decompressFilePublisher(
-    from inputPath: String,
-    to outputPath: String
-) -> AnyPublisher<Void, ZLibError>
-```
-
-**Description**: Returns a Combine publisher for file decompression.
-
-### Progress Publishers
-
-#### progressPublisher
-
-```swift
-var progressPublisher: AnyPublisher<Double, Never>
-```
-
-**Description**: Publisher that emits progress updates during file operations.
-
-**Example**:
-
-```swift
-ZLib.compressFilePublisher(from: "input.txt", to: "output.gz")
-    .progressPublisher
-    .sink { progress in
-        print("Progress: \(Int(progress * 100))%")
-    }
-    .store(in: &cancellables)
-```
-
-## Streaming Types
+## Configuration
 
 ### StreamingConfig
 
 ```swift
-struct StreamingConfig {
-    let chunkSize: Int
-    let compressionLevel: CompressionLevel
-    let compressionStrategy: CompressionStrategy
-    let memoryLevel: MemoryLevel
-    let enableLogging: Bool
-}
+struct StreamingConfig
 ```
 
-**Description**: Configuration for streaming operations.
+Configuration for streaming operations.
 
-**Properties**:
+**Properties:**
 
-- `chunkSize`: Size of data chunks for processing
-- `compressionLevel`: Compression level for operations
-- `compressionStrategy`: Compression strategy
+- `chunkSize`: Size of chunks to process
 - `memoryLevel`: Memory usage level
-- `enableLogging`: Whether to enable debug logging
-
-**Example**:
-
-```swift
-let config = StreamingConfig(
-    chunkSize: 64 * 1024,
-    compressionLevel: .best,
-    compressionStrategy: .default,
-    memoryLevel: .default,
-    enableLogging: false
-)
-```
-
-### ZLibStream
-
-```swift
-class ZLibStream {
-    let config: StreamingConfig
-
-    init(config: StreamingConfig)
-}
-```
-
-**Description**: Main streaming interface for compression and decompression.
-
-#### compress(\_:)
-
-```swift
-func compress(_ data: Data) throws -> Data
-```
-
-**Description**: Compresses a chunk of data.
-
-**Parameters**:
-
-- `data`: Data chunk to compress
-
-**Returns**: Compressed data
-
-**Throws**: `ZLibError` on compression failure
-
-#### decompress(\_:)
-
-```swift
-func decompress(_ data: Data) throws -> Data
-```
-
-**Description**: Decompresses a chunk of data.
-
-**Parameters**:
-
-- `data`: Compressed data chunk
-
-**Returns**: Decompressed data
-
-**Throws**: `ZLibError` on decompression failure
-
-#### finish()
-
-```swift
-func finish() throws -> Data
-```
-
-**Description**: Finalizes compression/decompression and returns remaining data.
-
-**Returns**: Final compressed/decompressed data
-
-**Throws**: `ZLibError` on failure
-
-#### compressFile(from:to:progress:)
-
-```swift
-func compressFile(
-    from inputPath: String,
-    to outputPath: String,
-    progress: ((Double) -> Void)? = nil
-) throws
-```
-
-**Description**: Compresses a file using streaming.
-
-**Parameters**:
-
-- `inputPath`: Path to input file
-- `outputPath`: Path to output file
-- `progress`: Optional progress callback
-
-**Throws**: `ZLibError` on failure
-
-#### decompressFile(from:to:progress:)
-
-```swift
-func decompressFile(
-    from inputPath: String,
-    to outputPath: String,
-    progress: ((Double) -> Void)? = nil
-) throws
-```
-
-**Description**: Decompresses a file using streaming.
-
-**Parameters**:
-
-- `inputPath`: Path to compressed file
-- `outputPath`: Path to output file
-- `progress`: Optional progress callback
-
-**Throws**: `ZLibError` on failure
-
-## Async Types
-
-### AsyncZLibStream
-
-```swift
-class AsyncZLibStream {
-    let config: StreamingConfig
-
-    init(config: StreamingConfig)
-}
-```
-
-**Description**: Async streaming interface for compression and decompression.
-
-#### compressFile(from:to:progress:)
-
-```swift
-func compressFile(
-    from inputPath: String,
-    to outputPath: String,
-    progress: ((Double) -> Void)? = nil
-) async throws
-```
-
-**Description**: Asynchronously compresses a file using streaming.
-
-#### decompressFile(from:to:progress:)
-
-```swift
-func decompressFile(
-    from inputPath: String,
-    to outputPath: String,
-    progress: ((Double) -> Void)? = nil
-) async throws
-```
-
-**Description**: Asynchronously decompresses a file using streaming.
-
-## Combine Publishers
-
-### Compression Publishers
-
-#### compressPublisher(data:level:strategy:dictionary:)
-
-```swift
-static func compressPublisher(
-    data: Data,
-    level: CompressionLevel = .default,
-    strategy: CompressionStrategy = .default,
-    dictionary: Data? = nil
-) -> AnyPublisher<Data, ZLibError>
-```
-
-**Description**: Publisher for data compression.
-
-#### compressPublisher(string:level:strategy:dictionary:)
-
-```swift
-static func compressPublisher(
-    string: String,
-    level: CompressionLevel = .default,
-    strategy: CompressionStrategy = .default,
-    dictionary: Data? = nil
-) -> AnyPublisher<Data, ZLibError>
-```
-
-**Description**: Publisher for string compression.
-
-#### decompressPublisher(data:)
-
-```swift
-static func decompressPublisher(data: Data) -> AnyPublisher<Data, ZLibError>
-```
-
-**Description**: Publisher for data decompression.
-
-#### decompressPublisher(string:)
-
-```swift
-static func decompressPublisher(string: String) -> AnyPublisher<String, ZLibError>
-```
-
-**Description**: Publisher for string decompression.
-
-### File Operation Publishers
-
-#### compressFilePublisher(from:to:level:)
-
-```swift
-static func compressFilePublisher(
-    from inputPath: String,
-    to outputPath: String,
-    level: CompressionLevel = .default
-) -> AnyPublisher<Void, ZLibError>
-```
-
-**Description**: Publisher for file compression.
-
-#### decompressFilePublisher(from:to:)
-
-```swift
-static func decompressFilePublisher(
-    from inputPath: String,
-    to outputPath: String
-) -> AnyPublisher<Void, ZLibError>
-```
-
-**Description**: Publisher for file decompression.
-
-## Utility Types
+- `windowBits`: Window size and format
 
 ### GzipHeader
 
 ```swift
-struct GzipHeader {
-    let filename: String?
-    let comment: String?
-    let timestamp: Date?
-    let operatingSystem: UInt8
-    let extraFlags: UInt8
-    let compressionLevel: UInt8
-}
+struct GzipHeader
 ```
 
-**Description**: Gzip header information.
+Gzip file header information.
 
-**Properties**:
+**Properties:**
 
 - `filename`: Original filename
-- `comment`: Optional comment
-- `timestamp`: File timestamp
-- `operatingSystem`: OS identifier
-- `extraFlags`: Additional flags
-- `compressionLevel`: Compression level used
+- `comment`: File comment
+- `modificationTime`: File modification time
+- `os`: Operating system identifier
+- `extraFlags`: Extra flags
+- `compressionMethod`: Compression method used
 
-### WindowBits
+## Logging
 
-```swift
-enum WindowBits: Int32 {
-    case raw = -15
-    case zlib = 15
-    case gzip = 31
-}
-```
-
-**Description**: Window bits for different compression formats.
-
-## Error Handling
-
-### Error Recovery
-
-All methods that can fail throw `ZLibError` with specific error cases:
-
-- `invalidData`: Input data is corrupted or not compressed
-- `insufficientMemory`: System memory is insufficient
-- `streamError(ZLibStatus)`: Internal zlib stream error
-- `fileError(String)`: File operation error
-- `unsupportedOperation(String)`: Operation not supported
-
-### Error Examples
+### Logging
 
 ```swift
-do {
-    let compressed = try data.compress(level: .best)
-} catch ZLibError.invalidData {
-    print("Invalid input data")
-} catch ZLibError.insufficientMemory {
-    print("Not enough memory")
-} catch ZLibError.streamError(let status) {
-    print("Stream error: \(status)")
-} catch {
-    print("Other error: \(error)")
-}
+enum Logging
 ```
 
-## Performance Considerations
+Logging configuration for debugging.
 
-### Memory Usage
+**Methods:**
 
-- Use appropriate `MemoryLevel` for your environment
-- Consider chunk size for streaming operations
-- Monitor memory usage for large files
+```swift
+static func enableDebugLogging()
+static func disableDebugLogging()
+```
 
-### Compression Levels
+## Timer
 
-- `.noCompression`: Fastest, no compression
-- `.bestSpeed`: Fast compression
-- `.default`: Balanced approach
-- `.best`: Best compression ratio
+### Timer
 
-### Strategies
+```swift
+class Timer
+```
 
-- `.default`: General data
-- `.filtered`: Image data
-- `.huffman`: Pre-filtered data
-- `.rle`: Data with runs
-- `.fixed`: Small data
+Utility for measuring operation performance.
 
-This API reference provides comprehensive coverage of all public SwiftZlib APIs with detailed descriptions, parameters, return values, and usage examples.
+**Methods:**
+
+```swift
+static func measure<T>(_ operation: () throws -> T) throws -> (T, TimeInterval)
+static func measureAsync<T>(_ operation: () async throws -> T) async throws -> (T, TimeInterval)
+```

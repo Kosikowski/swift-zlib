@@ -4,6 +4,241 @@
 
 This document details the challenges encountered when building SwiftZlib on Windows and the solutions implemented to resolve them.
 
+## Windows Preprocessor Definitions
+
+### Purpose and Necessity
+
+When building zlib on Windows, several preprocessor definitions are required to ensure proper compilation and avoid conflicts with the Microsoft Visual C++ runtime and Swift toolchain:
+
+```swift
+cSettings: [
+    .headerSearchPath("include"),
+    .define("_CRT_SECURE_NO_WARNINGS"),
+    .define("_WIN32_WINNT", to: "0x0601"),
+    .define("WIN32_LEAN_AND_MEAN"),
+    .define("__NO_INTRINSICS__"),
+    .define("_NO_CRT_STDIO_INLINE"),
+    .define("_CRT_NO_POSIX_ERROR_CODES"),
+    // Additional CRT flags for comprehensive Windows compatibility
+    .define("_NO_CRT_RAND_S"),
+    .define("_NO_CRT_TIME_INLINE"),
+    .define("_NO_CRT_MATH_INLINE"),
+    .define("_NO_CRT_STRING_INLINE"),
+    .define("_NO_CRT_WCTYPE_INLINE"),
+    .define("_NO_CRT_LOCALE_INLINE"),
+    .define("_NO_CRT_STDLIB_INLINE"),
+    .define("_NO_CRT_CTYPE_INLINE"),
+    .define("_NO_CRT_ERRNO_INLINE"),
+    .define("_NO_CRT_SETJMP_INLINE"),
+    .define("_NO_CRT_SIGNAL_INLINE"),
+    .define("_NO_CRT_ASSERT_INLINE"),
+    .define("_NO_CRT_MEMORY_INLINE"),
+    .define("_NO_CRT_MALLOC_INLINE"),
+    .define("_NO_CRT_FREE_INLINE"),
+    .define("_NO_CRT_MEMSET_INLINE"),
+    .define("_NO_CRT_MEMCPY_INLINE"),
+    .define("_NO_CRT_MEMCMP_INLINE"),
+    .define("_NO_CRT_STRLEN_INLINE"),
+    .define("_NO_CRT_STRCPY_INLINE"),
+    .define("_NO_CRT_STRCAT_INLINE"),
+    .define("_NO_CRT_STRCMP_INLINE"),
+    .define("_NO_CRT_SPRINTF_INLINE"),
+    .define("_NO_CRT_VSPRINTF_INLINE"),
+    .define("_NO_CRT_PRINTF_INLINE"),
+    .define("_NO_CRT_FFLUSH_INLINE"),
+    .define("_NO_CRT_WCHAR_INLINE"),
+    .define("_NO_CRT_MBSTOWCS_INLINE"),
+    .define("_NO_CRT_WCSTOMBS_INLINE"),
+    .define("_NO_CRT_MBTOWC_INLINE"),
+    .define("_NO_CRT_WCTOMB_INLINE"),
+    .define("_NO_CRT_MBLEN_INLINE"),
+    .define("_NO_CRT_MBRLEN_INLINE"),
+    .define("_NO_CRT_MBRTOWC_INLINE"),
+    .define("_NO_CRT_WCRTOMB_INLINE"),
+    .define("_NO_CRT_MBSRTOWCS_INLINE"),
+    .define("_NO_CRT_WCSRTOMBS_INLINE"),
+    .define("_NO_CRT_MBSTOWCS_S_INLINE"),
+    .define("_NO_CRT_WCSTOMBS_S_INLINE"),
+    .define("_NO_CRT_MBSRTOWCS_S_INLINE"),
+    .define("_NO_CRT_WCSRTOMBS_S_INLINE"),
+]
+```
+
+### Detailed Explanation of Each Definition
+
+#### Core Windows Definitions
+
+**`_CRT_SECURE_NO_WARNINGS`**
+
+- **Purpose**: Disables Microsoft's "secure" function warnings
+- **Why needed**: Microsoft Visual C++ warns about "unsafe" functions like `strcpy`, `sprintf`, etc.
+- **zlib usage**: zlib uses these standard C functions which are safe in their context
+- **Effect**: Prevents hundreds of warnings about "deprecated" functions
+- **Example**: Without this, you get warnings like "C4996: 'strcpy': This function or variable may be unsafe"
+
+**`_WIN32_WINNT` to `"0x0601"`**
+
+- **Purpose**: Defines the minimum Windows version (Windows 7)
+- **Why needed**: Controls which Windows API functions are available
+- **zlib usage**: zlib needs access to Windows file I/O functions
+- **Effect**: Ensures compatibility with Windows 7+ APIs
+- **Value explanation**: `0x0601` = Windows 7 (NT 6.1)
+
+**`WIN32_LEAN_AND_MEAN`**
+
+- **Purpose**: Excludes rarely-used Windows headers from `windows.h`
+- **Why needed**: Reduces compilation time and prevents conflicts
+- **zlib usage**: zlib only needs basic Windows types, not the full Windows API
+- **Effect**: Faster compilation and fewer header conflicts
+- **What it excludes**: COM, OLE, GDI, multimedia, and other Windows subsystems
+
+**`__NO_INTRINSICS__`**
+
+- **Purpose**: Disables Microsoft's intrinsic functions
+- **Why needed**: Prevents conflicts with zlib's own implementations
+- **zlib usage**: zlib provides its own optimized versions of some functions
+- **Effect**: Uses zlib's implementations instead of Microsoft's intrinsics
+- **Example**: Prevents conflicts with `memcpy`, `memset` intrinsics
+
+#### CRT (C Runtime) Inline Function Prevention
+
+**`_NO_CRT_STDIO_INLINE`**
+
+- **Purpose**: Prevents inline versions of stdio functions
+- **Why needed**: Avoids conflicts with zlib's function implementations
+- **zlib usage**: zlib needs to use the actual library functions, not inline versions
+- **Effect**: Forces use of library functions instead of inline versions
+- **Functions affected**: `printf`, `scanf`, `fopen`, `fclose`, etc.
+
+**`_CRT_NO_POSIX_ERROR_CODES`**
+
+- **Purpose**: Disables POSIX error code mappings
+- **Why needed**: Prevents conflicts between Windows and POSIX error handling
+- **zlib usage**: zlib uses its own error handling system
+- **Effect**: Uses zlib's error codes instead of Windows POSIX mappings
+- **Example**: Prevents `EINVAL` from being mapped to Windows error codes
+
+#### Comprehensive CRT Inline Prevention
+
+The extensive list of `_NO_CRT_*_INLINE` definitions prevents Microsoft's inline versions of C runtime functions from conflicting with zlib's implementations:
+
+- **`_NO_CRT_RAND_S`**: Prevents inline random number generation
+- **`_NO_CRT_TIME_INLINE`**: Prevents inline time functions
+- **`_NO_CRT_MATH_INLINE`**: Prevents inline math functions
+- **`_NO_CRT_STRING_INLINE`**: Prevents inline string functions
+- **`_NO_CRT_MEMORY_INLINE`**: Prevents inline memory functions
+- **`_NO_CRT_MALLOC_INLINE`**: Prevents inline malloc/free
+- **`_NO_CRT_MEMSET_INLINE`**: Prevents inline memset
+- **`_NO_CRT_MEMCPY_INLINE`**: Prevents inline memcpy
+- **`_NO_CRT_MEMCMP_INLINE`**: Prevents inline memcmp
+- **`_NO_CRT_STRLEN_INLINE`**: Prevents inline strlen
+- **`_NO_CRT_STRCPY_INLINE`**: Prevents inline strcpy
+- **`_NO_CRT_STRCAT_INLINE`**: Prevents inline strcat
+- **`_NO_CRT_STRCMP_INLINE`**: Prevents inline strcmp
+- **`_NO_CRT_SPRINTF_INLINE`**: Prevents inline sprintf
+- **`_NO_CRT_VSPRINTF_INLINE`**: Prevents inline vsprintf
+- **`_NO_CRT_PRINTF_INLINE`**: Prevents inline printf
+- **`_NO_CRT_FFLUSH_INLINE`**: Prevents inline fflush
+- **`_NO_CRT_WCHAR_INLINE`**: Prevents inline wide character functions
+- **`_NO_CRT_MBSTOWCS_INLINE`**: Prevents inline multibyte to wide char conversion
+- **`_NO_CRT_WCSTOMBS_INLINE`**: Prevents inline wide char to multibyte conversion
+- **`_NO_CRT_MBTOWC_INLINE`**: Prevents inline multibyte to wide char conversion
+- **`_NO_CRT_WCTOMB_INLINE`**: Prevents inline wide char to multibyte conversion
+- **`_NO_CRT_MBLEN_INLINE`**: Prevents inline multibyte length functions
+- **`_NO_CRT_MBRLEN_INLINE`**: Prevents inline multibyte restartable length functions
+- **`_NO_CRT_MBRTOWC_INLINE`**: Prevents inline multibyte restartable conversion
+- **`_NO_CRT_WCRTOMB_INLINE`**: Prevents inline wide char restartable conversion
+- **`_NO_CRT_MBSRTOWCS_INLINE`**: Prevents inline multibyte to wide char restartable conversion
+- **`_NO_CRT_WCSRTOMBS_INLINE`**: Prevents inline wide char to multibyte restartable conversion
+- **`_NO_CRT_MBSTOWCS_S_INLINE`**: Prevents inline secure multibyte to wide char conversion
+- **`_NO_CRT_WCSTOMBS_S_INLINE`**: Prevents inline secure wide char to multibyte conversion
+- **`_NO_CRT_MBSRTOWCS_S_INLINE`**: Prevents inline secure multibyte to wide char restartable conversion
+- **`_NO_CRT_WCSRTOMBS_S_INLINE`**: Prevents inline secure wide char to multibyte restartable conversion
+
+### Why These Definitions Are Critical
+
+#### 1. **Microsoft's "Secure" Function Warnings**
+
+Microsoft Visual C++ treats many standard C functions as "unsafe" and warns about their use. zlib uses these functions safely, but the warnings create noise and can be treated as errors.
+
+#### 2. **Inline Function Conflicts**
+
+Microsoft provides inline versions of many C runtime functions for performance. However, these can conflict with zlib's own implementations or cause linking issues.
+
+#### 3. **Windows API Version Control**
+
+Different Windows versions provide different APIs. Setting `_WIN32_WINNT` ensures consistent API availability across different Windows builds.
+
+#### 4. **Header Bloat Prevention**
+
+`WIN32_LEAN_AND_MEAN` prevents inclusion of unnecessary Windows headers that can cause conflicts and slow compilation.
+
+#### 5. **Intrinsic Function Conflicts**
+
+Microsoft's intrinsic functions can conflict with zlib's optimized implementations, leading to linking errors or incorrect behavior.
+
+### Impact on Build Process
+
+#### Without These Definitions:
+
+```
+error C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead.
+warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead.
+error LNK2005: _memcpy already defined in LIBCMT.lib
+error LNK2005: _memset already defined in LIBCMT.lib
+```
+
+#### With These Definitions:
+
+- ✅ Clean compilation without warnings
+- ✅ Proper linking without conflicts
+- ✅ Consistent behavior across Windows versions
+- ✅ Faster compilation times
+
+### Platform-Specific Considerations
+
+#### Windows-Specific Issues
+
+- **Visual C++ Runtime**: Different from POSIX systems
+- **Security Warnings**: Microsoft's "secure" function warnings
+- **Inline Functions**: Microsoft's performance optimizations
+- **API Versioning**: Windows API changes between versions
+
+#### Cross-Platform Compatibility
+
+These definitions are **Windows-specific** and don't affect other platforms:
+
+- **macOS**: Uses system zlib without these definitions
+- **Linux**: Uses system zlib without these definitions
+- **iOS/tvOS/watchOS**: Uses system zlib without these definitions
+
+### Current Implementation Status
+
+The project currently uses a **bundled zlib approach** on Windows, which means:
+
+1. **Bundled Sources**: zlib source files are included in the project
+2. **Custom Headers**: Custom `zlib_simple.h` avoids most Windows conflicts
+3. **Conditional Compilation**: Different code paths for Windows vs. other platforms
+4. **No System Dependencies**: No external zlib library required on Windows
+
+This approach successfully avoids the Swift toolchain issues while maintaining full functionality.
+
+### Future Considerations
+
+If the Swift toolchain improves on Windows, these definitions could be used with system zlib:
+
+```swift
+// Future possibility if Swift Windows toolchain improves
+.linkLibrary("z")  // Use system zlib on all platforms including Windows
+```
+
+Until then, the bundled approach with these definitions provides:
+
+- ✅ **Reliable Windows builds**
+- ✅ **Full zlib functionality**
+- ✅ **Cross-platform compatibility**
+- ✅ **No external dependencies**
+
 ## Problem Description
 
 ### Primary Issue: Cyclic Dependency in Swift Overlay Shims

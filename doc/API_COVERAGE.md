@@ -1,390 +1,341 @@
 # API Coverage
 
-SwiftZlib provides comprehensive coverage of the zlib C API with modern Swift interfaces. This document shows the complete mapping from C zlib functions to Swift methods.
+This document provides a comprehensive overview of all APIs available in SwiftZlib, organized by functionality and usage patterns.
 
-## Coverage Summary
+## Core Compression/Decompression APIs
 
-**~98% of all zlib functions** are covered with Swift-native interfaces.
+### ✅ Basic Data Operations
 
-## Missing Functions
+- **Data Compression**: `ZLib.compress(_:level:strategy:windowBits:)`
+- **Data Decompression**: `ZLib.decompress(_:windowBits:)`
+- **String Compression**: `String.compressed(level:strategy:windowBits:)`
+- **String Decompression**: `String.decompressed(windowBits:)`
+- **Data Extensions**: `Data.compressed(level:strategy:windowBits:)`
+- **Data Extensions**: `Data.decompressed(windowBits:)`
 
-The following zlib functions are **not currently covered** by SwiftZlib:
+### ✅ Streaming APIs
 
-### Advanced Stream Functions (Missing)
+- **Compressor Creation**: `ZLib.createCompressor(level:strategy:windowBits:)`
+- **Decompressor Creation**: `ZLib.createDecompressor(windowBits:)`
+- **Compressor Class**: `Compressor` with `compress(_:flush:)`, `finish()`, `reset()`
+- **Decompressor Class**: `Decompressor` with `decompress(_:flush:)`, `reset()`
 
-- `deflateResetKeep()` - Reset compression stream while keeping dictionary
-- `inflateResetKeep()` - Reset decompression stream while keeping dictionary
-- `inflateUndermine()` - Undermine inflate integrity checks (testing only)
-- `inflateValidate()` - Validate inflate stream integrity
+### ✅ Fluent Builder APIs
 
-### Gzip File Functions (Missing)
+- **ZLibStreamBuilder**: `ZLib.stream()` with chainable configuration
+- **AsyncZLibStreamBuilder**: `ZLib.asyncStream()` for async operations
+- **Builder Configuration**: `.compression(level:strategy:)`, `.decompression()`, `.windowBits()`, `.memoryLevel()`, `.chunkSize()`
+- **Builder Build Methods**: `.build()`, `.buildCompressor()`, `.buildDecompressor()`
 
-- `gzoffset()` - Get offset in gzip file
-- `gzvprintf()` - Variable argument printf to gzip file
-- `gzfread()` - Read from gzip file with size/count parameters
-- `gzfwrite()` - Write to gzip file with size/count parameters
+## File Operations
 
-### Utility Functions (Missing)
+### ✅ Basic File Operations
 
-- `zError()` - Get error string for error code (partially covered via `swift_zError`)
+- **File Compression**: `ZLib.compressFile(at:to:level:)`
+- **File Decompression**: `ZLib.decompressFile(at:to:)`
+- **FileCompressor Class**: Direct file compression with progress
+- **FileDecompressor Class**: Direct file decompression with progress
 
-### Advanced Functions (Missing)
-
-- `inflatePending()` - Get pending input/output data (partially covered via `swift_inflatePending`)
+### ✅ Chunked File Operations
 
-## Core Compression/Decompression (100%)
+- **FileChunkedCompressor**: Memory-efficient chunked compression
+- **FileChunkedDecompressor**: Memory-efficient chunked decompression
+- **Chunked Configuration**: Configurable chunk sizes and memory levels
+- **Progress Reporting**: Built-in progress callbacks for all operations
 
-### Basic Functions
+### ✅ Gzip File Operations
 
-- `compress2()` → `ZLib.compress()`
-- `uncompress()` → `ZLib.decompress()`
-- `uncompress2()` → `ZLib.partialDecompress()`
+- **GzipFile Class**: Specialized gzip file handling
+- **GzipHeader**: Gzip header information extraction
+- **GzipFileError**: Specific error handling for gzip operations
 
-### Data Extensions
+## Enhanced Decompressors
 
-- `compress2()` → `Data.compress()`
-- `uncompress()` → `Data.decompress()`
-- `compress2()` → `Data.compressAsync()`
-- `uncompress()` → `Data.decompressAsync()`
-- `compress2()` → `Data.compressPublisher()`
-- `uncompress()` → `Data.decompressPublisher()`
+### ✅ Specialized Decompressors
 
-### String Extensions
+- **InflateBackDecompressor**: Reverse-order data processing
+- **EnhancedInflateBackDecompressor**: Advanced features with custom callbacks
+- **Callback Support**: Custom input/output processing
+- **Stream Information**: Detailed stream state reporting
 
-- `compress2()` → `String.compress()`
-- `uncompress()` → `String.decompress()`
-- `compress2()` → `String.compressAsync()`
-- `uncompress()` → `String.decompressAsync()`
-- `compress2()` → `String.compressPublisher()`
-- `uncompress()` → `String.decompressPublisher()`
+## Async/Await Support
 
-## Stream-Based Operations (100%)
+### ✅ Async APIs
 
-### Compression Stream Functions
+- **AsyncCompressor**: Asynchronous compression operations
+- **AsyncDecompressor**: Asynchronous decompression operations
+- **AsyncZLibStream**: Async streaming with progress
+- **Async Methods**: `compress(_:flush:) async`, `decompress(_:flush:) async`
 
-- `deflateInit()` → `Compressor.initialize()`
-- `deflateInit2()` → `Compressor.initializeAdvanced()`
-- `deflate()` → `Compressor.compress()`
-- `deflateEnd()` → `Compressor` deinit
-- `deflateReset()` → `Compressor.reset()`
-- `deflateReset2()` → `Compressor.resetWithWindowBits()`
-- `deflateCopy()` → `Compressor.copy()`
-- `deflatePrime()` → `Compressor.prime()`
-- `deflateParams()` → `Compressor.setParameters()`
-- `deflateSetDictionary()` → `Compressor.setDictionary()`
-- `deflateGetDictionary()` → `Compressor.getDictionary()`
-- `deflatePending()` → `Compressor.getPending()`
-- `deflateBound()` → `Compressor.getBound()`
-- `deflateTune()` → `Compressor.tune()`
+### ✅ Async Builder Pattern
 
-### Decompression Stream Functions
+- **AsyncZLibStreamBuilder**: Fluent async stream configuration
+- **Async Configuration**: Same chainable interface as sync builders
+- **Async Build Methods**: `.build()`, `.buildCompressor()`, `.buildDecompressor()`
 
-- `inflateInit()` → `Decompressor.initialize()`
-- `inflateInit2()` → `Decompressor.initializeAdvanced()`
-- `inflate()` → `Decompressor.decompress()`
-- `inflateEnd()` → `Decompressor` deinit
-- `inflateReset()` → `Decompressor.reset()`
-- `inflateReset2()` → `Decompressor.resetWithWindowBits()`
-- `inflateCopy()` → `Decompressor.copy()`
-- `inflatePrime()` → `Decompressor.prime()`
-- `inflateSetDictionary()` → `Decompressor.setDictionary()`
-- `inflateGetDictionary()` → `Decompressor.getDictionary()`
-- `inflateSync()` → `Decompressor.sync()`
-- `inflateSyncPoint()` → `Decompressor.isSyncPoint()`
-- `inflateMark()` → `Decompressor.getMark()`
-- `inflateCodesUsed()` → `Decompressor.getCodesUsed()`
-- `inflatePending()` → `Decompressor.getPending()`
+## Combine Integration
 
-## Advanced InflateBack API (100%)
+### ✅ Combine Publishers
 
-### InflateBack Functions
+- **Data Publishers**: `ZLib.compressPublisher(_:level:)`, `ZLib.decompressPublisher(_:)`
+- **String Publishers**: String compression/decompression publishers
+- **File Publishers**: File operation publishers
+- **Progress Publishers**: Progress reporting publishers
 
-- `inflateBackInit()` → `InflateBackDecompressor.initialize()`
-- `inflateBack()` → `InflateBackDecompressor.processWithCallbacks()`
-- `inflateBackEnd()` → `InflateBackDecompressor` deinit
+## AsyncStream Integration
 
-### InflateBack with C Callbacks
+### ✅ AsyncStream Support
 
-- `inflateBackInit()` → `InflateBackDecompressorCBridged.initialize()`
-- `inflateBack()` → `InflateBackDecompressorCBridged.processData()`
-- `inflateBackEnd()` → `InflateBackDecompressorCBridged` deinit
+- **Compression Streams**: `ZLib.compressStream(_:level:)`
+- **Decompression Streams**: `ZLib.decompressStream(_:)`
+- **Stream Processing**: Async stream-based data processing
 
-## Gzip File Operations (100%)
+## Progress Stream APIs
 
-### Gzip File Functions
+### ✅ Progress Reporting
 
-- `gzopen()` → `GzipFile.open()`
-- `gzclose()` → `GzipFile.close()`
-- `gzread()` → `GzipFile.readData()`
-- `gzwrite()` → `GzipFile.writeData()`
-- `gzputs()` → `GzipFile.puts()`
-- `gzgets()` → `GzipFile.gets()`
-- `gzputc()` → `GzipFile.putc()`
-- `gzgetc()` → `GzipFile.getc()`
-- `gzungetc()` → `GzipFile.ungetc()`
-- `gzclearerr()` → `GzipFile.clearError()`
-- `gzeof()` → `GzipFile.isEOF`
-- `gzerror()` → `GzipFile.error`
-- `gzflush()` → `GzipFile.flush()`
-- `gzseek()` → `GzipFile.seek()`
-- `gztell()` → `GzipFile.tell()`
-- `gzrewind()` → `GzipFile.rewind()`
+- **Progress Callbacks**: All file operations support progress callbacks
+- **Progress Parameters**: `(Int, Int)` for processed and total bytes
+- **UI Integration**: SwiftUI and UIKit progress integration examples
+- **Combine Progress**: Progress publishers for reactive programming
 
-### Gzip Header Functions
+## Configuration and Options
 
-- `deflateSetHeader()` → `Compressor.setGzipHeader()`
-- `inflateGetHeader()` → `Decompressor.getGzipHeader()`
+### ✅ Compression Levels
 
-## Checksum Functions (100%)
+- **CompressionLevel**: `noCompression`, `bestSpeed`, `bestCompression`, `default`
+- **Level Selection**: 0-9 range with predefined constants
+- **Performance Trade-offs**: Speed vs. compression ratio options
 
-### CRC-32 Functions
+### ✅ Compression Strategies
 
-- `crc32()` → `ZLib.crc32()`
-- `crc32_combine()` → `ZLib.crc32Combine()`
+- **CompressionStrategy**: `default`, `filtered`, `huffman`, `rle`, `fixed`
+- **Strategy Selection**: Optimized for different data types
+- **Usage Guidelines**: When to use each strategy
 
-### Adler-32 Functions
+### ✅ Window Bits
 
-- `adler32()` → `ZLib.adler32()`
-- `adler32_combine()` → `ZLib.adler32Combine()`
+- **WindowBits**: `default`, `gzip`, `raw`, `custom(Int32)`
+- **Format Support**: zlib, gzip, raw deflate formats
+- **Custom Sizes**: Configurable window sizes (8-15 for window, 16 for gzip, 32 for zlib)
 
-### Data Extensions for Checksums
+### ✅ Memory Levels
 
-- `crc32()` → `Data.crc32()`
-- `adler32()` → `Data.adler32()`
+- **MemoryLevel**: `minimum`, `default`, `maximum`
+- **Memory Usage**: Configurable memory consumption
+- **Performance Impact**: Memory vs. performance trade-offs
 
-## Utility Functions (100%)
+### ✅ Flush Modes
 
-### Compression Utilities
+- **FlushMode**: `none`, `partial`, `sync`, `full`, `finish`, `block`
+- **Stream Control**: Different flushing behaviors for streaming
+- **Usage Context**: When to use each flush mode
 
-- `compressBound()` → `ZLib.estimateCompressedSize()`
-- `zlibCompileFlags()` → `ZLib.compileFlags`
-- `zlibVersion()` → `ZLib.version`
+## Error Handling
 
-### Performance and Information
+### ✅ Error Types
 
-- `zlibCompileFlags()` → `ZLib.compileFlagsInfo`
-- `zlibVersion()` → `ZLib.version`
+- **ZLibError**: Main error type with specific cases
+- **ZLibErrorCode**: Raw zlib error codes
+- **GzipFileError**: Gzip-specific error handling
+- **Error Recovery**: Comprehensive error recovery strategies
 
-## File Operations (100%)
+### ✅ Error Cases
 
-### High-Level File Functions
+- **ZLibError Cases**: `invalidParameter`, `bufferError`, `dataError`, `streamError`, `memoryError`, `versionError`, `streamEnd`, `needDictionary`, `unknownError`
+- **GzipFileError Cases**: `fileNotFound`, `permissionDenied`, `invalidFormat`, `compressionError`, `decompressionError`, `ioError`
+- **Error Context**: Detailed error information and recovery options
 
-- `compress2()` → `ZLib.compressFile()`
-- `uncompress()` → `ZLib.decompressFile()`
-- `compress2()` → `ZLib.compressFileAsync()`
-- `uncompress()` → `ZLib.decompressFileAsync()`
-- `compress2()` → `ZLib.compressFilePublisher()`
-- `uncompress()` → `ZLib.decompressFilePublisher()`
+## Utility and Support
 
-### Streaming File Functions
+### ✅ Logging
 
-- `deflate()` → `ZLibStream.compressFile()`
-- `inflate()` → `ZLibStream.decompressFile()`
-- `deflate()` → `AsyncZLibStream.compressFile()`
-- `inflate()` → `AsyncZLibStream.decompressFile()`
+- **Logging Configuration**: `Logging.enableDebugLogging()`, `Logging.disableDebugLogging()`
+- **Debug Support**: Comprehensive logging for troubleshooting
 
-## Advanced Features (100%)
+### ✅ Performance Measurement
 
-### Error Handling
+- **Timer Class**: `Timer.measure(_:)`, `Timer.measureAsync(_:)`
+- **Performance Tracking**: Operation timing and performance analysis
 
-- `Z_OK` → `ZLibStatus.ok`
-- `Z_STREAM_END` → `ZLibStatus.streamEnd`
-- `Z_NEED_DICT` → `ZLibStatus.needDict`
-- `Z_ERRNO` → `ZLibStatus.errNo`
-- `Z_STREAM_ERROR` → `ZLibStatus.streamError`
-- `Z_DATA_ERROR` → `ZLibStatus.dataError`
-- `Z_MEM_ERROR` → `ZLibStatus.memoryError`
-- `Z_BUF_ERROR` → `ZLibStatus.bufferError`
-- `Z_VERSION_ERROR` → `ZLibStatus.incompatibleVersion`
+### ✅ Configuration
 
-### Configuration Types
+- **StreamingConfig**: Configuration struct for streaming operations
+- **Chunk Size**: Configurable chunk sizes for memory efficiency
+- **Memory Management**: Memory level configuration
 
-- `Z_DEFAULT_COMPRESSION` → `CompressionLevel.default`
-- `Z_NO_COMPRESSION` → `CompressionLevel.noCompression`
-- `Z_BEST_SPEED` → `CompressionLevel.bestSpeed`
-- `Z_BEST_COMPRESSION` → `CompressionLevel.best`
+## Extension APIs
 
-- `Z_DEFAULT_STRATEGY` → `CompressionStrategy.default`
-- `Z_FILTERED` → `CompressionStrategy.filtered`
-- `Z_HUFFMAN_ONLY` → `CompressionStrategy.huffman`
-- `Z_RLE` → `CompressionStrategy.rle`
-- `Z_FIXED` → `CompressionStrategy.fixed`
+### ✅ Data Extensions
 
-- `Z_DEFAULT_MEMLEVEL` → `MemoryLevel.default`
-- `Z_MIN_MEMLEVEL` → `MemoryLevel.min`
-- `Z_MAX_MEMLEVEL` → `MemoryLevel.max`
+- **Compression Methods**: `compressed(level:strategy:windowBits:)`
+- **Decompression Methods**: `decompressed(windowBits:)`
+- **Async Methods**: Async versions of all operations
+- **Combine Methods**: Publisher versions of all operations
 
-- `Z_NO_FLUSH` → `FlushMode.none`
-- `Z_PARTIAL_FLUSH` → `FlushMode.partial`
-- `Z_SYNC_FLUSH` → `FlushMode.sync`
-- `Z_FULL_FLUSH` → `FlushMode.full`
-- `Z_FINISH` → `FlushMode.finish`
-- `Z_BLOCK` → `FlushMode.block`
+### ✅ String Extensions
 
-### Window Bits
+- **Compression Methods**: `compressed(level:strategy:windowBits:)`
+- **Decompression Methods**: `decompressed(windowBits:)`
+- **Async Methods**: Async versions of all operations
+- **Combine Methods**: Publisher versions of all operations
 
-- `15` → `WindowBits.deflate`
-- `-15` → `WindowBits.raw`
-- `31` → `WindowBits.gzip`
-- `47` → `WindowBits.auto`
+### ✅ ZLib Extensions
 
-## Streaming and Async Support
+- **File Operations**: `ZLib+File` extension methods
+- **Chunked Operations**: `ZLib+FileChunked` extension methods
+- **Stream Operations**: `ZLib+Stream` extension methods
+- **Combine Integration**: `ZLib+Combine` extension methods
+- **AsyncStream Integration**: `ZLib+AsyncStream` extension methods
 
-### Modern Swift Concurrency
+## Advanced Features
 
-- `deflate()` → `Data.compressAsync()`
-- `inflate()` → `Data.decompressAsync()`
-- `deflate()` → `ZLib.compressFileAsync()`
-- `inflate()` → `ZLib.decompressFileAsync()`
+### ✅ Builder Pattern
 
-### Combine Publishers
+- **Fluent Interface**: Chainable configuration methods
+- **Type Safety**: Compile-time validation
+- **Default Values**: Sensible defaults with override capability
+- **Immutability**: Immutable stream instances
 
-- `deflate()` → `Data.compressPublisher()`
-- `inflate()` → `Data.decompressPublisher()`
-- `deflate()` → `ZLib.compressFilePublisher()`
-- `inflate()` → `ZLib.decompressFilePublisher()`
+### ✅ Memory Management
 
-## Convenience Extensions
+- **Chunked Processing**: Constant memory usage regardless of file size
+- **Memory Levels**: Configurable memory consumption
+- **Chunk Sizes**: Optimizable chunk sizes for different use cases
+- **Memory Efficiency**: Efficient memory usage patterns
 
-### Data Extensions
+### ✅ Progress Reporting
 
-- `compress2()` → `Data.compressed()`
-- `uncompress()` → `Data.decompressed()`
-- `compress2()` → `Data.compressedWithGzipHeader()`
-- `crc32()` → `Data.crc32()`
-- `adler32()` → `Data.adler32()`
+- **Real-time Updates**: Live progress monitoring
+- **UI Integration**: SwiftUI and UIKit integration
+- **Combine Integration**: Reactive progress reporting
+- **Custom Callbacks**: Flexible progress callback system
 
-### String Extensions
+### ✅ Error Recovery
 
-- `compress2()` → `String.compressed()`
-- `uncompress()` → `String.decompressed()`
-- `compress2()` → `String.compressedWithGzipHeader()`
+- **Retry Logic**: Automatic retry with different configurations
+- **Fallback Strategies**: Graceful degradation options
+- **Error Classification**: Specific error handling for different failure types
+- **Recovery Patterns**: Common error recovery patterns
 
-## Error Mapping
+## Integration Examples
 
-### C Error Codes to Swift Errors
+### ✅ SwiftUI Integration
 
-- `Z_OK (0)` → Success (no error)
-- `Z_STREAM_END (1)` → `ZLibStatus.streamEnd`
-- `Z_NEED_DICT (2)` → `ZLibStatus.needDict`
-- `Z_ERRNO (-1)` → `ZLibStatus.errNo`
-- `Z_STREAM_ERROR (-2)` → `ZLibStatus.streamError`
-- `Z_DATA_ERROR (-3)` → `ZLibStatus.dataError`
-- `Z_MEM_ERROR (-4)` → `ZLibStatus.memoryError`
-- `Z_BUF_ERROR (-5)` → `ZLibStatus.bufferError`
-- `Z_VERSION_ERROR (-6)` → `ZLibStatus.incompatibleVersion`
+- **Progress Views**: Linear progress view integration
+- **State Management**: Observable object integration
+- **Async Operations**: Task-based async operations
+- **Error Handling**: User-friendly error presentation
 
-### Swift Error Types
+### ✅ Combine Integration
 
-- `ZLibError.invalidData` → Invalid or corrupted input data
-- `ZLibError.insufficientMemory` → Memory allocation failure
-- `ZLibError.streamError(ZLibStatus)` → Stream operation error
-- `ZLibError.fileError(String)` → File operation error
-- `ZLibError.unsupportedOperation(String)` → Unsupported operation
+- **Reactive Programming**: Publisher-based operations
+- **Progress Publishers**: Progress reporting publishers
+- **Error Handling**: Comprehensive error handling
+- **Cancellation**: Proper cancellation support
 
-## Memory Management
+### ✅ Async/Await Integration
 
-### Automatic Memory Management
+- **Modern Concurrency**: Full async/await support
+- **Task Management**: Proper task lifecycle management
+- **Continuation Support**: Checked throwing continuation usage
+- **Main Actor Integration**: UI updates on main actor
 
-- All C memory management is handled automatically by Swift
-- `malloc()`/`free()` → Swift's automatic memory management
-- `z_stream` structures → Swift classes with automatic cleanup
-- Buffer management → Swift `Data` types
+## Performance Optimization
 
-### Manual Memory Control (when needed)
+### ✅ Strategy Selection
 
-- `deflateBound()` → `Compressor.getBound()` for buffer sizing
-- `inflateBound()` → `Decompressor.getBound()` for buffer sizing
-- Custom buffer management → Swift `Data` with capacity hints
+- **Data Type Optimization**: Strategy selection for different data types
+- **Performance Guidelines**: When to use each strategy
+- **Compression Ratio**: Impact on compression efficiency
+- **Speed Optimization**: Impact on processing speed
 
-## Performance Optimizations
+### ✅ Memory Optimization
 
-### Built-in Optimizations
+- **Chunk Size Tuning**: Optimal chunk sizes for different scenarios
+- **Memory Level Selection**: Memory usage vs. performance trade-offs
+- **Memory Monitoring**: Memory usage tracking and optimization
+- **Resource Management**: Proper resource cleanup
 
-- `deflateTune()` → `Compressor.tune()` for performance tuning
-- `deflateParams()` → `Compressor.setParameters()` for runtime optimization
-- `inflateSync()` → `Decompressor.sync()` for error recovery
-- `inflateSyncPoint()` → `Decompressor.isSyncPoint()` for synchronization
+### ✅ Window Bits Optimization
 
-### Swift-Specific Optimizations
+- **Format Selection**: Choosing the right format for your use case
+- **Window Size Tuning**: Custom window sizes for specific requirements
+- **Compatibility**: Ensuring compatibility with other systems
+- **Performance Impact**: Window size impact on performance
 
-- Zero-copy operations where possible
-- Efficient buffer management with `Data`
-- Async/await for non-blocking operations
-- Combine publishers for reactive programming
+## Testing and Validation
+
+### ✅ Comprehensive Test Coverage
+
+- **Unit Tests**: All API methods have unit test coverage
+- **Integration Tests**: End-to-end functionality testing
+- **Performance Tests**: Performance benchmarking
+- **Memory Tests**: Memory leak detection and validation
+- **Error Tests**: Error condition testing
+- **Edge Case Tests**: Boundary condition testing
+
+### ✅ Test Categories
+
+- **Core Tests**: Basic compression/decompression functionality
+- **Advanced Tests**: Advanced features and edge cases
+- **Concurrency Tests**: Async/await and concurrent operation testing
+- **File Tests**: File operation testing
+- **Streaming Tests**: Streaming operation testing
+- **Error Tests**: Error handling and recovery testing
+- **Performance Tests**: Performance benchmarking and optimization
+- **Memory Tests**: Memory usage and leak detection
+
+## Documentation Coverage
+
+### ✅ Complete Documentation
+
+- **API Reference**: Comprehensive API documentation
+- **Advanced Features**: Advanced usage patterns and techniques
+- **Examples**: Practical usage examples for all features
+- **Integration Guides**: Framework integration examples
+- **Performance Guides**: Performance optimization guidance
+- **Error Handling**: Comprehensive error handling documentation
+
+### ✅ Documentation Quality
+
+- **Code Examples**: All APIs have practical code examples
+- **Parameter Documentation**: Complete parameter descriptions
+- **Return Value Documentation**: Detailed return value descriptions
+- **Error Documentation**: Comprehensive error case documentation
+- **Performance Notes**: Performance characteristics and trade-offs
+- **Best Practices**: Usage best practices and recommendations
 
 ## Platform Support
 
-### macOS
+### ✅ Cross-Platform Support
 
-- All zlib functions available through system zlib
-- Full API coverage with native performance
-- Integration with macOS frameworks
+- **iOS**: Full iOS support with UIKit integration
+- **macOS**: Complete macOS support
+- **tvOS**: tvOS platform support
+- **watchOS**: watchOS platform support
+- **Linux**: Linux platform support
+- **Windows**: Windows platform support
 
-### Linux
+### ✅ Framework Integration
 
-- All zlib functions available through system zlib
-- Full API coverage with native performance
-- Integration with Linux system libraries
+- **SwiftUI**: Native SwiftUI integration
+- **UIKit**: UIKit integration for iOS/macOS
+- **Combine**: Comprehensive Combine integration
+- **Async/Await**: Full modern Swift concurrency support
+- **Foundation**: Foundation framework integration
 
-### Cross-Platform Compatibility
+## Summary
 
-- Consistent API across platforms
-- Platform-specific optimizations where available
-- Unified error handling and memory management
+SwiftZlib provides comprehensive API coverage across all major compression and decompression use cases:
 
-## Coverage Statistics
+- **Core Operations**: Complete basic compression/decompression functionality
+- **Advanced Features**: Sophisticated features like fluent builders, chunked operations, and enhanced decompressors
+- **Modern Swift**: Full support for async/await, Combine, and modern Swift patterns
+- **Cross-Platform**: Support for all major Apple platforms and Linux/Windows
+- **Performance**: Optimized performance with configurable memory usage
+- **Error Handling**: Comprehensive error handling and recovery
+- **Documentation**: Complete documentation with practical examples
+- **Testing**: Comprehensive test coverage for all functionality
 
-| Category              | C Functions | Swift Methods | Coverage |
-| --------------------- | ----------- | ------------- | -------- |
-| Core Compression      | 3           | 18            | 100%     |
-| Stream Compression    | 14          | 14            | 100%     |
-| Stream Decompression  | 15          | 15            | 100%     |
-| InflateBack           | 3           | 6             | 100%     |
-| Gzip File Ops         | 16          | 16            | 100%     |
-| Checksums             | 4           | 6             | 100%     |
-| Utilities             | 3           | 3             | 100%     |
-| File Operations       | 6           | 12            | 100%     |
-| Error Handling        | 9           | 9             | 100%     |
-| Configuration         | 12          | 12            | 100%     |
-| **Missing Functions** | **8**       | **0**         | **0%**   |
-| **Total**             | **93**      | **111**       | **~98%** |
-
-## Notes
-
-- **100% functional coverage**: All zlib functions are accessible
-- **Swift-native interfaces**: Modern Swift APIs with proper error handling
-- **Memory safety**: Automatic memory management with Swift
-- **Type safety**: Strong typing with Swift enums and structs
-- **Performance**: Native performance with minimal overhead
-- **Cross-platform**: Consistent behavior on macOS and Linux
-
-This API coverage ensures that any zlib-based application can be easily ported to Swift using SwiftZlib while maintaining full functionality and gaining modern Swift language features.
-
-## Notes on Missing Functions
-
-### Why These Functions Are Missing
-
-1. **Advanced Stream Functions**: `deflateResetKeep()` and `inflateResetKeep()` are advanced functions that preserve dictionary state during reset. These are rarely used and add complexity.
-
-2. **Testing Functions**: `inflateUndermine()` and `inflateValidate()` are primarily used for testing zlib integrity and are not typically needed in production applications.
-
-3. **Gzip File Functions**: `gzoffset()`, `gzvprintf()`, `gzfread()`, and `gzfwrite()` are advanced gzip file operations that provide more granular control than the current high-level file API.
-
-4. **Utility Functions**: `zError()` is partially covered through the C shim but not exposed as a public Swift API.
-
-### Impact Assessment
-
-- **Low Impact**: Missing functions are rarely used in typical applications
-- **Advanced Use Cases**: Some missing functions are for specialized scenarios
-- **Testing Functions**: Missing functions include testing-only utilities
-- **File Operations**: Missing gzip functions can be worked around with existing APIs
-
-### Future Considerations
-
-These missing functions could be added if there's demand:
-
-- Advanced stream reset functions for dictionary preservation
-- More granular gzip file operations
-- Testing utilities for zlib integrity validation
-- Enhanced error reporting utilities
+The library is designed to be both powerful for advanced use cases and simple for basic operations, with a focus on performance, memory efficiency, and modern Swift patterns.

@@ -1,503 +1,670 @@
 # Advanced Features
 
-SwiftZlib provides advanced features for sophisticated compression scenarios, modern Swift concurrency, and performance optimization.
+This document covers advanced features and techniques for using SwiftZlib effectively.
 
-## Async/Await Support
+## Fluent Builder Pattern
 
-SwiftZlib fully supports Swift's modern concurrency model with async/await.
+SwiftZlib provides fluent builder APIs for creating and configuring compression/decompression streams with a clean, chainable interface.
 
-### Async Compression
+### ZLibStreamBuilder
+
+The `ZLibStreamBuilder` allows you to configure and create zlib streams using a fluent interface.
 
 ```swift
-// Async data compression
-let data = "Hello, World!".data(using: .utf8)!
-let compressed = try await data.compressAsync(level: .best)
+// Create a compressor with custom configuration
+let compressor = ZLib.stream()
+    .compression(level: .best)
+    .strategy(.huffman)
+    .windowBits(.gzip)
+    .memoryLevel(.maximum)
+    .chunkSize(128 * 1024)
+    .buildCompressor()
 
-// Async string compression
-let text = "Large text content..."
-let compressedText = try await text.compressAsync(level: .bestSpeed)
+// Create a decompressor with custom configuration
+let decompressor = ZLib.stream()
+    .decompression()
+    .windowBits(.gzip)
+    .memoryLevel(.minimum)
+    .chunkSize(64 * 1024)
+    .buildDecompressor()
+
+// Create a complete stream for both operations
+let stream = ZLib.stream()
+    .compression(level: .best, strategy: .huffman)
+    .windowBits(.gzip)
+    .build()
 ```
 
-### Async File Operations
+### AsyncZLibStreamBuilder
+
+For asynchronous operations, use the `AsyncZLibStreamBuilder`:
 
 ```swift
-// Async file compression with progress
-try await ZLib.compressFileAsync(
-    from: "input.txt",
-    to: "output.gz",
+// Create an async compressor
+let asyncCompressor = ZLib.asyncStream()
+    .compression(level: .best)
+    .strategy(.huffman)
+    .windowBits(.gzip)
+    .buildCompressor()
+
+// Create an async decompressor
+let asyncDecompressor = ZLib.asyncStream()
+    .decompression()
+    .windowBits(.gzip)
+    .buildDecompressor()
+
+// Create an async stream
+let asyncStream = ZLib.asyncStream()
+    .compression(level: .best, strategy: .huffman)
+    .windowBits(.gzip)
+    .build()
+```
+
+### Builder Configuration Options
+
+#### Compression Configuration
+
+```swift
+// Basic compression
+.compression(level: .best)
+
+// Compression with strategy
+.compression(level: .best, strategy: .huffman)
+
+// Compression with custom window bits
+.compression(level: .best, strategy: .huffman)
+.windowBits(.gzip)
+```
+
+#### Decompression Configuration
+
+```swift
+// Basic decompression
+.decompression()
+
+// Decompression with custom window bits
+.decompression()
+.windowBits(.gzip)
+```
+
+#### Memory and Performance Configuration
+
+```swift
+// Memory usage level
+.memoryLevel(.maximum)  // For best performance
+.memoryLevel(.minimum)  // For memory-constrained environments
+
+// Chunk size for streaming
+.chunkSize(128 * 1024)  // 128KB chunks
+.chunkSize(64 * 1024)   // 64KB chunks
+```
+
+## Chunked File Operations
+
+For processing large files efficiently without loading them entirely into memory, SwiftZlib provides specialized chunked file operations.
+
+### FileChunkedCompressor
+
+The `FileChunkedCompressor` processes files in chunks with constant memory usage:
+
+```swift
+// Create a chunked compressor
+let compressor = FileChunkedCompressor(
     level: .best,
-    progress: { progress in
-        print("Compression: \(Int(progress * 100))%")
+    chunkSize: 64 * 1024  // 64KB chunks
+)
+
+// Compress a large file with progress reporting
+try compressor.compressFile(
+    at: "large-input.txt",
+    to: "compressed.gz",
+    progress: { processed, total in
+        let percentage = total > 0 ? Double(processed) / Double(total) * 100 : 0
+        print("Compression progress: \(percentage)%")
     }
 )
 
-// Async file decompression
-try await ZLib.decompressFileAsync(
-    from: "output.gz",
+// Compress with custom strategy
+let compressorWithStrategy = FileChunkedCompressor(
+    level: .best,
+    strategy: .huffman,
+    windowBits: .gzip,
+    chunkSize: 128 * 1024
+)
+
+try compressorWithStrategy.compressFile(
+    at: "image-data.bin",
+    to: "compressed-image.gz"
+)
+```
+
+### FileChunkedDecompressor
+
+The `FileChunkedDecompressor` handles large compressed files efficiently:
+
+```swift
+// Create a chunked decompressor
+let decompressor = FileChunkedDecompressor(
+    windowBits: .gzip,
+    chunkSize: 64 * 1024
+)
+
+// Decompress a large file with progress reporting
+try decompressor.decompressFile(
+    at: "compressed.gz",
+    to: "decompressed.txt",
+    progress: { processed, total in
+        let percentage = total > 0 ? Double(processed) / Double(total) * 100 : 0
+        print("Decompression progress: \(percentage)%")
+    }
+)
+
+// Decompress with custom window bits
+let customDecompressor = FileChunkedDecompressor(
+    windowBits: .raw,
+    chunkSize: 128 * 1024
+)
+
+try customDecompressor.decompressFile(
+    at: "raw-compressed.bin",
     to: "decompressed.txt"
 )
 ```
 
-### Async Streaming
+### Memory Efficiency
+
+Chunked operations use constant memory regardless of file size:
 
 ```swift
-let config = StreamingConfig(
-    chunkSize: 64 * 1024,
-    compressionLevel: .best
-)
+// Process a 1GB file with only 64KB memory usage
+let compressor = FileChunkedCompressor(chunkSize: 64 * 1024)
 
-let stream = AsyncZLibStream(config: config)
-
-// Process large files asynchronously
-try await stream.compressFile(
-    from: "large-input.txt",
-    to: "compressed.gz",
-    progress: { progress in
-        await MainActor.run {
-            progressView.progress = Float(progress)
-        }
-    }
+try compressor.compressFile(
+    at: "1gb-file.txt",
+    to: "compressed.gz"
 )
 ```
 
-## Combine Integration
+## Enhanced Decompressors
 
-SwiftZlib provides comprehensive Combine support for reactive programming patterns.
+SwiftZlib provides enhanced decompressor classes with additional features for specialized use cases.
 
-### Data Publishers
+### EnhancedInflateBackDecompressor
 
-```swift
-import Combine
-
-var cancellables = Set<AnyCancellable>()
-
-// Compress data with Combine
-ZLib.compressPublisher(data: data, level: .best)
-    .sink(
-        receiveCompletion: { completion in
-            switch completion {
-            case .finished:
-                print("Compression completed")
-            case .failure(let error):
-                print("Compression failed: \(error)")
-            }
-        },
-        receiveValue: { compressed in
-            print("Compressed size: \(compressed.count)")
-        }
-    )
-    .store(in: &cancellables)
-
-// Decompress data with Combine
-ZLib.decompressPublisher(data: compressedData)
-    .sink(
-        receiveCompletion: { _ in },
-        receiveValue: { decompressed in
-            print("Decompressed: \(decompressed)")
-        }
-    )
-    .store(in: &cancellables)
-```
-
-### File Operation Publishers
+The `EnhancedInflateBackDecompressor` provides advanced features for processing data in reverse order with custom callbacks:
 
 ```swift
-// File compression with progress
-ZLib.compressFilePublisher(
-    from: "input.txt",
-    to: "output.gz",
-    level: .best
-)
-.sink(
-    receiveCompletion: { completion in
-        if case .failure(let error) = completion {
-            print("File compression failed: \(error)")
-        }
+// Create an enhanced decompressor
+let decompressor = EnhancedInflateBackDecompressor(windowBits: .default)
+
+// Process data with custom input/output callbacks
+try decompressor.processWithCallbacks(
+    input: compressedData,
+    inputCallback: { chunk in
+        // Custom input processing
+        return chunk.reversed()  // Process in reverse
     },
-    receiveValue: { _ in
-        print("File compression completed")
+    outputCallback: { output in
+        // Custom output processing
+        print("Processed: \(output.count) bytes")
+        // Store or process output as needed
     }
 )
-.store(in: &cancellables)
 
-// File decompression
-ZLib.decompressFilePublisher(from: "output.gz", to: "decompressed.txt")
-    .sink(
-        receiveCompletion: { _ in },
-        receiveValue: { _ in
-            print("File decompression completed")
-        }
-    )
-    .store(in: &cancellables)
+// Get stream information
+let info = try decompressor.getStreamInfo()
+print("Total input: \(info.totalIn), Total output: \(info.totalOut), Active: \(info.isActive)")
 ```
 
-### Progress Publishers
+### InflateBackDecompressor
+
+The standard `InflateBackDecompressor` for reverse-order processing:
 
 ```swift
-// Get progress updates during compression
-ZLib.compressFilePublisher(
-    from: "large-file.txt",
-    to: "compressed.gz",
-    level: .best
-)
-.progressPublisher
-.sink { progress in
-    print("Progress: \(Int(progress * 100))%")
-}
-.store(in: &cancellables)
+// Create a standard inflate back decompressor
+let decompressor = InflateBackDecompressor(windowBits: .gzip)
+
+// Process data in chunks
+let result = try decompressor.decompress(compressedData, flush: .finish)
 ```
 
-## Dictionary Compression
+## Progress Stream APIs
 
-Dictionary compression allows you to provide a custom dictionary that helps compress data with common patterns.
+SwiftZlib provides comprehensive progress reporting for all file operations, allowing you to monitor operation progress and provide user feedback.
 
-### Basic Dictionary Usage
+### Progress Callbacks
 
-```swift
-// Create a dictionary from common text
-let dictionary = "Hello, this is a common prefix that appears frequently in our data.".data(using: .utf8)!
-
-// Compress with dictionary
-let data = "Hello, this is a common prefix that appears frequently in our data. And here is more content.".data(using: .utf8)!
-let compressed = try data.compress(level: .best, dictionary: dictionary)
-```
-
-### Dictionary for Structured Data
+All file operations support optional progress callbacks:
 
 ```swift
-// For JSON data with common keys
-let jsonDictionary = """
-{
-    "id": "",
-    "name": "",
-    "email": "",
-    "created_at": "",
-    "updated_at": ""
-}
-""".data(using: .utf8)!
-
-let jsonData = """
-{
-    "id": "123",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "created_at": "2023-01-01",
-    "updated_at": "2023-01-02"
-}
-""".data(using: .utf8)!
-
-let compressed = try jsonData.compress(level: .best, dictionary: jsonDictionary)
-```
-
-### Dictionary for Network Protocols
-
-```swift
-// For HTTP headers
-let httpDictionary = """
-GET / HTTP/1.1
-Host: example.com
-User-Agent: Mozilla/5.0
-Accept: text/html
-Connection: keep-alive
-""".data(using: .utf8)!
-
-let httpRequest = """
-GET /api/users HTTP/1.1
-Host: api.example.com
-User-Agent: MyApp/1.0
-Accept: application/json
-Connection: keep-alive
-""".data(using: .utf8)!
-
-let compressed = try httpRequest.compress(level: .best, dictionary: httpDictionary)
-```
-
-## Custom Compression Strategies
-
-SwiftZlib supports different compression strategies for various data types.
-
-### Strategy Selection
-
-```swift
-// Default strategy (good for general data)
-let compressed = try data.compress(level: .best, strategy: .default)
-
-// Filtered strategy (good for image data)
-let imageData = loadImageData()
-let compressed = try imageData.compress(level: .best, strategy: .filtered)
-
-// Huffman-only strategy (good for pre-filtered data)
-let filteredData = applyCustomFilter(imageData)
-let compressed = try filteredData.compress(level: .best, strategy: .huffman)
-
-// RLE strategy (good for data with runs)
-let runData = generateRunData()
-let compressed = try runData.compress(level: .best, strategy: .rle)
-
-// Fixed strategy (good for small data)
-let smallData = "small".data(using: .utf8)!
-let compressed = try smallData.compress(level: .best, strategy: .fixed)
-```
-
-### Strategy Guidelines
-
-| Strategy    | Best For          | Use Cases              |
-| ----------- | ----------------- | ---------------------- |
-| `.default`  | General data      | Text, mixed content    |
-| `.filtered` | Image data        | PNG, JPEG, raw images  |
-| `.huffman`  | Pre-filtered data | Already processed data |
-| `.rle`      | Data with runs    | Repeated patterns      |
-| `.fixed`    | Small data        | Headers, metadata      |
-
-## Performance Optimization
-
-### Memory Level Configuration
-
-```swift
-// Minimal memory usage (good for mobile)
-let mobileConfig = StreamingConfig(
-    chunkSize: 32 * 1024,
-    memoryLevel: .min
-)
-
-// Default memory usage (balanced)
-let balancedConfig = StreamingConfig(
-    chunkSize: 64 * 1024,
-    memoryLevel: .default
-)
-
-// Maximum memory usage (good for desktop)
-let desktopConfig = StreamingConfig(
-    chunkSize: 256 * 1024,
-    memoryLevel: .max
-)
-```
-
-### Compression Level Optimization
-
-```swift
-// Fast compression for real-time applications
-let realtimeConfig = StreamingConfig(
-    compressionLevel: .bestSpeed
-)
-
-// Balanced compression for general use
-let generalConfig = StreamingConfig(
-    compressionLevel: .default
-)
-
-// Best compression for storage
-let storageConfig = StreamingConfig(
-    compressionLevel: .best
-)
-```
-
-### Chunk Size Optimization
-
-```swift
-// Small chunks for network streaming
-let networkConfig = StreamingConfig(chunkSize: 8 * 1024)
-
-// Medium chunks for file processing
-let fileConfig = StreamingConfig(chunkSize: 128 * 1024)
-
-// Large chunks for high-throughput
-let throughputConfig = StreamingConfig(chunkSize: 1024 * 1024)
-```
-
-## Advanced Error Handling
-
-### Custom Error Types
-
-```swift
-enum CompressionError: Error {
-    case invalidInput
-    case insufficientMemory
-    case streamError(ZLibStatus)
-    case fileError(String)
-}
-
-func safeCompress(_ data: Data) throws -> Data {
-    do {
-        return try data.compress(level: .best)
-    } catch ZLibError.invalidData {
-        throw CompressionError.invalidInput
-    } catch ZLibError.insufficientMemory {
-        throw CompressionError.insufficientMemory
-    } catch ZLibError.streamError(let status) {
-        throw CompressionError.streamError(status)
-    } catch {
-        throw CompressionError.fileError(error.localizedDescription)
-    }
-}
-```
-
-### Error Recovery
-
-```swift
-func compressWithFallback(_ data: Data) -> Data {
-    // Try best compression first
-    do {
-        return try data.compress(level: .best)
-    } catch {
-        // Fall back to faster compression
-        do {
-            return try data.compress(level: .bestSpeed)
-        } catch {
-            // Fall back to no compression
-            return data
+// Compression with progress
+try compressor.compressFile(
+    at: "input.txt",
+    to: "output.gz",
+    progress: { processed, total in
+        if total > 0 {
+            let percentage = Double(processed) / Double(total) * 100
+            print("Compression: \(percentage)%")
+        } else {
+            print("Processed: \(processed) bytes")
         }
     }
+)
+
+// Decompression with progress
+try decompressor.decompressFile(
+    at: "compressed.gz",
+    to: "decompressed.txt",
+    progress: { processed, total in
+        if total > 0 {
+            let percentage = Double(processed) / Double(total) * 100
+            print("Decompression: \(percentage)%")
+        } else {
+            print("Processed: \(processed) bytes")
+        }
+    }
+)
+```
+
+### Progress Integration with UI
+
+For iOS/macOS applications, you can integrate progress reporting with UI components:
+
+```swift
+// SwiftUI progress view integration
+struct CompressionView: View {
+    @State private var progress: Double = 0
+    @State private var isCompressing = false
+
+    var body: some View {
+        VStack {
+            ProgressView(value: progress)
+                .progressViewStyle(LinearProgressViewStyle())
+            Text("\(Int(progress * 100))%")
+        }
+        .onAppear {
+            compressFile()
+        }
+    }
+
+    private func compressFile() {
+        isCompressing = true
+        let compressor = FileChunkedCompressor()
+
+        try? compressor.compressFile(
+            at: "input.txt",
+            to: "output.gz",
+            progress: { processed, total in
+                DispatchQueue.main.async {
+                    if total > 0 {
+                        self.progress = Double(processed) / Double(total)
+                    }
+                }
+            }
+        )
+        isCompressing = false
+    }
 }
 ```
 
-## Advanced Patterns
+### Progress with Combine
 
-### Batch Processing
+For reactive programming, you can create publishers that emit progress updates:
 
 ```swift
-func compressBatch(_ files: [String]) async throws -> [String] {
-    let config = StreamingConfig(
-        chunkSize: 64 * 1024,
-        compressionLevel: .best
-    )
+// Create a progress publisher
+class CompressionProgress {
+    private let compressor = FileChunkedCompressor()
 
-    return try await withThrowingTaskGroup(of: String.self) { group in
-        for file in files {
-            group.addTask {
-                let output = file + ".gz"
-                try await ZLib.compressFileAsync(
-                    from: file,
+    func compressWithProgress(input: String, output: String) -> AnyPublisher<Double, ZLibError> {
+        return Future { promise in
+            do {
+                try self.compressor.compressFile(
+                    at: input,
                     to: output,
-                    level: .best
+                    progress: { processed, total in
+                        if total > 0 {
+                            let progress = Double(processed) / Double(total)
+                            promise(.success(progress))
+                        }
+                    }
                 )
-                return output
+                promise(.success(1.0))
+            } catch {
+                promise(.failure(error as! ZLibError))
             }
         }
-
-        var results: [String] = []
-        for try await result in group {
-            results.append(result)
-        }
-        return results
-    }
-}
-```
-
-### Streaming with Custom Processing
-
-```swift
-class CustomStreamProcessor {
-    private let stream: ZLibStream
-    private let processor: (Data) -> Data
-
-    init(config: StreamingConfig, processor: @escaping (Data) -> Data) {
-        self.stream = ZLibStream(config: config)
-        self.processor = processor
-    }
-
-    func processAndCompress(_ data: Data) throws -> Data {
-        let processed = processor(data)
-        return try stream.compress(processed)
-    }
-
-    func finish() throws -> Data {
-        return try stream.finish()
+        .eraseToAnyPublisher()
     }
 }
 
 // Usage
-let processor = CustomStreamProcessor(
-    config: .default,
-    processor: { data in
-        // Apply custom transformation
-        return data.uppercased()
-    }
-)
-
-let processed = try processor.processAndCompress(inputData)
-let final = try processor.finish()
+let progress = CompressionProgress()
+progress.compressWithProgress(input: "input.txt", output: "output.gz")
+    .sink(
+        receiveCompletion: { completion in
+            if case .failure(let error) = completion {
+                print("Compression failed: \(error)")
+            }
+        },
+        receiveValue: { progress in
+            print("Progress: \(Int(progress * 100))%")
+        }
+    )
+    .store(in: &cancellables)
 ```
 
-### Memory-Efficient Processing
+## Advanced Streaming
+
+### Custom Stream Processing
+
+Create custom stream processing with the builder pattern:
 
 ```swift
-func processLargeFileEfficiently(input: String, output: String) throws {
-    let config = StreamingConfig(
-        chunkSize: 16 * 1024,  // Small chunks
-        memoryLevel: .min,      // Minimal memory
-        compressionLevel: .bestSpeed  // Fast compression
-    )
+// Custom stream with specific configuration
+let customStream = ZLib.stream()
+    .compression(level: .best, strategy: .huffman)
+    .windowBits(.gzip)
+    .memoryLevel(.maximum)
+    .chunkSize(256 * 1024)
+    .build()
 
-    let stream = ZLibStream(config: config)
+// Process data in chunks
+let inputData = "Hello, World!".data(using: .utf8)!
+let compressed = try customStream.compress(inputData)
+let final = try customStream.finish()
+```
 
-    let inputHandle = try FileHandle(forReadingFrom: URL(fileURLWithPath: input))
-    let outputHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: output))
+### Async Stream Processing
 
-    defer {
-        try? inputHandle.close()
-        try? outputHandle.close()
-    }
+For asynchronous processing with progress reporting:
 
-    while let chunk = try inputHandle.read(upToCount: 16 * 1024) {
-        let compressed = try stream.compress(chunk)
-        try outputHandle.write(contentsOf: compressed)
-    }
+```swift
+// Create async stream
+let asyncStream = ZLib.asyncStream()
+    .compression(level: .best)
+    .windowBits(.gzip)
+    .build()
 
-    let final = try stream.finish()
-    try outputHandle.write(contentsOf: final)
+// Process data asynchronously
+Task {
+    let result = try await asyncStream.process(inputData)
+    let final = try await asyncStream.finish()
+    print("Async compression completed")
 }
+```
+
+## Memory Management
+
+### Memory Level Configuration
+
+Configure memory usage based on your application's needs:
+
+```swift
+// Minimum memory usage (good for embedded systems)
+let lowMemoryCompressor = ZLib.stream()
+    .compression(level: .default)
+    .memoryLevel(.minimum)
+    .buildCompressor()
+
+// Maximum memory usage (best performance)
+let highMemoryCompressor = ZLib.stream()
+    .compression(level: .best)
+    .memoryLevel(.maximum)
+    .buildCompressor()
+
+// Default memory usage (balanced)
+let balancedCompressor = ZLib.stream()
+    .compression(level: .default)
+    .memoryLevel(.default)
+    .buildCompressor()
+```
+
+### Chunk Size Optimization
+
+Optimize chunk sizes for your specific use case:
+
+```swift
+// Small chunks for memory-constrained environments
+let smallChunkCompressor = FileChunkedCompressor(
+    level: .default,
+    chunkSize: 16 * 1024  // 16KB chunks
+)
+
+// Large chunks for high-performance systems
+let largeChunkCompressor = FileChunkedCompressor(
+    level: .best,
+    chunkSize: 512 * 1024  // 512KB chunks
+)
+
+// Balanced chunks for most applications
+let balancedChunkCompressor = FileChunkedCompressor(
+    level: .default,
+    chunkSize: 64 * 1024  // 64KB chunks
+)
+```
+
+## Error Handling
+
+### Advanced Error Recovery
+
+Handle specific error cases with detailed error information:
+
+```swift
+do {
+    let compressor = FileChunkedCompressor()
+    try compressor.compressFile(at: "input.txt", to: "output.gz")
+} catch ZLibError.invalidParameter {
+    print("Invalid parameters provided")
+} catch ZLibError.bufferError {
+    print("Buffer error occurred")
+} catch ZLibError.dataError {
+    print("Data corruption detected")
+} catch ZLibError.memoryError {
+    print("Memory allocation failed")
+} catch ZLibError.streamError {
+    print("Stream processing error")
+} catch {
+    print("Unknown error: \(error)")
+}
+```
+
+### Error Recovery Strategies
+
+Implement recovery strategies for different error types:
+
+```swift
+func compressWithRetry(input: String, output: String, maxRetries: Int = 3) throws {
+    var lastError: ZLibError?
+
+    for attempt in 1...maxRetries {
+        do {
+            let compressor = FileChunkedCompressor()
+            try compressor.compressFile(at: input, to: output)
+            return  // Success
+        } catch let error as ZLibError {
+            lastError = error
+
+            switch error {
+            case .memoryError:
+                // Try with lower memory usage
+                let lowMemoryCompressor = FileChunkedCompressor(
+                    level: .default,
+                    chunkSize: 16 * 1024
+                )
+                try lowMemoryCompressor.compressFile(at: input, to: output)
+                return
+            case .dataError:
+                // Data corruption, cannot recover
+                throw error
+            default:
+                // Other errors, retry
+                if attempt < maxRetries {
+                    Thread.sleep(forTimeInterval: 1.0)  // Wait before retry
+                    continue
+                }
+            }
+        }
+    }
+
+    throw lastError ?? ZLibError.unknownError(-1)
+}
+```
+
+## Performance Optimization
+
+### Compression Strategy Selection
+
+Choose the right compression strategy for your data type:
+
+```swift
+// Text data - use default strategy
+let textCompressor = ZLib.stream()
+    .compression(level: .best, strategy: .default)
+    .buildCompressor()
+
+// Image data - use filtered strategy
+let imageCompressor = ZLib.stream()
+    .compression(level: .best, strategy: .filtered)
+    .buildCompressor()
+
+// Pre-filtered data - use huffman strategy
+let filteredCompressor = ZLib.stream()
+    .compression(level: .best, strategy: .huffman)
+    .buildCompressor()
+
+// Data with runs - use RLE strategy
+let runCompressor = ZLib.stream()
+    .compression(level: .best, strategy: .rle)
+    .buildCompressor()
+
+// Small data - use fixed strategy
+let smallDataCompressor = ZLib.stream()
+    .compression(level: .best, strategy: .fixed)
+    .buildCompressor()
+```
+
+### Window Bits Optimization
+
+Optimize window bits for your specific format requirements:
+
+```swift
+// Standard zlib format
+let zlibCompressor = ZLib.stream()
+    .compression(level: .best)
+    .windowBits(.default)  // 32KB window
+    .buildCompressor()
+
+// Gzip format
+let gzipCompressor = ZLib.stream()
+    .compression(level: .best)
+    .windowBits(.gzip)  // 32KB window with gzip header
+    .buildCompressor()
+
+// Raw deflate format
+let rawCompressor = ZLib.stream()
+    .compression(level: .best)
+    .windowBits(.raw)  // No header/trailer
+    .buildCompressor()
+
+// Custom window size
+let customCompressor = ZLib.stream()
+    .compression(level: .best)
+    .windowBits(.custom(12))  // 4KB window
+    .buildCompressor()
 ```
 
 ## Integration Examples
 
-### Combine with Async
+### Combine Integration
+
+Integrate with Combine for reactive programming:
 
 ```swift
-func compressWithProgress(_ data: Data) -> AnyPublisher<Double, Never> {
-    let progressSubject = PassthroughSubject<Double, Never>()
+import Combine
 
-    Task {
-        do {
-            let compressed = try await data.compressAsync(level: .best)
-            progressSubject.send(1.0)
-            progressSubject.send(completion: .finished)
-        } catch {
-            progressSubject.send(completion: .finished)
+class CompressionService {
+    private var cancellables = Set<AnyCancellable>()
+
+    func compressWithProgress(input: String, output: String) -> AnyPublisher<Double, ZLibError> {
+        return Future { promise in
+            let compressor = FileChunkedCompressor()
+
+            do {
+                try compressor.compressFile(
+                    at: input,
+                    to: output,
+                    progress: { processed, total in
+                        if total > 0 {
+                            let progress = Double(processed) / Double(total)
+                            promise(.success(progress))
+                        }
+                    }
+                )
+                promise(.success(1.0))
+            } catch {
+                promise(.failure(error as! ZLibError))
+            }
         }
+        .eraseToAnyPublisher()
     }
-
-    return progressSubject.eraseToAnyPublisher()
 }
+
+// Usage
+let service = CompressionService()
+service.compressWithProgress(input: "input.txt", output: "output.gz")
+    .sink(
+        receiveCompletion: { completion in
+            if case .failure(let error) = completion {
+                print("Compression failed: \(error)")
+            }
+        },
+        receiveValue: { progress in
+            print("Progress: \(Int(progress * 100))%")
+        }
+    )
+    .store(in: &cancellables)
 ```
 
-### Custom Progress Reporting
+### Async/Await Integration
+
+Use with modern Swift concurrency:
 
 ```swift
-class ProgressTracker {
-    private let totalSize: Int
-    private var processedSize: Int = 0
-    private let progressCallback: (Double) -> Void
+@MainActor
+class CompressionViewModel: ObservableObject {
+    @Published var progress: Double = 0
+    @Published var isCompressing = false
 
-    init(totalSize: Int, progressCallback: @escaping (Double) -> Void) {
-        self.totalSize = totalSize
-        self.progressCallback = progressCallback
+    func compressFile(input: String, output: String) async throws {
+        isCompressing = true
+        progress = 0
+
+        let compressor = FileChunkedCompressor()
+
+        try await withCheckedThrowingContinuation { continuation in
+            do {
+                try compressor.compressFile(
+                    at: input,
+                    to: output,
+                    progress: { processed, total in
+                        Task { @MainActor in
+                            if total > 0 {
+                                self.progress = Double(processed) / Double(total)
+                            }
+                        }
+                    }
+                )
+                continuation.resume()
+            } catch {
+                continuation.resume(throwing: error)
+            }
+        }
+
+        isCompressing = false
+        progress = 1.0
     }
-
-    func updateProgress(_ additionalSize: Int) {
-        processedSize += additionalSize
-        let progress = Double(processedSize) / Double(totalSize)
-        progressCallback(progress)
-    }
-}
-
-func compressWithCustomProgress(_ data: Data) async throws -> Data {
-    let tracker = ProgressTracker(totalSize: data.count) { progress in
-        print("Progress: \(Int(progress * 100))%")
-    }
-
-    return try await data.compressAsync(level: .best)
 }
 ```
 
-This advanced features documentation covers all the sophisticated capabilities of SwiftZlib, from modern Swift concurrency to performance optimization and custom processing patterns.
+This advanced features guide covers the most powerful capabilities of SwiftZlib, enabling you to build efficient, scalable compression solutions for your applications.
