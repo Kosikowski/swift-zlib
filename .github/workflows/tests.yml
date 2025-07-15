@@ -246,7 +246,7 @@ jobs:
 
   # Build verification - macOS
   build-verification-macos:
-    name: Build Verification (macOS, Swift ${{ matrix.swift-version }})
+    name: Build Verification (macOS, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
     strategy:
       matrix:
         configuration: [debug, release]
@@ -278,7 +278,7 @@ jobs:
 
   # Build verification - Linux
   build-verification-linux:
-    name: Build Verification (Linux, Swift ${{ matrix.swift-version }})
+    name: Build Verification (Linux, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
     strategy:
       matrix:
         configuration: [debug, release]

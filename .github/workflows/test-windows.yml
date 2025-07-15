@@ -52,7 +52,7 @@ jobs:
 
   # Build verification - Windows
   build-verification-windows:
-    name: Build Verification (Windows)
+    name: Build Verification (Windows, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
     strategy:
       matrix:
         configuration: [debug, release]
