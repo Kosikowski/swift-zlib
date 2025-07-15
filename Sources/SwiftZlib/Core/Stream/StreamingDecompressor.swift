@@ -74,11 +74,7 @@ final class StreamingDecompressor {
 
             // Process input data with valid pointer
             try inputData.withUnsafeBytes { inputPtr in
-                #if os(Windows)
-                    stream.next_in = inputPtr.bindMemory(to: Bytef.self).baseAddress
-                #else
-                    stream.next_in = inputPtr.bindMemory(to: Bytef.self).baseAddress.map { UnsafeMutablePointer(mutating: $0) }
-                #endif
+                stream.next_in = inputPtr.bindMemory(to: Bytef.self).baseAddress.map { UnsafeMutablePointer(mutating: $0) }
                 stream.avail_in = uInt(inputData.count)
 
                 // Process input
