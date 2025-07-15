@@ -69,7 +69,8 @@ let package = Package(
                 .define("_NO_CRT_WCSRTOMBS_S_INLINE"),
             ],
             linkerSettings: [
-                .linkedLibrary("z"),
+                // Only link zlib on non-Windows platforms since we use our own implementation on Windows
+                .linkedLibrary("z", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .linux])),
             ]
         ),
 

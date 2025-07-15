@@ -219,7 +219,7 @@ final class FileChunkedDecompressor {
                 do {
                     let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
                     defer { try? input.close() }
-                    FileManager.default.createFile(atPath: destinationPath, contents: nil)
+                    _ = FileManager.default.createFile(atPath: destinationPath, contents: nil)
                     let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
                     defer { try? output.close() }
 

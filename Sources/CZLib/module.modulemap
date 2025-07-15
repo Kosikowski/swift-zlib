@@ -1,6 +1,5 @@
 module CZLib [system] {
   umbrella header "include/zlib_shim.h"
-  link "z"
   export *
 
   // Explicitly exclude problematic system modules
