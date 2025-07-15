@@ -113,175 +113,171 @@ SwiftZlib is a comprehensive Swift wrapper for the ZLib compression library, des
 ### 1. High-Level Component Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           SwiftZlib Architecture                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
-│  │   High-Level    │  │   File Ops      │  │   Async/Combine │            │
-│  │     API         │  │   Layer         │  │   Layer         │            │
-│  │                 │  │                 │  │                 │            │
-│  │ • ZLib.swift    │  │ • FileCompressor│  │ • AsyncCompressor│            │
-│  │ • ZLib+Async    │  │ • FileDecompressor│ │ • AsyncDecompressor│        │
-│  │ • ZLib+File     │  │ • FileChunked   │  │ • AsyncZLibStream│          │
-│  │ • ZLib+Combine  │  │ • FileProcessor │  │ • Combine Publishers│        │
-│  │ • Data+Extensions│ │ • GzipFile      │  │ • Progress Tracking│         │
-│  │ • String+Extensions│ │ • Progress Callbacks│ │ • Cancellation Support│   │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘            │
-│           │                       │                       │                │
-│           └───────────────────────┼───────────────────────┘                │
-│                                   │                                        │
-│                    ┌─────────────────┐                                    │
-│                    │   Core Layer    │                                    │
-│                    │                 │                                    │
-│                    │ • Compressor    │                                    │
-│                    │ • Decompressor  │                                    │
-│                    │ • InflateBack   │                                    │
-│                    │ • ZLibStream    │                                    │
-│                    │ • ZLibError     │                                    │
-│                    │ • Configuration │                                    │
-│                    │   Classes       │                                    │
-│                    └─────────────────┘                                    │
-│                                   │                                        │
-│                    ┌─────────────────┐                                    │
-│                    │   C Bridge      │                                    │
-│                    │   Layer         │                                    │
-│                    │                 │                                    │
-│                    │ • zlib_shim.c   │                                    │
-│                    │ • zlib_shim.h   │                                    │
-│                    │ • module.modulemap│                                  │
-│                    └─────────────────┘                                    │
-│                                   │                                        │
-│                    ┌─────────────────┐                                    │
-│                    │   ZLib C        │                                    │
-│                    │   Library       │                                    │
-│                    │                 │                                    │
-│                    │ • deflate       │                                    │
-│                    │ • inflate       │                                    │
-│                    │ • checksums     │                                    │
-│                    │ • utilities     │                                    │
-│                    └─────────────────┘                                    │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           SwiftZlib Architecture                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────────────┐│
+│  │   High-Level API     │  │     File Ops Layer   │  │   Async/Combine      ││
+│  │                      │  │                      │  │   Layer              ││
+│  │ • ZLib.swift         │  │ • FileCompressor     │  │ • AsyncCompressor    ││
+│  │ • ZLib+Async         │  │ • FileDecompressor   │  │ • AsyncDecompressor  ││
+│  │ • ZLib+File          │  │ • FileChunked        │  │ • AsyncZLibStream    ││
+│  │ • ZLib+Combine       │  │ • FileProcessor      │  │ • Combine Publishers ││
+│  │ • Data+Extensions    │  │ • GzipFile           │  │ • Progress Tracking  ││
+│  │ • String+Extensions  │  │ • Progress Callbacks │  │ • Cancellation Supp. ││
+│  └──────────────────────┘  └──────────────────────┘  └──────────────────────┘│
+│           │                        │                        │                │
+│           └────────────────────────┼────────────────────────┘                │
+│                                    │                                         │
+│                    ┌──────────────────────┐                                  │
+│                    │    Core Layer        │                                  │
+│                    │                      │                                  │
+│                    │ • Compressor         │                                  │
+│                    │ • Decompressor       │                                  │
+│                    │ • InflateBack        │                                  │
+│                    │ • ZLibStream         │                                  │
+│                    │ • ZLibError          │                                  │
+│                    │ • Configuration Cls. │                                  │
+│                    └──────────────────────┘                                  │
+│                                    │                                         │
+│                    ┌──────────────────────┐                                  │
+│                    │    C Bridge Layer    │                                  │
+│                    │                      │                                  │
+│                    │ • zlib_shim.c        │                                  │
+│                    │ • zlib_shim.h        │                                  │
+│                    │ • module.modulemap   │                                  │
+│                    └──────────────────────┘                                  │
+│                                    │                                         │
+│                    ┌──────────────────────┐                                  │
+│                    │    ZLib C Library    │                                  │
+│                    │                      │                                  │
+│                    │ • deflate            │                                  │
+│                    │ • inflate            │                                  │
+│                    │ • checksums          │                                  │
+│                    │ • utilities          │                                  │
+│                    └──────────────────────┘                                  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 2. Data Flow Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Input Data    │    │   Processing    │    │   Output Data   │
-│                 │    │   Pipeline      │    │                 │
-├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│                 │    │                 │    │                 │
-│ • Raw Data      │───▶│ • Compression   │───▶│ • Compressed    │
-│ • File Path     │    │ • Decompression │    │ • Decompressed  │
-│ • Stream Data   │    │ • Streaming     │    │ • Progress Info │
-│ • Async Data    │    │ • Async/Combine │    │ • Error Info    │
-│ • Combine Data  │    │ • Error Handling│    │ • Status Info   │
-│                 │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Validation    │    │   Processing    │    │   Validation    │
-│   Layer         │    │   Engine        │    │   Layer         │
-├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│                 │    │                 │    │                 │
-│ • Type Checking │    │ • Core ZLib     │    │ • Output Format │
-│ • Size Limits   │    │ • Memory Mgmt   │    │ • Error Codes   │
-│ • Format Detect │    │ • Buffer Mgmt   │    │ • Progress Calc │
-│ • Error Detect  │    │ • Stream Mgmt   │    │ • Status Report │
-│                 │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+│    Input Data      │    │    Processing      │    │    Output Data     │
+│                    │    │    Pipeline        │    │                    │
+├────────────────────┤    ├────────────────────┤    ├────────────────────┤
+│                    │    │                    │    │                    │
+│ • Raw Data         │───▶│ • Compression      │───▶│ • Compressed       │
+│ • File Path        │    │ • Decompression    │    │ • Decompressed     │
+│ • Stream Data      │    │ • Streaming        │    │ • Progress Info    │
+│ • Async Data       │    │ • Async/Combine    │    │ • Error Info       │
+│ • Combine Data     │    │ • Error Handling   │    │ • Status Info      │
+│                    │    │                    │    │                    │
+└────────────────────┘    └────────────────────┘    └────────────────────┘
+         │                        │                        │
+         ▼                        ▼                        ▼
+┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+│   Validation       │    │   Processing       │    │   Validation       │
+│   Layer            │    │   Engine           │    │   Layer            │
+├────────────────────┤    ├────────────────────┤    ├────────────────────┤
+│                    │    │                    │    │                    │
+│ • Type Checking    │    │ • Core ZLib        │    │ • Output Format    │
+│ • Size Limits      │    │ • Memory Mgmt      │    │ • Error Codes      │
+│ • Format Detect    │    │ • Buffer Mgmt      │    │ • Progress Calc    │
+│ • Error Detect     │    │ • Stream Mgmt      │    │ • Status Report    │
+│                    │    │                    │    │                    │
+└────────────────────┘    └────────────────────┘    └────────────────────┘
 ```
 
 ### 3. Class Relationship Diagram
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   ZLib (Enum)   │    │   Compressor    │    │ Decompressor    │
-│                 │    │                 │    │                 │
-│ • compress()    │◄───┤ • initialize()  │    │ • initialize()  │
-│ • decompress()  │    │ • compress()    │    │ • decompress()  │
-│ • compressFile()│    │ • reset()       │    │ • reset()       │
-│ • decompressFile()│  │ • setDictionary()│   │ • setDictionary()│
-│ • compressAsync()│   │ • setGzipHeader()│   │ • getGzipHeader()│
-│ • decompressAsync()│ │ • getBound()    │    │ • sync()        │
-│ • compressPublisher()│ │ • copy()       │    │ • copy()        │
-│ • decompressPublisher()│ • tune()      │    │ • prime()       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       ▼                       ▼
-         │              ┌─────────────────┐    ┌─────────────────┐
-         │              │ InflateBack     │    │ FileCompressor   │
-         │              │ Decompressor    │    │                 │
-         │              │                 │    │ • compressFile()│
-         │              │ • initialize()  │    │ • compressFileToMemory()│
-         │              │ • processData() │    │ • progress callback│
-         │              │ • callbacks     │    │                 │
-         │              │ • C bridging    │    └─────────────────┘
-         │              └─────────────────┘              │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   FileChunked   │    │   FileChunked   │    │   FileProcessor │
-│   Compressor    │    │   Decompressor  │    │                 │
-│                 │    │                 │    │ • processFile() │
-│ • compressFile()│    │ • decompressFile()│  │ • auto-detect   │
-│ • progress      │    │ • progress      │    │ • format detect │
-│ • async         │    │ • async         │    │ • compression   │
-│ • streaming     │    │ • streaming     │    │ • decompression │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+│   ZLib (Enum)      │    │    Compressor      │    │   Decompressor     │
+│                    │    │                    │    │                    │
+│ • compress()       │◄───┤ • initialize()     │    │ • initialize()     │
+│ • decompress()     │    │ • compress()       │    │ • decompress()     │
+│ • compressFile()   │    │ • reset()          │    │ • reset()          │
+│ • decompressFile() │    │ • setDictionary()  │    │ • setDictionary()  │
+│ • compressAsync()  │    │ • setGzipHeader()  │    │ • getGzipHeader()  │
+│ • decompressAsync()│    │ • getBound()       │    │ • sync()           │
+│ • compressPublisher()│  │ • copy()           │    │ • copy()           │
+│ • decompressPublisher()││ • tune()           │    │ • prime()          │
+└────────────────────┘    └────────────────────┘    └────────────────────┘
+         │                        │                        │
+         │                        ▼                        ▼
+         │               ┌────────────────────┐    ┌────────────────────┐
+         │               │ InflateBack        │    │  FileCompressor    │
+         │               │ Decompressor       │    │                    │
+         │               │                    │    │ • compressFile()   │
+         │               │ • initialize()     │    │ • compressFileToMem│
+         │               │ • processData()    │    │ • progress callback│
+         │               │ • callbacks        │    │                    │
+         │               │ • C bridging       │    └────────────────────┘
+         │               └────────────────────┘              │
+         │                        │                        │
+         ▼                        ▼                        ▼
+┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+│   FileChunked      │    │   FileChunked      │    │   FileProcessor    │
+│   Compressor       │    │   Decompressor     │    │                    │
+│                    │    │                    │    │ • processFile()    │
+│ • compressFile()   │    │ • decompressFile() │    │ • auto-detect      │
+│ • progress         │    │ • progress         │    │ • format detect    │
+│ • async            │    │ • async            │    │ • compression      │
+│ • streaming        │    │ • streaming        │    │ • decompression    │
+└────────────────────┘    └────────────────────┘    └────────────────────┘
 ```
 
 ### 4. API Usage Patterns
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           API Usage Patterns                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  1. Simple API (One-liner)                                                 │
-│     ┌─────────────────────────────────────────────────────────────────────┐ │
-│     │ let compressed = try ZLib.compress(data)                          │ │
-│     │ let decompressed = try ZLib.decompress(compressed)                │ │
-│     └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-│  2. File Operations                                                        │
-│     ┌─────────────────────────────────────────────────────────────────────┐ │
-│     │ try ZLib.compressFile(from: "input.txt", to: "output.gz")        │ │
-│     │ try ZLib.decompressFile(from: "input.gz", to: "output.txt")      │ │
-│     └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-│  3. Async/Await                                                            │
-│     ┌─────────────────────────────────────────────────────────────────────┐ │
-│     │ let compressed = try await ZLib.compressAsync(data)               │ │
-│     │ try await ZLib.compressFileAsync(from: "input.txt", to: "output.gz")│ │
-│     └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-│  4. Combine Publishers                                                     │
-│     ┌─────────────────────────────────────────────────────────────────────┐ │
-│     │ ZLib.compressPublisher(data)                                       │ │
-│     │   .sink(receiveCompletion: { ... }, receiveValue: { ... })        │ │
-│     │   .store(in: &cancellables)                                       │ │
-│     └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-│  5. Progress Tracking                                                      │
-│     ┌─────────────────────────────────────────────────────────────────────┐ │
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              API Usage Patterns                              │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. Simple API (One-liner)                                                   │
+│     ┌──────────────────────────────────────────────────────────────────────┐ │
+│     │ let compressed = try ZLib.compress(data)                             │ │
+│     │ let decompressed = try ZLib.decompress(compressed)                   │ │
+│     └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  2. File Operations                                                          │
+│     ┌──────────────────────────────────────────────────────────────────────┐ │
+│     │ try ZLib.compressFile(from: "input.txt", to: "output.gz")           │ │
+│     │ try ZLib.decompressFile(from: "input.gz", to: "output.txt")         │ │
+│     └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  3. Async/Await                                                              │
+│     ┌──────────────────────────────────────────────────────────────────────┐ │
+│     │ let compressed = try await ZLib.compressAsync(data)                   │ │
+│     │ try await ZLib.compressFileAsync(from: "input.txt", to: "output.gz") │ │
+│     └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  4. Combine Publishers                                                       │
+│     ┌──────────────────────────────────────────────────────────────────────┐ │
+│     │ ZLib.compressPublisher(data)                                          │ │
+│     │   .sink(receiveCompletion: { ... }, receiveValue: { ... })            │ │
+│     │   .store(in: &cancellables)                                           │ │
+│     └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  5. Progress Tracking                                                        │
+│     ┌──────────────────────────────────────────────────────────────────────┐ │
 │     │ ZLib.compressFileProgressPublisher(from: "input.txt", to: "output.gz")│ │
-│     │   .sink(receiveValue: { progress in                                │ │
-│     │     print("Progress: \(progress.percent)%")                        │ │
-│     │   })                                                               │ │
-│     └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-│  6. Advanced Streaming                                                     │
-│     ┌─────────────────────────────────────────────────────────────────────┐ │
-│     │ let compressor = Compressor()                                      │ │
-│     │ try compressor.initialize(level: .bestCompression)                 │ │
-│     │ let compressed = try compressor.compress(data, flush: .finish)    │ │
-│     └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+│     │   .sink(receiveValue: { progress in                                   │ │
+│     │     print("Progress: \(progress.percent)%")                           │ │
+│     │   })                                                                  │ │
+│     └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  6. Advanced Streaming                                                       │
+│     ┌──────────────────────────────────────────────────────────────────────┐ │
+│     │ let compressor = Compressor()                                         │ │
+│     │ try compressor.initialize(level: .bestCompression)                    │ │
+│     │ let compressed = try compressor.compress(data, flush: .finish)        │ │
+│     └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 5. Error Handling Flow
