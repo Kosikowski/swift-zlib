@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-windows:
-    name: Windows (Swift 6.1.2)
+    name: Windows (Swift 5.9)
     runs-on: windows-2022
 
     steps:
@@ -18,7 +18,7 @@ jobs:
       - name: Install Swift
         uses: SwiftyLab/setup-swift@v1
         with:
-          swift-version: "6.1.2"
+          swift-version: "5.9"
 
       - name: Verify Swift installation
         run: |
@@ -61,7 +61,7 @@ jobs:
       - name: Install Swift
         uses: SwiftyLab/setup-swift@v1
         with:
-          swift-version: "6.1.2"
+          swift-version: "5.9"
 
       - name: Build and test package
         run: |
@@ -82,7 +82,7 @@ jobs:
       - name: Install Swift
         uses: SwiftyLab/setup-swift@v1
         with:
-          swift-version: "6.1.2"
+          swift-version: "5.9"
 
       - name: Run performance tests
         run: |
