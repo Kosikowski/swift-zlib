@@ -49,8 +49,8 @@ jobs:
           swift test --filter StreamingTests
           swift test --filter ConcurrencyTests
 
-  # Test on iOS Simulator (disabled due to cross-compilation issues)
-  # test-ios:
+  # Test on iOS Simulator
+  test-ios:
     name: iOS (Xcode 15.2, Swift ${{ matrix.swift-version }})
     runs-on: macos-14
     strategy:
@@ -82,19 +82,19 @@ jobs:
         run: swift build -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
 
       - name: Test on iOS Simulator
-          run: |
-            # Get the first available iPhone simulator (exclude "Shutdown" and other invalid entries)
-            SIMULATOR=$(xcrun simctl list devices available | grep "iPhone" | grep -v "Shutdown" | head -1 | sed 's/.*(\([^)]*\)).*/\1/')
-            echo "Using simulator: $SIMULATOR"
+        run: |
+          # Get the first available iPhone simulator (capture device ID, not status)
+          SIMULATOR=$(xcrun simctl list devices available | grep "iPhone" | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
+          echo "Using simulator: $SIMULATOR"
 
-            # Boot the simulator
-            xcrun simctl boot "$SIMULATOR" || true
+          # Boot the simulator
+          xcrun simctl boot "$SIMULATOR" || true
 
-            # Wait for simulator to be ready
-            sleep 10
+          # Wait for simulator to be ready
+          sleep 10
 
-            # Run tests on iOS simulator (library only)
-            swift test -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --verbose
+          # Run tests on iOS simulator (library only)
+          swift test -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --verbose
 
       - name: Run specific iOS test groups
         run: |
@@ -329,8 +329,8 @@ jobs:
       - name: Build CLI tool
         run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
 
-  # Build verification - iOS (disabled due to cross-compilation issues)
-  # build-verification-ios:
+  # Build verification - iOS
+  build-verification-ios:
     name: Build Verification (iOS, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
     strategy:
       matrix:
@@ -349,13 +349,13 @@ jobs:
         with:
           swift-version: ${{ matrix.swift-version }}
 
-            - name: Build package for iOS (library only)
+      - name: Build package for iOS (library only)
         run: swift build -c ${{ matrix.configuration }} -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
 
       - name: Test package on iOS Simulator
         run: |
-          # Get the first available iPhone simulator (exclude "Shutdown" and other invalid entries)
-          SIMULATOR=$(xcrun simctl list devices available | grep "iPhone" | grep -v "Shutdown" | head -1 | sed 's/.*(\([^)]*\)).*/\1/')
+          # Get the first available iPhone simulator (capture device ID, not status)
+          SIMULATOR=$(xcrun simctl list devices available | grep "iPhone" | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
           echo "Using simulator: $SIMULATOR"
 
           # Boot the simulator
