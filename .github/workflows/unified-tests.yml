@@ -210,11 +210,13 @@ jobs:
         swift-version: [5.9, 6.1.2]
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Swift Environment
-        uses: ./.github/actions/setup-swift
+        uses: SwiftyLab/setup-swift@v1
         with:
           swift-version: ${{ matrix.swift-version }}
-          platform: linux
 
       - name: Run Memory Leak Tests
         run: swift test --filter MemoryLeakTests --verbose
