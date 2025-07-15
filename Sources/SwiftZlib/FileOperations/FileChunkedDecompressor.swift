@@ -149,7 +149,16 @@ final class FileChunkedDecompressor {
         let decompressor = Decompressor()
         try decompressor.initializeAdvanced(windowBits: windowBits)
 
-        let totalBytes = try Int(input.seekToEnd())
+                            let totalBytes: Int
+                    if #available(iOS 13.4, macOS 10.15.4, tvOS 13.4, watchOS 6.2, *) {
+                        totalBytes = try Int(input.seekToEnd())
+                    } else {
+                        // Fallback for older platforms
+                        let currentOffset = input.offsetInFile
+                        input.seekToEndOfFile()
+                        totalBytes = Int(input.offsetInFile)
+                        input.seek(toFileOffset: currentOffset)
+                    }
         try input.seek(toOffset: 0)
         var processedBytes = 0
         var lastReport = Date()
@@ -199,7 +208,11 @@ final class FileChunkedDecompressor {
             let decompressed = try decompressor.decompress(chunk, flush: flush)
             phase = .writing
             if !decompressed.isEmpty {
-                try wrapFileError { try output.write(contentsOf: decompressed) }
+                if #available(iOS 13.4, macOS 10.15.4, tvOS 13.4, watchOS 6.2, *) {
+                    try wrapFileError { try output.write(contentsOf: decompressed) }
+                } else {
+                    try wrapFileError { try output.write(decompressed) }
+                }
             }
             processedBytes += chunk.count
             if isLast {
@@ -242,7 +255,16 @@ final class FileChunkedDecompressor {
                     let decompressor = Decompressor()
                     try decompressor.initializeAdvanced(windowBits: windowBits)
 
-                    let totalBytes = try Int(input.seekToEnd())
+                    let totalBytes: Int
+                    if #available(iOS 13.4, macOS 10.15.4, tvOS 13.4, watchOS 6.2, *) {
+                        totalBytes = try Int(input.seekToEnd())
+                    } else {
+                        // Fallback for older platforms
+                        let currentOffset = input.offsetInFile
+                        input.seekToEndOfFile()
+                        totalBytes = Int(input.offsetInFile)
+                        input.seek(toFileOffset: currentOffset)
+                    }
                     try input.seek(toOffset: 0)
                     var processedBytes = 0
                     var lastReport = Date()
@@ -285,7 +307,11 @@ final class FileChunkedDecompressor {
                         let decompressed = try decompressor.decompress(chunk, flush: flush)
                         phase = .writing
                         if !decompressed.isEmpty {
-                            try output.write(contentsOf: decompressed)
+                            if #available(iOS 13.4, macOS 10.15.4, tvOS 13.4, watchOS 6.2, *) {
+                                try output.write(contentsOf: decompressed)
+                            } else {
+                                try output.write(decompressed)
+                            }
                         }
                         processedBytes += chunk.count
                         if isLast {
