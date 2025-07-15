@@ -8,6 +8,7 @@ let package = Package(
         .iOS(.v13),
         .tvOS(.v13),
         .watchOS(.v6),
+        .visionOS(.v1),
     ],
     products: [
         .library(name: "SwiftZlib", targets: ["SwiftZlib"]),
@@ -88,7 +89,7 @@ let package = Package(
             ],
             linkerSettings: [
                 // Only link zlib on non-Windows platforms since we use our own implementation on Windows
-                .linkedLibrary("z", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .linux])),
+                .linkedLibrary("z", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .linux])),
             ]
         ),
 
@@ -109,6 +110,7 @@ let package = Package(
         .executableTarget(
             name: "SwiftZlibCLI",
             dependencies: ["SwiftZlib"]
+            // Note: CLI is not built for iOS/tvOS/watchOS/visionOS (command-line executables not supported)
         ),
     ]
 )
