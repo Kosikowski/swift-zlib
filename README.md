@@ -132,6 +132,7 @@ dependencies: [
 - **[Testing Guide](doc/TESTING.md)**: Testing and validation approaches
 - **[Windows Build Issues](doc/WINDOWS_BUILD_ISSUES.md)**: Windows-specific build guidance
 - **[Windows Testing](doc/WINDOWS_TESTING.md)**: Windows testing procedures
+- **[CLI Tool](doc/CLI.md)**: Command-line interface documentation
 
 ### 🚀 Key Features Documentation
 
