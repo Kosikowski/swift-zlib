@@ -15,18 +15,39 @@ actor ResultsBox<T> {
 
     // MARK: Functions
 
+    /// Append an item to the results array
+    ///
+    /// Note: @inline(never) is used to prevent the Swift compiler from inlining
+    /// these methods in release mode, which could break actor isolation and cause
+    /// memory corruption or race conditions. This is particularly important for
+    /// Swift 6.1.2 where aggressive compiler optimizations can interfere with
+    /// actor synchronization mechanisms.
     @inline(never)
     func append(_ item: T) { items.append(item) }
 
+    /// Set an item at a specific index
+    ///
+    /// Note: @inline(never) prevents compiler from inlining this method,
+    /// ensuring proper actor isolation in release builds.
     @inline(never)
     func set(_ item: T, at index: Int) { if items.indices.contains(index) { items[index] = item } }
 
+    /// Get all items from the results array
+    ///
+    /// Note: @inline(never) ensures this method call maintains proper
+    /// actor isolation boundaries in release mode.
     @inline(never)
     func getAll() -> [T] { items }
 
+    /// Get the count of items
+    ///
+    /// Note: @inline(never) prevents inlining that could break actor isolation.
     @inline(never)
     func count() -> Int { items.count }
 
+    /// Remove all items from the results array
+    ///
+    /// Note: @inline(never) ensures proper actor isolation in release builds.
     @inline(never)
     func removeAll() { items.removeAll() }
 }
