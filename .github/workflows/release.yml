@@ -77,11 +77,11 @@ jobs:
 
           ## Installation
 
-          ```swift
+          \`\`\`swift
           dependencies: [
               .package(url: "https://github.com/Kosikowski/swift-zlib.git", from: "$VERSION")
           ]
-          ```
+          \`\`\`
 
           ## Breaking Changes
 
@@ -89,9 +89,9 @@ jobs:
 
           ## Recent Commits
 
-          ```
+          \`\`\`
           $COMMITS
-          ```
+          \`\`\`
           EOF
 
           echo "notes<<EOF" >> $GITHUB_OUTPUT
