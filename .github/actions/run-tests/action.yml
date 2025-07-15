@@ -1,0 +1,40 @@
+name: "Run Swift Tests"
+description: "Run Swift tests with specified configuration and test groups"
+inputs:
+  configuration:
+    description: "Build configuration (debug, release)"
+    required: false
+    default: "debug"
+  test-groups:
+    description: "Comma-separated list of test groups to run"
+    required: false
+    default: "CoreTests,ExtensionsTests,FileOperationsTests,PerformanceTests,ErrorHandlingTests,StreamingTests,ConcurrencyTests"
+  run-all-tests:
+    description: "Whether to run all tests or just specific groups"
+    required: false
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - name: Build package
+      shell: bash
+      run: swift build -c ${{ inputs.configuration }}
+
+    - name: Run all tests
+      if: inputs.run-all-tests == 'true'
+      shell: bash
+      run: swift test -c ${{ inputs.configuration }} --verbose
+
+    - name: Run specific test groups
+      if: inputs.run-all-tests == 'false'
+      shell: bash
+      run: |
+        IFS=',' read -ra TEST_GROUPS <<< "${{ inputs.test-groups }}"
+        for group in "${TEST_GROUPS[@]}"; do
+          echo "Running test group: $group"
+          swift test -c ${{ inputs.configuration }} --filter "$group"
+        done
+
+    - name: Build CLI tool
+      shell: bash
+      run: swift build -c ${{ inputs.configuration }} --product SwiftZlibCLI

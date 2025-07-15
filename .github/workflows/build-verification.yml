@@ -1,0 +1,37 @@
+name: Build Verification
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        description: "Platform to run on (macos, linux, windows)"
+        required: true
+        type: string
+      swift-version:
+        description: "Swift version to use"
+        required: true
+        type: string
+      configuration:
+        description: "Build configuration (debug, release)"
+        required: true
+        type: string
+    secrets:
+      github-token:
+        required: false
+
+jobs:
+  build-verification:
+    name: Build Verification (${{ inputs.platform }}, Swift ${{ inputs.swift-version }}, ${{ inputs.configuration }})
+    runs-on: ${{ inputs.platform == 'macos' && 'macos-14' || inputs.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
+    steps:
+      - name: Setup Swift Environment
+        uses: ./.github/actions/setup-swift
+        with:
+          swift-version: ${{ inputs.swift-version }}
+          platform: ${{ inputs.platform }}
+
+      - name: Build and Test
+        uses: ./.github/actions/run-tests
+        with:
+          configuration: ${{ inputs.configuration }}
+          run-all-tests: "true"
