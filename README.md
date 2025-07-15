@@ -1,77 +1,21 @@
 # SwiftZlib
 
-A comprehensive Swift library for zlib compression and decompression with support for streaming, async operations, Combine publishers, and file operations.
+A comprehensive Swift library for zlib compression and decompression, providing both simple APIs and advanced features for modern Swift applications.
 
 ## Features
 
-- **Core Compression/Decompression**: In-memory data compression and decompression
-- **Streaming Support**: Process large data streams efficiently
-- **Async/Await**: Modern Swift concurrency support
-- **Combine Integration**: Reactive programming with publishers
-- **File Operations**: Direct file compression and decompression
-- **Progress Reporting**: Real-time progress updates for long operations
-- **Gzip Support**: Full gzip header and footer handling
-- **Dictionary Compression**: Custom dictionary support
-- **Error Handling**: Comprehensive error types and recovery
-- **Performance Optimized**: Multiple compression levels and strategies
-
-## 📚 Documentation
-
-### Getting Started
-
-- **[Quick Start Guide](doc/README.md)** - Complete getting started tutorial
-- **[API Reference](doc/API_REFERENCE.md)** - Complete API documentation
-- **[Examples](doc/README.md#examples)** - Code examples and use cases
-
-### Core Topics
-
-- **[Error Handling](doc/ERROR_HANDLING.md)** - Comprehensive error handling guide
-- **[Streaming Operations](doc/STREAMING.md)** - Memory-efficient large file processing
-- **[File Operations](doc/README.md#file-operations)** - Direct file compression/decompression
-- **[Async & Combine](doc/README.md#async--combine)** - Modern Swift concurrency
-
-### Advanced Features
-
-- **[Dictionary Compression](doc/DICTIONARY_COMPRESSION.md)** - Custom dictionary support
-- **[Gzip Support](doc/GZIP_SUPPORT.md)** - Gzip header and metadata handling
-- **[Advanced Features](doc/ADVANCED_FEATURES.md)** - Advanced usage patterns
-- **[Priming Support](doc/PRIMING.md)** - Low-level bit manipulation
-
-### Development
-
-- **[Architecture](doc/ARCHITECTURE.md)** - Technical architecture overview
-- **[Testing](doc/TESTING.md)** - Testing guide and best practices
-- **[CI/CD](doc/CI_CD.md)** - Continuous integration setup
-- **[API Coverage](doc/API_COVERAGE.md)** - Complete zlib API mapping
-
-### Tools
-
-- **[CLI Tool](README_CLI.md)** - Command-line interface documentation
-- **[Performance](doc/README.md#performance)** - Performance optimization guide
-
-## Installation
-
-### Swift Package Manager
-
-Add SwiftZlib to your `Package.swift`:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/your-username/swift-zlib.git", from: "1.0.0")
-]
-```
-
-Or add it directly in Xcode:
-
-1. File → Add Package Dependencies
-2. Enter: `https://github.com/your-username/swift-zlib.git`
-3. Select version and add to your target
-
-### Requirements
-
-- iOS 13.0+ / macOS 10.15+ / tvOS 13.0+ / watchOS 6.0+
-- Swift 5.5+
-- Xcode 13.0+
+- **Simple APIs**: Easy-to-use compression and decompression for Data and String
+- **Streaming Support**: Process large data efficiently with streaming APIs
+- **File Operations**: Direct file compression and decompression with progress reporting
+- **Chunked Processing**: Memory-efficient chunked file operations for large files
+- **Fluent Builder Pattern**: Chainable configuration for advanced use cases
+- **Enhanced Decompressors**: Specialized decompressors with custom callbacks
+- **Progress Stream APIs**: Real-time progress reporting for all operations
+- **Async/Await Support**: Full modern Swift concurrency support
+- **Combine Integration**: Reactive programming with Combine publishers
+- **Cross-Platform**: Support for iOS, macOS, tvOS, watchOS, Linux, and Windows
+- **Memory Efficient**: Configurable memory usage and chunked processing
+- **Comprehensive Error Handling**: Detailed error types and recovery strategies
 
 ## Quick Start
 
@@ -82,324 +26,257 @@ import SwiftZlib
 
 // Compress data
 let data = "Hello, World!".data(using: .utf8)!
-let compressed = try data.compress()
+let compressed = try data.compressed(level: .best)
 
 // Decompress data
-let decompressed = try compressed.decompress()
+let decompressed = try compressed.decompressed()
 ```
 
 ### File Operations
 
 ```swift
-// Compress a file
-try await ZLib.compressFile(
-    from: "input.txt",
+// Compress a file with progress
+let compressor = FileChunkedCompressor()
+try compressor.compressFile(
+    at: "input.txt",
     to: "output.gz",
-    level: .best,
-    progress: { progress in
-        print("Compression: \(Int(progress * 100))%")
+    progress: { processed, total in
+        let percentage = total > 0 ? Double(processed) / Double(total) * 100 : 0
+        print("Progress: \(percentage)%")
     }
 )
 
 // Decompress a file
-try await ZLib.decompressFile(
-    from: "output.gz",
+let decompressor = FileChunkedDecompressor()
+try decompressor.decompressFile(
+    at: "output.gz",
     to: "decompressed.txt"
 )
 ```
 
-### Combine Integration
+### Fluent Builder Pattern
 
-> **Note**: Combine support is only available on platforms that support the Combine framework (iOS 13.0+, macOS 10.15+, tvOS 13.0+, watchOS 6.0+).
+```swift
+// Create a compressor with fluent configuration
+let compressor = ZLib.stream()
+    .compression(level: .best)
+    .strategy(.huffman)
+    .windowBits(.gzip)
+    .memoryLevel(.maximum)
+    .chunkSize(128 * 1024)
+    .buildCompressor()
+
+// Use the configured compressor
+let compressed = try compressor.compress(inputData)
+let final = try compressor.finish()
+```
+
+### Async Operations
+
+```swift
+// Async compression
+let asyncCompressor = ZLib.asyncStream()
+    .compression(level: .best)
+    .buildCompressor()
+
+let compressed = try await asyncCompressor.compress(inputData)
+let final = try await asyncCompressor.finish()
+```
+
+### Enhanced Decompressors
+
+```swift
+// Enhanced decompressor with custom callbacks
+let decompressor = EnhancedInflateBackDecompressor()
+
+try decompressor.processWithCallbacks(
+    input: compressedData,
+    inputCallback: { chunk in
+        // Custom input processing
+        return chunk.reversed()
+    },
+    outputCallback: { output in
+        // Custom output processing
+        print("Processed: \(output.count) bytes")
+    }
+)
+```
+
+## Installation
+
+### Swift Package Manager
+
+Add SwiftZlib to your project in Xcode:
+
+1. File → Add Package Dependencies
+2. Enter: `https://github.com/your-username/swift-zlib`
+3. Select the package and add to your target
+
+Or add to your `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/your-username/swift-zlib", from: "1.0.0")
+]
+```
+
+## Documentation
+
+### 📚 Complete Documentation
+
+- **[API Reference](doc/API_REFERENCE.md)**: Comprehensive reference for all public APIs
+- **[Advanced Features](doc/ADVANCED_FEATURES.md)**: Advanced usage patterns and techniques
+- **[API Coverage](doc/API_COVERAGE.md)**: Complete overview of all available APIs
+- **[Streaming Guide](doc/STREAMING.md)**: Streaming and chunked processing
+- **[Error Handling](doc/ERROR_HANDLING.md)**: Error handling and recovery strategies
+- **[Testing Guide](doc/TESTING.md)**: Testing and validation approaches
+- **[Windows Build Issues](doc/WINDOWS_BUILD_ISSUES.md)**: Windows-specific build guidance
+- **[Windows Testing](doc/WINDOWS_TESTING.md)**: Windows testing procedures
+
+### 🚀 Key Features Documentation
+
+- **Fluent Builder APIs**: Chainable configuration for streams and compressors
+- **Chunked File Operations**: Memory-efficient processing of large files
+- **Enhanced Decompressors**: Specialized decompressors with custom callbacks
+- **Progress Stream APIs**: Real-time progress reporting for all operations
+- **Async/Await Integration**: Full modern Swift concurrency support
+- **Combine Integration**: Reactive programming with Combine publishers
+- **Cross-Platform Support**: iOS, macOS, tvOS, watchOS, Linux, and Windows
+
+## Advanced Usage
+
+### Memory-Efficient Chunked Processing
+
+```swift
+// Process large files with constant memory usage
+let compressor = FileChunkedCompressor(
+    level: .best,
+    chunkSize: 64 * 1024  // 64KB chunks
+)
+
+try compressor.compressFile(
+    at: "1gb-file.txt",
+    to: "compressed.gz"
+)
+```
+
+### Progress Reporting with UI
+
+```swift
+// SwiftUI progress integration
+struct CompressionView: View {
+    @State private var progress: Double = 0
+
+    var body: some View {
+        VStack {
+            ProgressView(value: progress)
+            Text("\(Int(progress * 100))%")
+        }
+        .onAppear {
+            compressFile()
+        }
+    }
+
+    private func compressFile() {
+        let compressor = FileChunkedCompressor()
+        try? compressor.compressFile(
+            at: "input.txt",
+            to: "output.gz",
+            progress: { processed, total in
+                DispatchQueue.main.async {
+                    if total > 0 {
+                        self.progress = Double(processed) / Double(total)
+                    }
+                }
+            }
+        )
+    }
+}
+```
+
+### Combine Integration
 
 ```swift
 import Combine
 
-// Compress with Combine
-ZLib.compressPublisher(data: data)
+// Progress publisher
+let progress = CompressionProgress()
+progress.compressWithProgress(input: "input.txt", output: "output.gz")
     .sink(
         receiveCompletion: { completion in
             if case .failure(let error) = completion {
-                print("Error: \(error)")
+                print("Compression failed: \(error)")
             }
         },
-        receiveValue: { compressed in
-            print("Compressed size: \(compressed.count)")
+        receiveValue: { progress in
+            print("Progress: \(Int(progress * 100))%")
         }
     )
     .store(in: &cancellables)
 ```
 
-## API Reference
-
-### Core Methods
-
-#### Data Compression
-
-- `Data.compress(level:strategy:)` - Compress data with specified level and strategy
-- `Data.decompress()` - Decompress data
-- `Data.compressAsync(level:strategy:)` - Async compression
-- `Data.compressPublisher(level:strategy:)` - Combine publisher for compression
-
-#### String Compression
-
-- `String.compress(level:strategy:)` - Compress string data
-- `String.decompress()` - Decompress string data
-- `String.compressAsync(level:strategy:)` - Async string compression
-- `String.compressPublisher(level:strategy:)` - Combine publisher for string compression
-
-#### File Operations
-
-- `ZLib.compressFile(from:to:level:progress:)` - Compress file with progress
-- `ZLib.decompressFile(from:to:progress:)` - Decompress file with progress
-- `ZLib.compressFileAsync(from:to:level:progress:)` - Async file compression
-- `ZLib.decompressFileAsync(from:to:progress:)` - Async file decompression
-- `ZLib.compressFilePublisher(from:to:level:)` - Combine publisher for file compression
-- `ZLib.decompressFilePublisher(from:to:)` - Combine publisher for file decompression
-
-### Compression Levels
-
-- `.noCompression` - No compression (fastest)
-- `.bestSpeed` - Fast compression
-- `.best` - Best compression ratio
-- `.default` - Default compression (level 6)
-
-### Compression Strategies
-
-- `.default` - Default strategy
-- `.filtered` - Filtered data
-- `.huffman` - Huffman-only
-- `.rle` - Run-length encoding
-- `.fixed` - Fixed Huffman codes
-
-## Examples
-
-### Streaming Large Files
+### Error Recovery
 
 ```swift
-let config = StreamingConfig(
-    chunkSize: 64 * 1024,
-    compressionLevel: .best,
-    compressionStrategy: .default
-)
-
-let stream = ZLibStream(config: config)
-try stream.compressFile(from: "large-input.txt", to: "compressed.gz")
-```
-
-### Dictionary Compression
-
-```swift
-let dictionary = "common prefix".data(using: .utf8)!
-let compressed = try data.compress(
-    level: .best,
-    dictionary: dictionary
-)
-```
-
-### Error Handling
-
-```swift
-do {
-    let compressed = try data.compress()
-} catch ZLibError.invalidData {
-    print("Invalid input data")
-} catch ZLibError.insufficientMemory {
-    print("Not enough memory")
-} catch {
-    print("Other error: \(error)")
+func compressWithRetry(input: String, output: String, maxRetries: Int = 3) throws {
+    for attempt in 1...maxRetries {
+        do {
+            let compressor = FileChunkedCompressor()
+            try compressor.compressFile(at: input, to: output)
+            return  // Success
+        } catch ZLibError.memoryError {
+            // Try with lower memory usage
+            let lowMemoryCompressor = FileChunkedCompressor(
+                level: .default,
+                chunkSize: 16 * 1024
+            )
+            try lowMemoryCompressor.compressFile(at: input, to: output)
+            return
+        } catch {
+            if attempt < maxRetries {
+                Thread.sleep(forTimeInterval: 1.0)
+                continue
+            }
+            throw error
+        }
+    }
 }
 ```
 
-### Progress Monitoring
+## Performance
 
-```swift
-try await ZLib.compressFile(
-    from: "input.txt",
-    to: "output.gz",
-    progress: { progress in
-        DispatchQueue.main.async {
-            progressView.progress = Float(progress)
-        }
-    }
-)
-```
+SwiftZlib is optimized for performance with:
 
-## Troubleshooting
+- **Configurable Memory Usage**: Choose memory levels based on your environment
+- **Chunked Processing**: Process large files with constant memory usage
+- **Strategy Selection**: Optimize compression for different data types
+- **Window Size Tuning**: Configure window sizes for your specific use case
+- **Async Processing**: Non-blocking operations for responsive applications
 
-### Common Issues
+## Platform Support
 
-**Build Errors**
-
-- Ensure you're using Swift 5.5+ and Xcode 13.0+
-- Check that the package is properly added to your target
-- Clean build folder (Cmd+Shift+K) and rebuild
-
-**Runtime Errors**
-
-- `ZLibError.invalidData`: Input data is corrupted or not compressed
-- `ZLibError.insufficientMemory`: System memory is insufficient
-- `ZLibError.streamError`: Internal zlib stream error
-
-**Performance Issues**
-
-- Use `.bestSpeed` for faster compression
-- Increase chunk size for streaming operations
-- Consider using async operations for large files
-
-**File Operation Errors**
-
-- Ensure source file exists and is readable
-- Check destination directory permissions
-- Verify sufficient disk space
-
-### Getting Help
-
-1. **📖 Documentation**: Check the [documentation index](doc/README.md) for comprehensive guides
-2. **🔧 Error Handling**: Review [error handling guide](doc/ERROR_HANDLING.md) for troubleshooting
-3. **🧪 Testing**: See [testing guide](doc/TESTING.md) for debugging and test examples
-4. **🏗️ Architecture**: Review [architecture docs](doc/ARCHITECTURE.md) for technical details
-5. **🐛 Issues**: Open an issue with reproduction steps using our [bug report template](.github/ISSUE_TEMPLATE/bug_report.md)
-
-## Command Line Tool
-
-SwiftZlib includes a comprehensive command-line tool for compression tasks:
-
-### Installation
-
-```bash
-swift build -c release
-.build/release/swift-zlib
-```
-
-### Usage
-
-```bash
-# Basic compression
-swift-zlib compress input.txt output.gz
-
-# Decompression
-swift-zlib decompress output.gz decompressed.txt
-
-# Benchmark different levels
-swift-zlib benchmark input.txt
-
-# Large file with progress
-swift-zlib large input.txt output.gz
-
-# Memory level info
-swift-zlib memory
-```
-
-See [CLI README](CLI_README.md) for complete documentation.
-
-## Testing
-
-Run the test suite:
-
-```bash
-swift test
-```
-
-Quick verification:
-
-```bash
-swift test --filter CoreTests
-swift test --filter ExtensionsTests
-swift test --filter FileOperationsTests
-```
+- **iOS 13.0+** / **macOS 10.15+** / **tvOS 13.0+** / **watchOS 6.0+**
+- **Linux** (Ubuntu 18.04+, CentOS 7+)
+- **Windows** (Windows 10+ with Visual Studio 2019+)
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and [ARCHITECTURE.md](ARCHITECTURE.md) for technical details.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-## Technical Documentation
+### Development Setup
 
-For detailed technical information about zlib API coverage and C function mappings, see [API Coverage](doc/API_COVERAGE.md).
-
-## Memory Safety and Gzip Headers
-
-SwiftZlib provides safe memory management for all operations, with special attention to gzip headers which require careful C pointer management.
-
-### Gzip Header Memory Management
-
-When using gzip headers with compression, SwiftZlib automatically manages the memory for header fields (`extra`, `name`, `comment`) to prevent use-after-free errors:
-
-```swift
-let header = GzipHeader()
-header.name = "example.txt"
-header.comment = "Test file"
-header.extra = "metadata".data(using: .utf8)
-
-// Memory is automatically managed - no manual cleanup needed
-let compressed = try data.compressedWithGzipHeader(level: .default, header: header)
-```
-
-**Important Notes:**
-
-- Each compressor can only have one gzip header set
-- Memory is automatically freed when the compressor is deallocated
-- No manual memory management required
-
-For advanced usage details, see the [Architecture Documentation](doc/ARCHITECTURE.md#memory-management).
+1. Clone the repository
+2. Run `swift package resolve`
+3. Run `swift test` to verify everything works
+4. Make your changes and add tests
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Running Tests with Sanitizers and Leak Detection
+## Acknowledgments
 
-SwiftZlib supports memory safety and correctness checks using sanitizers. This is especially useful for catching bugs in C interop and low-level code.
-
-### Address Sanitizer (ASan)
-
-Run all tests with Address Sanitizer enabled (detects use-after-free, buffer overflows, and some leaks):
-
-```sh
-swift test --sanitize=address --verbose
-```
-
-- **macOS:** ASan is supported and will catch most memory errors.
-- **Linux:** ASan is supported and will also report memory leaks at the end of the test run.
-
-### Thread Sanitizer (TSan)
-
-Detects data races in concurrent code:
-
-```sh
-swift test --sanitize=thread --verbose
-```
-
-### Undefined Behavior Sanitizer (UBSan)
-
-Detects undefined behavior in C/Swift code:
-
-```sh
-swift test --sanitize=undefined --verbose
-```
-
-### Leak Detection
-
-#### On macOS
-
-- LeakSanitizer (`--sanitize=leak`) is **not supported** by Swift on macOS.
-- Use Xcode Instruments for leak detection:
-  1. Open your project in Xcode.
-  2. Product > Profile (⌘I), select "Leaks".
-  3. Run your tests and inspect for leaks.
-- Or, use the "Leaks" instrument from the command line:
-  ```sh
-  instruments -t "Leaks" .build/debug/SwiftZlibPackageTests.xctest
-  ```
-
-#### On Linux
-
-- LeakSanitizer is integrated with AddressSanitizer:
-  - Run: `swift test --sanitize=address --verbose`
-  - Leaks will be reported at the end of the output if present.
-
-### Notes
-
-- Sanitizers may slow down test execution.
-- Always run tests with sanitizers enabled before submitting code, especially after changes to C interop or memory management.
-- For more information, see the [Swift documentation on sanitizers](https://www.swift.org/documentation/#sanitizers).
+- Built on top of the excellent zlib library
+- Inspired by modern Swift patterns and best practices
+- Thanks to all contributors and the Swift community
