@@ -5,8 +5,8 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+import zlib
 
 public extension ZLib {
     /// True chunked streaming file compression (synchronous)

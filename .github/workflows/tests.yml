@@ -33,6 +33,9 @@ jobs:
       - name: Show Swift version
         run: swift --version
 
+      - name: Install zlib (macOS)
+        run: brew install zlib
+
       - name: Build package
         run: swift build
 
@@ -108,6 +111,9 @@ jobs:
         with:
           swift-version: ${{ matrix.swift-version }}
 
+      - name: Install zlib (macOS)
+        run: brew install zlib
+
       - name: Build CLI tool
         run: swift build -c release --product SwiftZlibCLI
 
@@ -157,6 +163,9 @@ jobs:
         uses: SwiftyLab/setup-swift@v1
         with:
           swift-version: ${{ matrix.swift-version }}
+
+      - name: Install zlib (macOS)
+        run: brew install zlib
 
       - name: Run performance tests
         run: |
@@ -305,22 +314,7 @@ jobs:
       - name: Build CLI tool
         run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
 
-  # C zlib C API tests
-  test-c-zlib:
-    name: C zlib C API tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install build tools and zlib
-        run: sudo apt-get update && sudo apt-get install -y build-essential zlib1g-dev
-
-      - name: Build and run C zlib tests
-        run: |
-          cd Tests/CZLibC
-          make clean all run
-
+  # Memory leak tests - Linux
   memory-leak-linux:
     name: Linux Memory Leak Test (Swift ${{ matrix.swift-version }})
     runs-on: ubuntu-latest

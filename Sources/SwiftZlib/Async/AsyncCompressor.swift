@@ -5,8 +5,8 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+import zlib
 
 /// Async streaming compressor for non-blocking compression
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)

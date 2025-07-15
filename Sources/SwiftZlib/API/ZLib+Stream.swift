@@ -5,8 +5,8 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+import zlib
 
 extension ZLib {
     /// Create a stream builder for fluent configuration

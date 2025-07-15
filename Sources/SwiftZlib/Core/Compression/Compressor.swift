@@ -5,8 +5,8 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+import zlib
 
 /// Stream-based compression for large data or streaming scenarios
 public final class Compressor {
@@ -29,7 +29,7 @@ public final class Compressor {
     deinit {
         // gzipHeaderStorage will be deallocated automatically
         if isInitialized {
-            swift_deflateEnd(&stream)
+            deflateEnd(&stream)
         }
     }
 
@@ -43,9 +43,9 @@ public final class Compressor {
 
         // Use the exact same parameters as compress2: level, Z_DEFLATED, 15 (zlib format), 8 (default memory), Z_DEFAULT_STRATEGY
         // compress2 uses zlib format by default, which means windowBits = 15
-        let result = swift_deflateInit2(&stream, level.zlibLevel, Z_DEFLATED, 15, 8, Z_DEFAULT_STRATEGY)
+        let result = deflateInit2_(&stream, level.zlibLevel, Z_DEFLATED, 15, 8, Z_DEFAULT_STRATEGY, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
         if result != Z_OK {
-            zlibError("Compressor initialization failed with code: \(result) - \(String(cString: swift_zError(result)))")
+            zlibError("Compressor initialization failed with code: \(result) - \(String(cString: zError(result)))")
             throw ZLibError.compressionFailed(result)
         }
         isInitialized = true
@@ -67,14 +67,7 @@ public final class Compressor {
         memoryLevel: MemoryLevel = .maximum,
         strategy: CompressionStrategy = .defaultStrategy
     ) throws {
-        let result = swift_deflateInit2(
-            &stream,
-            level.zlibLevel,
-            method.zlibMethod,
-            windowBits.zlibWindowBits,
-            memoryLevel.zlibMemoryLevel,
-            strategy.zlibStrategy
-        )
+        let result = deflateInit2_(&stream, level.zlibLevel, method.zlibMethod, windowBits.zlibWindowBits, memoryLevel.zlibMemoryLevel, strategy.zlibStrategy, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -91,7 +84,7 @@ public final class Compressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_deflateParams(&stream, level.zlibLevel, strategy.zlibStrategy)
+        let result = deflateParams(&stream, level.zlibLevel, strategy.zlibStrategy)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -106,7 +99,7 @@ public final class Compressor {
         }
 
         let result = dictionary.withUnsafeBytes { dictPtr in
-            swift_deflateSetDictionary(
+            deflateSetDictionary(
                 &stream,
                 dictPtr.bindMemory(to: Bytef.self).baseAddress!,
                 uInt(dictionary.count)
@@ -124,7 +117,7 @@ public final class Compressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_deflateReset(&stream)
+        let result = deflateReset(&stream)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -138,7 +131,7 @@ public final class Compressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_deflateReset2(&stream, windowBits.zlibWindowBits)
+        let result = deflateResetKeep(&stream)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -152,7 +145,7 @@ public final class Compressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_deflateCopy(&destination.stream, &stream)
+        let result = deflateCopy(&destination.stream, &stream)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -169,7 +162,7 @@ public final class Compressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_deflatePrime(&stream, bits, value)
+        let result = deflatePrime(&stream, bits, value)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -186,7 +179,7 @@ public final class Compressor {
         var pending: UInt32 = 0
         var bits: Int32 = 0
 
-        let result = swift_deflatePending(&stream, &pending, &bits)
+        let result = deflatePending(&stream, &pending, &bits)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -203,7 +196,7 @@ public final class Compressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let bound = swift_deflateBound(&stream, sourceLen)
+        let bound = deflateBound(&stream, sourceLen)
         // deflateBound returns a uLong, so we just need to check if it's reasonable
         return bound
     }
@@ -220,7 +213,7 @@ public final class Compressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_deflateTune(&stream, goodLength, maxLazy, niceLength, maxChain)
+        let result = deflateTune(&stream, goodLength, maxLazy, niceLength, maxChain)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -235,7 +228,7 @@ public final class Compressor {
         }
 
         var dictLength: uInt = 0
-        let result = swift_deflateGetDictionary(&stream, nil, &dictLength)
+        let result = deflateGetDictionary(&stream, nil, &dictLength)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }
@@ -246,7 +239,7 @@ public final class Compressor {
 
         var dictionary = Data(count: Int(dictLength))
         let getResult = dictionary.withUnsafeMutableBytes { dictPtr in
-            swift_deflateGetDictionary(&stream, dictPtr.bindMemory(to: Bytef.self).baseAddress!, &dictLength)
+            deflateGetDictionary(&stream, dictPtr.bindMemory(to: Bytef.self).baseAddress!, &dictLength)
         }
 
         guard getResult == Z_OK else {
@@ -338,7 +331,7 @@ public final class Compressor {
                     stream.next_out = buffer.baseAddress
                     stream.avail_out = uInt(outputBufferSize)
 
-                    // Log input buffer state before calling swift_deflate
+                    // Log input buffer state before calling deflate
                     let inPtr = stream.next_in
                     let inAddr = UInt(bitPattern: inPtr)
                     let inAvail = stream.avail_in
@@ -349,7 +342,7 @@ public final class Compressor {
                     }()
                     zlibDebug("[Compressor] Before deflate: next_in=0x\(String(inAddr, radix: 16)), avail_in=\(inAvail), preview=\(inPreview)")
 
-                    result = swift_deflate(&stream, flush.zlibFlush)
+                    result = deflate(&stream, flush.zlibFlush)
                     if result == Z_STREAM_ERROR {
                         zlibError("Compression failed with Z_STREAM_ERROR")
                         throw ZLibError.streamError(result)
@@ -402,7 +395,7 @@ public final class Compressor {
                 stream.next_out = buffer.baseAddress
                 stream.avail_out = uInt(outputBufferSize)
 
-                result = swift_deflate(&stream, FlushMode.finish.zlibFlush)
+                result = deflate(&stream, FlushMode.finish.zlibFlush)
                 guard result != Z_STREAM_ERROR else {
                     throw ZLibError.streamError(result)
                 }
@@ -424,7 +417,7 @@ public final class Compressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
         let storage = GzipHeaderStorage(swiftHeader: header)
-        let result = swift_deflateSetHeader(&stream, &storage.cHeader)
+        let result = deflateSetHeader(&stream, &storage.cHeader)
         guard result == Z_OK else {
             throw ZLibError.compressionFailed(result)
         }

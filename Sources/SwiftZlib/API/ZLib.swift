@@ -5,8 +5,8 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+import zlib
 
 /// High-level ZLib compression and decompression
 public enum ZLib {
@@ -76,12 +76,12 @@ public enum ZLib {
 
     /// Get the ZLib version string
     public static var version: String {
-        String(cString: swift_zlibVersion())
+        String(cString: zlibVersion())
     }
 
     /// Get ZLib compile flags
     public static var compileFlags: UInt {
-        UInt(swift_zlibCompileFlags())
+        UInt(zlibCompileFlags())
     }
 
     /// Get detailed ZLib compile flags information
@@ -117,7 +117,7 @@ public enum ZLib {
     /// - Parameter code: The zlib error code
     /// - Returns: Human-readable error message
     public static func getErrorMessage(_ code: Int32) -> String {
-        String(cString: swift_zError(code))
+        String(cString: zError(code))
     }
 
     /// Check if an error is recoverable
@@ -228,7 +228,7 @@ public enum ZLib {
     ///   - level: Compression level
     /// - Returns: Estimated compressed size
     public static func estimateCompressedSize(_ inputSize: Int, level: CompressionLevel = .defaultCompression) -> Int {
-        let bound = swift_compressBound(uLong(inputSize))
+        let bound = compressBound(uLong(inputSize))
         // Apply a rough estimation based on compression level
         let factor: Double
         switch level {
@@ -339,25 +339,24 @@ public enum ZLib {
 
         return try withTiming("Compression") {
             let sourceLen = uLong(data.count)
-            var destLen = swift_compressBound(sourceLen)
+            var destLen = compressBound(sourceLen)
 
             logMemoryUsage("Compression output buffer", bytes: Int(destLen))
             var compressedData = Data(repeating: 0, count: Int(destLen))
 
             let result = compressedData.withUnsafeMutableBytes { destPtr in
                 data.withUnsafeBytes { sourcePtr in
-                    swift_compress(
+                    zlib.compress(
                         destPtr.bindMemory(to: Bytef.self).baseAddress!,
                         &destLen,
                         sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
-                        sourceLen,
-                        level.zlibLevel
+                        sourceLen
                     )
                 }
             }
 
             if result != Z_OK {
-                zlibError("Compression failed with code: \(result) - \(String(cString: swift_zError(result)))")
+                zlibError("Compression failed with code: \(result) - \(String(cString: zError(result)))")
                 throw ZLibError.compressionFailed(result)
             }
 
@@ -393,7 +392,7 @@ public enum ZLib {
 
             let result = decompressedData.withUnsafeMutableBytes { destPtr in
                 data.withUnsafeBytes { sourcePtr in
-                    swift_uncompress(
+                    zlib.uncompress(
                         destPtr.bindMemory(to: Bytef.self).baseAddress!,
                         &destLen,
                         sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
@@ -418,7 +417,7 @@ public enum ZLib {
 
                     retryResult = decompressedData.withUnsafeMutableBytes { destPtr in
                         data.withUnsafeBytes { sourcePtr in
-                            swift_uncompress(
+                            zlib.uncompress(
                                 destPtr.bindMemory(to: Bytef.self).baseAddress!,
                                 &destLen,
                                 sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
@@ -431,11 +430,11 @@ public enum ZLib {
                 }
 
                 if retryResult != Z_OK {
-                    zlibError("Decompression retry failed with code: \(retryResult) - \(String(cString: swift_zError(retryResult)))")
+                    zlibError("Decompression retry failed with code: \(retryResult) - \(String(cString: zError(retryResult)))")
                     throw ZLibError.decompressionFailed(retryResult)
                 }
             } else if result != Z_OK {
-                zlibError("Decompression failed with code: \(result) - \(String(cString: swift_zError(result)))")
+                zlibError("Decompression failed with code: \(result) - \(String(cString: zError(result)))")
                 throw ZLibError.decompressionFailed(result)
             }
 
@@ -464,7 +463,7 @@ public enum ZLib {
 
         let result = decompressedData.withUnsafeMutableBytes { destPtr in
             data.withUnsafeBytes { sourcePtr in
-                swift_uncompress2(
+                zlib.uncompress2(
                     destPtr.bindMemory(to: Bytef.self).baseAddress!,
                     &destLen,
                     sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
@@ -485,7 +484,7 @@ public enum ZLib {
 
                 retryResult = decompressedData.withUnsafeMutableBytes { destPtr in
                     data.withUnsafeBytes { sourcePtr in
-                        swift_uncompress2(
+                        zlib.uncompress2(
                             destPtr.bindMemory(to: Bytef.self).baseAddress!,
                             &destLen,
                             sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
@@ -519,7 +518,7 @@ public enum ZLib {
         zlibDebug("Calculating Adler-32 for \(data.count) bytes with initial value: \(initialValue)")
 
         let result = data.withUnsafeBytes { buffer in
-            swift_adler32(initialValue, buffer.bindMemory(to: Bytef.self).baseAddress!, uInt(data.count))
+            zlib.adler32(initialValue, buffer.bindMemory(to: Bytef.self).baseAddress!, uInt(data.count))
         }
 
         zlibDebug("Adler-32 result: \(result)")
@@ -535,7 +534,7 @@ public enum ZLib {
         zlibDebug("Calculating CRC-32 for \(data.count) bytes with initial value: \(initialValue)")
 
         let result = data.withUnsafeBytes { buffer in
-            swift_crc32(initialValue, buffer.bindMemory(to: Bytef.self).baseAddress!, uInt(data.count))
+            zlib.crc32(initialValue, buffer.bindMemory(to: Bytef.self).baseAddress!, uInt(data.count))
         }
 
         zlibDebug("CRC-32 result: \(result)")
@@ -571,7 +570,7 @@ public enum ZLib {
     ///   - len2: Length of the second data block
     /// - Returns: Combined Adler-32 checksum
     public static func adler32Combine(_ adler1: uLong, _ adler2: uLong, len2: Int) -> uLong {
-        swift_adler32_combine(adler1, adler2, CLong(len2))
+        zlib.adler32_combine(adler1, adler2, CLong(len2))
     }
 
     /// Combine two CRC-32 checksums
@@ -581,7 +580,7 @@ public enum ZLib {
     ///   - len2: Length of the second data block
     /// - Returns: Combined CRC-32 checksum
     public static func crc32Combine(_ crc1: uLong, _ crc2: uLong, len2: Int) -> uLong {
-        swift_crc32_combine(crc1, crc2, CLong(len2))
+        zlib.crc32_combine(crc1, crc2, CLong(len2))
     }
 
     /// Compress data with advanced options
