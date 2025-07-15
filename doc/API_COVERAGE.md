@@ -339,3 +339,43 @@ SwiftZlib provides comprehensive API coverage across all major compression and d
 - **Testing**: Comprehensive test coverage for all functionality
 
 The library is designed to be both powerful for advanced use cases and simple for basic operations, with a focus on performance, memory efficiency, and modern Swift patterns.
+
+# API Coverage: System zlib vs. Upstream zlib
+
+## macOS System zlib API: Missing or Different Features
+
+When using the system zlib provided by macOS (and iOS), there are a few important differences and missing features compared to upstream (bundled) zlib:
+
+### 1. `inflatePending` is NOT available
+
+- The function `inflatePending` is not present in the system zlib on macOS/iOS.
+- This means any code that relies on `inflatePending` will not compile or run on these platforms unless you bundle your own zlib.
+- **Workaround:** Remove or conditionally compile out code that uses `inflatePending` if you want to use the system zlib everywhere.
+
+### 2. Macro Init Functions Are Not Real Functions
+
+- Macros like `deflateInit`, `deflateInit2`, `inflateInit`, and `inflateInit2` are not available as real functions in the system zlib.
+
+### 3. Some Advanced APIs May Be Unavailable or Version-Gated
+
+- Some advanced or rarely-used APIs (e.g., `inflateMark`, `inflateUndermine`, `crc32_combine_op`) are only available on newer macOS/iOS versions, and are marked with `@available`.
+
+---
+
+**Summary Table**
+
+| Feature/API      | macOS System zlib | Bundled zlib (upstream) |
+| ---------------- | :---------------: | :---------------------: |
+| Core functions   |        ✅         |           ✅            |
+| Macro inits      |        ❌         |           ✅            |
+| `inflatePending` |        ❌         |           ✅            |
+| Modern APIs      |  ✅❌ (pointers)  |           ✅            |
+| Custom shims     |        ❌         |           ✅            |
+
+---
+
+**Recommendation:**
+
+- If you want to use the system zlib everywhere, avoid or conditionally compile out any code that depends on `inflatePending` or other missing APIs.
+- Always use the `_`-suffixed init functions with the extra arguments.
+- Test on all platforms to ensure compatibility.
