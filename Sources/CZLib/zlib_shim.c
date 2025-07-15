@@ -1,8 +1,8 @@
 #include "zlib_shim.h"
 #ifdef _WIN32
-// On Windows, avoid system headers that cause cyclic dependencies
-// The zlib_simple.h provides all necessary types and constants
+// On Windows, include necessary headers for debug output
 #include <stdlib.h>
+#include <stdio.h>
 #else
 #include <stdlib.h>
 #include <stdarg.h>
@@ -11,14 +11,6 @@
 
 // Enable debug output for release mode debugging
 #define ZLIB_DEBUG 1
-
-#if ZLIB_DEBUG
-#ifdef _WIN32
-// On Windows, avoid system headers that cause cyclic dependencies
-#else
-#include <stdio.h>
-#endif
-#endif
 
 int swift_compress(Bytef *dest, uLongf *destLen,
                    const Bytef *source, uLong sourceLen,
