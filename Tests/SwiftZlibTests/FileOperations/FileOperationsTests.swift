@@ -133,21 +133,34 @@ final class FileOperationsTests: XCTestCase {
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
 
-        // Compress file
+        // Verify source file exists
+        let fileManager = FileManager.default
+        XCTAssertTrue(fileManager.fileExists(atPath: sourcePath), "Source file should exist after writing")
+
+        // Compress file with better error handling
         let config = StreamingConfig(bufferSize: 1024, compressionLevel: 6)
         let compressor = FileCompressor(config: config)
-        try compressor.compressFile(from: sourcePath, to: destPath)
+
+        do {
+            try compressor.compressFile(from: sourcePath, to: destPath)
+        } catch {
+            XCTFail("Compression failed with error: \(error)")
+            return
+        }
 
         // Verify compressed file exists and is non-empty
+        XCTAssertTrue(fileManager.fileExists(atPath: destPath), "Compressed file should exist after compression")
+
         let compressedData = try Data(contentsOf: URL(fileURLWithPath: destPath))
-        XCTAssertFalse(compressedData.isEmpty)
+        XCTAssertFalse(compressedData.isEmpty, "Compressed data should not be empty")
+
         // Decompress and check round-trip
         let decompressed = try ZLib.decompress(compressedData)
-        XCTAssertEqual(decompressed, testData)
+        XCTAssertEqual(decompressed, testData, "Decompressed data should match original data")
 
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
-        try? FileManager.default.removeItem(atPath: destPath)
+        // Clean up with proper error handling for Windows
+        try? fileManager.removeItem(atPath: sourcePath)
+        try? fileManager.removeItem(atPath: destPath)
     }
 
     func testFileDecompression() throws {
@@ -217,25 +230,38 @@ final class FileOperationsTests: XCTestCase {
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
 
+        // Verify source file exists
+        let fileManager = FileManager.default
+        XCTAssertTrue(fileManager.fileExists(atPath: sourcePath), "Source file should exist after writing")
+
         var progressCalls = 0
         var lastProgress = 0
 
-        // Compress file with progress
+        // Compress file with progress and better error handling
         let compressor = FileChunkedCompressor()
-        try compressor.compressFile(from: sourcePath, to: destPath) { processed, total in
-            progressCalls += 1
-            lastProgress = processed
-            XCTAssertGreaterThanOrEqual(processed, 0)
-            XCTAssertLessThanOrEqual(processed, total)
+
+        do {
+            try compressor.compressFile(from: sourcePath, to: destPath) { processed, total in
+                progressCalls += 1
+                lastProgress = processed
+                XCTAssertGreaterThanOrEqual(processed, 0)
+                XCTAssertLessThanOrEqual(processed, total)
+            }
+        } catch {
+            XCTFail("Compression with progress failed with error: \(error)")
+            return
         }
 
-        // Verify progress was called
-        XCTAssertGreaterThan(progressCalls, 0)
-        XCTAssertGreaterThan(lastProgress, 0)
+        // Verify compressed file exists
+        XCTAssertTrue(fileManager.fileExists(atPath: destPath), "Compressed file should exist after compression")
 
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
-        try? FileManager.default.removeItem(atPath: destPath)
+        // Verify progress was called
+        XCTAssertGreaterThan(progressCalls, 0, "Progress callback should be called")
+        XCTAssertGreaterThan(lastProgress, 0, "Progress should be greater than 0")
+
+        // Clean up with proper error handling for Windows
+        try? fileManager.removeItem(atPath: sourcePath)
+        try? fileManager.removeItem(atPath: destPath)
     }
 
     func testChunkedProcessor() throws {
@@ -277,20 +303,40 @@ final class FileOperationsTests: XCTestCase {
         // Write test data to file
         try testData.write(to: URL(fileURLWithPath: sourcePath))
 
-        // Test convenience compression
-        try ZLib.compressFile(from: sourcePath, to: compressedPath)
+        // Verify source file exists
+        let fileManager = FileManager.default
+        XCTAssertTrue(fileManager.fileExists(atPath: sourcePath), "Source file should exist after writing")
 
-        // Test convenience decompression
-        try ZLib.decompressFile(from: compressedPath, to: decompressedPath)
+        // Test convenience compression with error handling
+        do {
+            try ZLib.compressFile(from: sourcePath, to: compressedPath)
+        } catch {
+            XCTFail("Convenience compression failed with error: \(error)")
+            return
+        }
+
+        // Verify compressed file exists
+        XCTAssertTrue(fileManager.fileExists(atPath: compressedPath), "Compressed file should exist after convenience compression")
+
+        // Test convenience decompression with error handling
+        do {
+            try ZLib.decompressFile(from: compressedPath, to: decompressedPath)
+        } catch {
+            XCTFail("Convenience decompression failed with error: \(error)")
+            return
+        }
+
+        // Verify decompressed file exists
+        XCTAssertTrue(fileManager.fileExists(atPath: decompressedPath), "Decompressed file should exist after convenience decompression")
 
         // Verify result
         let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
-        XCTAssertEqual(decompressedData, testData)
+        XCTAssertEqual(decompressedData, testData, "Decompressed data should match original data")
 
-        // Clean up
-        try? FileManager.default.removeItem(atPath: sourcePath)
-        try? FileManager.default.removeItem(atPath: compressedPath)
-        try? FileManager.default.removeItem(atPath: decompressedPath)
+        // Clean up with proper error handling for Windows
+        try? fileManager.removeItem(atPath: sourcePath)
+        try? fileManager.removeItem(atPath: compressedPath)
+        try? fileManager.removeItem(atPath: decompressedPath)
     }
 
     func testFileCompressionToMemory() throws {
