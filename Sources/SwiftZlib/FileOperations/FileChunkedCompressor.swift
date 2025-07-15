@@ -32,7 +32,11 @@ final class FileChunkedCompressor {
         defer { try? input.close() }
 
         try wrapFileError {
-            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+            guard FileManager.default.createFile(atPath: destinationPath, contents: nil) else {
+                throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: [
+                    NSLocalizedDescriptionKey: "Failed to create destination file at \(destinationPath)",
+                ])
+            }
         }
         let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
@@ -62,7 +66,11 @@ final class FileChunkedCompressor {
         let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
         try wrapFileError {
-            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+            guard FileManager.default.createFile(atPath: destinationPath, contents: nil) else {
+                throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: [
+                    NSLocalizedDescriptionKey: "Failed to create destination file at \(destinationPath)",
+                ])
+            }
         }
         let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
@@ -133,7 +141,11 @@ final class FileChunkedCompressor {
         let input = try wrapFileError { try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath)) }
         defer { try? input.close() }
         try wrapFileError {
-            FileManager.default.createFile(atPath: destinationPath, contents: nil)
+            guard FileManager.default.createFile(atPath: destinationPath, contents: nil) else {
+                throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: [
+                    NSLocalizedDescriptionKey: "Failed to create destination file at \(destinationPath)",
+                ])
+            }
         }
         let output = try wrapFileError { try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath)) }
         defer { try? output.close() }
@@ -223,7 +235,13 @@ final class FileChunkedCompressor {
                 do {
                     let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
                     defer { try? input.close() }
-                    _ = FileManager.default.createFile(atPath: destinationPath, contents: nil)
+                    try wrapFileError {
+                        guard FileManager.default.createFile(atPath: destinationPath, contents: nil) else {
+                            throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: [
+                                NSLocalizedDescriptionKey: "Failed to create destination file at \(destinationPath)",
+                            ])
+                        }
+                    }
                     let output = try FileHandle(forWritingTo: URL(fileURLWithPath: destinationPath))
                     defer { try? output.close() }
 
