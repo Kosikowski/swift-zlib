@@ -78,8 +78,8 @@ jobs:
       - name: List available simulators
         run: xcrun simctl list devices
 
-      - name: Build for iOS
-        run: swift build -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
+      - name: Build for iOS (library only)
+        run: swift build --target SwiftZlib -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
 
       - name: Test on iOS Simulator
         run: |
@@ -93,14 +93,14 @@ jobs:
           # Wait for simulator to be ready
           sleep 10
 
-          # Run tests on iOS simulator
-          swift test -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --verbose
+          # Run tests on iOS simulator (library only)
+          swift test --target SwiftZlibTests -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --verbose
 
       - name: Run specific iOS test groups
         run: |
-          swift test -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --filter CoreTests
-          swift test -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --filter ExtensionsTests
-          swift test -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --filter ErrorHandlingTests
+          swift test --target SwiftZlibTests -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --filter CoreTests
+          swift test --target SwiftZlibTests -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --filter ExtensionsTests
+          swift test --target SwiftZlibTests -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator --filter ErrorHandlingTests
 
   # Test on Linux (Ubuntu)
   test-linux:
@@ -349,8 +349,8 @@ jobs:
         with:
           swift-version: ${{ matrix.swift-version }}
 
-      - name: Build package for iOS
-        run: swift build -c ${{ matrix.configuration }} -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
+      - name: Build package for iOS (library only)
+        run: swift build -c ${{ matrix.configuration }} --target SwiftZlib -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
 
       - name: Test package on iOS Simulator
         run: |
@@ -364,8 +364,8 @@ jobs:
           # Wait for simulator to be ready
           sleep 10
 
-          # Run tests on iOS simulator
-          swift test -c ${{ matrix.configuration }} -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
+          # Run tests on iOS simulator (library only)
+          swift test -c ${{ matrix.configuration }} --target SwiftZlibTests -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
 
   # Build verification - Linux
   build-verification-linux:

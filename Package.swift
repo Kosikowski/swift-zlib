@@ -110,6 +110,7 @@ let package = Package(
         .executableTarget(
             name: "SwiftZlibCLI",
             dependencies: ["SwiftZlib"]
+            // Note: CLI is not built for iOS/tvOS/watchOS/visionOS (command-line executables not supported)
         ),
     ]
 )
