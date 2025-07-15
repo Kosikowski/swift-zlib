@@ -56,6 +56,12 @@ final class FileOperationsTests: XCTestCase {
         ]
     #endif
 
+    // MARK: Properties
+
+    #if canImport(Combine)
+        private var cancellables = Set<AnyCancellable>()
+    #endif
+
     // MARK: Overridden Functions
 
     // MARK: Setup and Teardown
@@ -530,8 +536,7 @@ final class FileOperationsTests: XCTestCase {
             try testData.write(to: URL(fileURLWithPath: sourcePath))
 
             let compressExpectation = expectation(description: "Combine file compression completes")
-            let decompressExpectation = expectation(description: "Combine file decompression completes")
-            var cancellables = Set<AnyCancellable>()
+            cancellables.removeAll()
 
             // Compress file using Combine publisher
             ZLib.compressFilePublisher(from: sourcePath, to: compressedPath)
@@ -548,6 +553,7 @@ final class FileOperationsTests: XCTestCase {
             wait(for: [compressExpectation], timeout: 5.0)
 
             // Decompress file using Combine publisher
+            let decompressExpectation = expectation(description: "Combine file decompression completes")
             ZLib.decompressFilePublisher(from: compressedPath, to: decompressedPath)
                 .sink(receiveCompletion: { completion in
                     switch completion {
@@ -580,7 +586,7 @@ final class FileOperationsTests: XCTestCase {
             let progressExpectation = expectation(description: "Combine file compression with progress completes")
             var progressUpdates = 0
             var lastPercent: Double = 0
-            var cancellables = Set<AnyCancellable>()
+            cancellables.removeAll()
 
             ZLib.compressFileProgressPublisher(from: sourcePath, to: compressedPath)
                 .sink(receiveCompletion: { completion in
@@ -616,7 +622,7 @@ final class FileOperationsTests: XCTestCase {
 
             // Compress file first
             let compressExpectation = expectation(description: "Compression for decompression progress test completes")
-            var cancellables = Set<AnyCancellable>()
+            cancellables.removeAll()
             ZLib.compressFilePublisher(from: sourcePath, to: compressedPath)
                 .sink(receiveCompletion: { completion in
                     if case .finished = completion { compressExpectation.fulfill() }
@@ -661,7 +667,7 @@ final class FileOperationsTests: XCTestCase {
             let nonExistentPath = tempFilePath("does_not_exist.txt")
             let destPath = tempFilePath("should_not_be_created.gz")
             let expectation = expectation(description: "Combine compression error")
-            var cancellables = Set<AnyCancellable>()
+            cancellables.removeAll()
             ZLib.compressFilePublisher(from: nonExistentPath, to: destPath)
                 .sink(receiveCompletion: { completion in
                     switch completion {
@@ -680,7 +686,7 @@ final class FileOperationsTests: XCTestCase {
             let nonExistentPath = tempFilePath("does_not_exist.gz")
             let destPath = tempFilePath("should_not_be_created.txt")
             let expectation = expectation(description: "Combine decompression error")
-            var cancellables = Set<AnyCancellable>()
+            cancellables.removeAll()
             ZLib.decompressFilePublisher(from: nonExistentPath, to: destPath)
                 .sink(receiveCompletion: { completion in
                     switch completion {

@@ -272,6 +272,9 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
+        // Log input data (hex, truncated)
+        let inputHex = input.prefix(32).map { String(format: "%02x", $0) }.joined()
+        zlibDebug("Input (hex, first 32 bytes): \(inputHex)\(input.count > 32 ? "..." : "")")
         zlibDebug("Decompressing \(input.count) bytes with flush mode: \(flush)")
         logStreamState(stream, operation: "Decompression start")
 
@@ -293,6 +296,7 @@ final class Decompressor {
                     zlibDebug("[Decompressor.decompress] Iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
                 }
                 let outputBufferCount = outputBuffer.count
+                var bytesProcessed = 0
                 result = try outputBuffer.withUnsafeMutableBytes { outputPtr -> Int32 in
                     stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
                     stream.avail_out = uInt(outputBufferCount)
@@ -315,15 +319,20 @@ final class Decompressor {
                         zlibError("Decompression failed with error code: \(inflateResult)")
                         throw ZLibError.decompressionFailed(inflateResult)
                     }
-                    let bytesProcessed = outputBufferCount - Int(stream.avail_out)
+                    bytesProcessed = outputBufferCount - Int(stream.avail_out)
                     if bytesProcessed > 0 {
+                        // Fix: Copy the data within the closure scope where the pointer is valid
                         let temp = Data(bytes: outputPtr.baseAddress!, count: bytesProcessed)
                         output.append(temp)
+                        // Log output chunk (hex, truncated)
+                        let chunkHex = temp.prefix(32).map { String(format: "%02x", $0) }.joined()
+                        zlibDebug("Output chunk (hex, first 32 bytes): \(chunkHex)\(temp.count > 32 ? "..." : "")")
                         zlibDebug("[Decompressor.decompress] Produced \(bytesProcessed) bytes of decompressed data")
                         zlibDebug("Produced \(bytesProcessed) bytes of decompressed data")
                     }
                     return inflateResult
                 }
+                logStreamState(stream, operation: "Decompression iteration \(iteration) end")
                 if dictWasSet {
                     dictWasSet = false // Only allow one extra pass after setting dictionary
                 }
@@ -332,6 +341,9 @@ final class Decompressor {
 
         logStreamState(stream, operation: "Decompression end")
         zlibInfo("Decompression completed: \(input.count) -> \(output.count) bytes")
+        // Log final output (hex, truncated)
+        let outputHex = output.prefix(32).map { String(format: "%02x", $0) }.joined()
+        zlibDebug("Final output (hex, first 32 bytes): \(outputHex)\(output.count > 32 ? "..." : "")")
 
         return output
     }
@@ -340,7 +352,49 @@ final class Decompressor {
     /// - Returns: Final decompressed data
     /// - Throws: ZLibError if decompression fails
     public func finish() throws -> Data {
-        try decompress(Data(), flush: .finish)
+        zlibDebug("[Decompressor.finish] Finishing decompression")
+        guard isInitialized else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+
+        var output = Data()
+        var outputBuffer = Data(repeating: 0, count: 1024) // 1KB chunks
+
+        // Set empty input for finish
+        stream.next_in = nil
+        stream.avail_in = 0
+
+        // Process until stream is finished
+        var result: Int32 = Z_OK
+        repeat {
+            var bytesProcessed = 0
+            let outputBufferCount = outputBuffer.count
+            // We assign the result of withUnsafeMutableBytes to _ because
+            // the closure's return value (Int32) is not needed outside the closure.
+            // The important side effects (decompression, updating `result`, appending to `output`)
+            // are handled inside the closure and via the `result` variable.
+            _ = try outputBuffer.withUnsafeMutableBytes { outputPtr -> Int32 in
+                stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
+                stream.avail_out = uInt(outputBufferCount)
+
+                result = swift_inflate(&stream, FlushMode.finish.zlibFlush)
+                guard result != Z_STREAM_ERROR else {
+                    throw ZLibError.streamError(result)
+                }
+
+                bytesProcessed = outputBufferCount - Int(stream.avail_out)
+                if bytesProcessed > 0 {
+                    // Fix: Copy the data within the closure scope where the pointer is valid
+                    let temp = Data(bytes: outputPtr.baseAddress!, count: bytesProcessed)
+                    output.append(temp)
+                    zlibDebug("[Decompressor.finish] Produced \(bytesProcessed) bytes of decompressed data")
+                }
+                return result
+            }
+        } while stream.avail_out == 0 && result != Z_STREAM_END // Continue until stream ends
+
+        zlibInfo("[Decompressor.finish] Decompression finished: \(output.count) bytes")
+        return output
     }
 
     /// Get the gzip header from the stream (must be called after initializeAdvanced)

@@ -306,6 +306,9 @@ public final class Compressor {
         }
 
         zlibDebug("Compressing \(input.count) bytes with flush mode: \(flush)")
+        // Log input data (hex, truncated)
+        let inputHex = input.prefix(32).map { String(format: "%02x", $0) }.joined()
+        zlibDebug("Input (hex, first 32 bytes): \(inputHex)\(input.count > 32 ? "..." : "")")
         logStreamState(stream, operation: "Compression start")
 
         var output = Data()
@@ -315,39 +318,62 @@ public final class Compressor {
         // Copy input data to ensure it remains valid throughout compression
         let inputBuffer = [Bytef](input)
 
-        // Set input data
-        stream.next_in = inputBuffer.withUnsafeBufferPointer { ptr in ptr.baseAddress.map { UnsafeMutablePointer(mutating: $0) } }
-        stream.avail_in = uInt(input.count)
+        // Keep inputBuffer alive for the entire compression loop
+        try inputBuffer.withUnsafeBufferPointer { ptr in
+            stream.next_in = ptr.baseAddress.map { UnsafeMutablePointer(mutating: $0) }
+            stream.avail_in = uInt(input.count)
 
-        // Process all input data
-        var result: Int32 = Z_OK
-        var iteration = 0
-        repeat {
-            iteration += 1
-            if ZLibVerboseConfig.logProgress {
-                zlibDebug("Compression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
-            }
-
-            try outputBuffer.withUnsafeMutableBufferPointer { buffer in
-                stream.next_out = buffer.baseAddress
-                stream.avail_out = uInt(outputBufferSize)
-
-                result = swift_deflate(&stream, flush.zlibFlush)
-                if result == Z_STREAM_ERROR {
-                    zlibError("Compression failed with Z_STREAM_ERROR")
-                    throw ZLibError.streamError(result)
+            // Process all input data
+            var result: Int32 = Z_OK
+            var iteration = 0
+            var totalProduced = 0
+            repeat {
+                iteration += 1
+                if ZLibVerboseConfig.logProgress {
+                    zlibDebug("Compression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
                 }
 
-                let bytesProcessed = outputBufferSize - Int(stream.avail_out)
-                if bytesProcessed > 0 {
-                    output.append(Data(bytes: buffer.baseAddress!, count: bytesProcessed))
-                    zlibDebug("Produced \(bytesProcessed) bytes of compressed data")
+                var bytesProcessed = 0
+                try outputBuffer.withUnsafeMutableBufferPointer { buffer in
+                    stream.next_out = buffer.baseAddress
+                    stream.avail_out = uInt(outputBufferSize)
+
+                    // Log input buffer state before calling swift_deflate
+                    let inPtr = stream.next_in
+                    let inAddr = UInt(bitPattern: inPtr)
+                    let inAvail = stream.avail_in
+                    let inPreview: String = {
+                        guard let inPtr else { return "nil" }
+                        let buf = UnsafeBufferPointer(start: inPtr, count: min(Int(inAvail), 8))
+                        return buf.map { String(format: "%02x", $0) }.joined(separator: " ")
+                    }()
+                    zlibDebug("[Compressor] Before deflate: next_in=0x\(String(inAddr, radix: 16)), avail_in=\(inAvail), preview=\(inPreview)")
+
+                    result = swift_deflate(&stream, flush.zlibFlush)
+                    if result == Z_STREAM_ERROR {
+                        zlibError("Compression failed with Z_STREAM_ERROR")
+                        throw ZLibError.streamError(result)
+                    }
+
+                    bytesProcessed = outputBufferSize - Int(stream.avail_out)
+                    if bytesProcessed > 0 {
+                        let chunk = Data(bytes: buffer.baseAddress!, count: bytesProcessed)
+                        output.append(chunk)
+                        totalProduced += bytesProcessed
+                        let chunkHex = chunk.prefix(32).map { String(format: "%02x", $0) }.joined()
+                        zlibDebug("Output chunk (hex, first 32 bytes): \(chunkHex)\(chunk.count > 32 ? "..." : "")")
+                        zlibDebug("Produced \(bytesProcessed) bytes of compressed data (total: \(totalProduced))")
+                    }
                 }
-            }
-        } while flush == .finish ? result != Z_STREAM_END : (stream.avail_in > 0 || stream.avail_out == 0) // Continue until finish or while input/output remains
+                logStreamState(stream, operation: "Compression iteration \(iteration) end")
+            } while flush == .finish ? result != Z_STREAM_END : (stream.avail_in > 0 || stream.avail_out == 0) // Continue until finish or while input/output remains
+        }
 
         logStreamState(stream, operation: "Compression end")
         zlibInfo("Compression completed: \(input.count) -> \(output.count) bytes")
+        // Log final output (hex, truncated)
+        let outputHex = output.prefix(32).map { String(format: "%02x", $0) }.joined()
+        zlibDebug("Final output (hex, first 32 bytes): \(outputHex)\(output.count > 32 ? "..." : "")")
 
         return output
     }
@@ -371,6 +397,7 @@ public final class Compressor {
         // Process until stream is finished
         var result: Int32 = Z_OK
         repeat {
+            var bytesProcessed = 0
             try outputBuffer.withUnsafeMutableBufferPointer { buffer in
                 stream.next_out = buffer.baseAddress
                 stream.avail_out = uInt(outputBufferSize)
@@ -380,8 +407,9 @@ public final class Compressor {
                     throw ZLibError.streamError(result)
                 }
 
-                let bytesProcessed = outputBufferSize - Int(stream.avail_out)
+                bytesProcessed = outputBufferSize - Int(stream.avail_out)
                 if bytesProcessed > 0 {
+                    // Fix: Copy the data within the closure scope where the pointer is valid
                     output.append(Data(bytes: buffer.baseAddress!, count: bytesProcessed))
                 }
             }
