@@ -316,9 +316,11 @@ public final class Compressor {
         let inputBuffer = [Bytef](input)
 
         // Set input data
-        stream.next_in = inputBuffer.withUnsafeBufferPointer { ptr in
-            ptr.baseAddress.map { UnsafeMutablePointer(mutating: $0) }
-        }
+        #if os(Windows)
+            stream.next_in = inputBuffer.withUnsafeBufferPointer { ptr in ptr.baseAddress }
+        #else
+            stream.next_in = inputBuffer.withUnsafeBufferPointer { ptr in ptr.baseAddress.map { UnsafeMutablePointer(mutating: $0) } }
+        #endif
         stream.avail_in = uInt(input.count)
 
         // Process all input data
