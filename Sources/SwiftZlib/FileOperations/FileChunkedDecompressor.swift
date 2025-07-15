@@ -149,16 +149,16 @@ final class FileChunkedDecompressor {
         let decompressor = Decompressor()
         try decompressor.initializeAdvanced(windowBits: windowBits)
 
-                            let totalBytes: Int
-                    if #available(iOS 13.4, macOS 10.15.4, tvOS 13.4, watchOS 6.2, *) {
-                        totalBytes = try Int(input.seekToEnd())
-                    } else {
-                        // Fallback for older platforms
-                        let currentOffset = input.offsetInFile
-                        input.seekToEndOfFile()
-                        totalBytes = Int(input.offsetInFile)
-                        input.seek(toFileOffset: currentOffset)
-                    }
+        let totalBytes: Int
+        if #available(iOS 13.4, macOS 10.15.4, tvOS 13.4, watchOS 6.2, *) {
+            totalBytes = try Int(input.seekToEnd())
+        } else {
+            // Fallback for older platforms
+            let currentOffset = input.offsetInFile
+            input.seekToEndOfFile()
+            totalBytes = Int(input.offsetInFile)
+            input.seek(toFileOffset: currentOffset)
+        }
         try input.seek(toOffset: 0)
         var processedBytes = 0
         var lastReport = Date()

@@ -78,10 +78,10 @@ jobs:
       - name: List available simulators
         run: xcrun simctl list devices
 
-              - name: Build for iOS (library only)
-          run: swift build -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
+      - name: Build for iOS (library only)
+        run: swift build -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios13.4-simulator
 
-        - name: Test on iOS Simulator
+      - name: Test on iOS Simulator
           run: |
             # Get the first available iPhone simulator (exclude "Shutdown" and other invalid entries)
             SIMULATOR=$(xcrun simctl list devices available | grep "iPhone" | grep -v "Shutdown" | head -1 | sed 's/.*(\([^)]*\)).*/\1/')
