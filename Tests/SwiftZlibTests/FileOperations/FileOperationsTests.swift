@@ -197,26 +197,44 @@ final class FileOperationsTests: XCTestCase {
         let processedPath = tempFilePath("test_processed.gz")
         let decompressedPath = tempFilePath("test_decompressed.txt")
 
-        // Write test data to file
-        try testData.write(to: URL(fileURLWithPath: sourcePath))
+        // Write test data to file with better error handling
+        do {
+            try testData.write(to: URL(fileURLWithPath: sourcePath))
+        } catch {
+            XCTFail("Failed to write test data to file: \(error)")
+            return
+        }
 
-        // Process file (should compress)
+        // Verify source file exists
+        let fileManager = FileManager.default
+        XCTAssertTrue(fileManager.fileExists(atPath: sourcePath), "Source file should exist after writing")
+
+        // Process file (should compress) with better error handling
         let processor = FileProcessor()
-        try processor.processFile(from: sourcePath, to: processedPath)
+        do {
+            try processor.processFile(from: sourcePath, to: processedPath)
+        } catch {
+            XCTFail("File processing failed: \(error)")
+            return
+        }
 
         // Verify compressed file exists
         let compressedData = try Data(contentsOf: URL(fileURLWithPath: processedPath))
         XCTAssertFalse(compressedData.isEmpty)
 
-        // Process compressed file (should decompress)
-        try processor.processFile(from: processedPath, to: decompressedPath)
+        // Process compressed file (should decompress) with better error handling
+        do {
+            try processor.processFile(from: processedPath, to: decompressedPath)
+        } catch {
+            XCTFail("File decompression failed: \(error)")
+            return
+        }
 
         // Verify decompressed data matches original
         let decompressedData = try Data(contentsOf: URL(fileURLWithPath: decompressedPath))
         XCTAssertEqual(decompressedData, testData)
 
         // Clean up with proper error handling for Windows
-        let fileManager = FileManager.default
         try? fileManager.removeItem(atPath: sourcePath)
         try? fileManager.removeItem(atPath: processedPath)
         try? fileManager.removeItem(atPath: decompressedPath)
@@ -478,14 +496,27 @@ final class FileOperationsTests: XCTestCase {
 
     /// Get a temporary file path for testing
     private func tempFilePath(_ filename: String) -> String {
-        let tempDir = FileManager.default.temporaryDirectory
-        let path = tempDir.appendingPathComponent(filename).path
+        #if os(Windows)
+            // On Windows, use a more reliable temporary directory
+            let tempDir = FileManager.default.temporaryDirectory
+            let uniqueFilename = "\(UUID().uuidString)_\(filename)"
+            let path = tempDir.appendingPathComponent(uniqueFilename).path
 
-        // Ensure the file doesn't exist before returning the path
-        // This helps prevent permission issues on Windows
-        try? FileManager.default.removeItem(atPath: path)
+            // Ensure the file doesn't exist before returning the path
+            // This helps prevent permission issues on Windows
+            try? FileManager.default.removeItem(atPath: path)
 
-        return path
+            return path
+        #else
+            let tempDir = FileManager.default.temporaryDirectory
+            let path = tempDir.appendingPathComponent(filename).path
+
+            // Ensure the file doesn't exist before returning the path
+            // This helps prevent permission issues on Windows
+            try? FileManager.default.removeItem(atPath: path)
+
+            return path
+        #endif
     }
 }
 
