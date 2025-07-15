@@ -52,9 +52,6 @@
 
 #ifdef _WIN32
 #include "../zlib.h"
-#elif defined(__APPLE__) && (defined(__arm__) || defined(__arm64__)) && !defined(__x86_64__)
-// For iOS builds, use bundled zlib
-#include "../zlib.h"
 #else
 #include <zlib.h>
 #endif
