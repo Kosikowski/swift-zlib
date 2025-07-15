@@ -56,7 +56,7 @@
 #endif
 
 #ifdef _WIN32
-#include "../private/zlib_simple.h"
+#include "../zlib.h"
 #else
 #include <zlib.h>
 #endif
