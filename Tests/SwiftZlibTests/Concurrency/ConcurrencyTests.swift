@@ -15,10 +15,19 @@ actor ResultsBox<T> {
 
     // MARK: Functions
 
+    @inline(never)
     func append(_ item: T) { items.append(item) }
+
+    @inline(never)
     func set(_ item: T, at index: Int) { if items.indices.contains(index) { items[index] = item } }
+
+    @inline(never)
     func getAll() -> [T] { items }
+
+    @inline(never)
     func count() -> Int { items.count }
+
+    @inline(never)
     func removeAll() { items.removeAll() }
 }
 
