@@ -64,6 +64,14 @@ final class DecompressorCancellationTests: XCTestCase {
         let decompressor = Decompressor()
         try decompressor.initialize()
 
+        // Add some decompression work first to make reset more meaningful
+        let data = Data(repeating: 0x41, count: 1_000_000) // 1MB
+        guard let compressed = try? ZLib.compress(data) else {
+            XCTFail("Compression failed")
+            return
+        }
+        _ = try decompressor.decompress(compressed, flush: .finish)
+
         let task = Task {
             do {
                 try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
