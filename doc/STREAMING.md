@@ -378,4 +378,8 @@ class NetworkStreamProcessor {
 }
 ```
 
+### Cancellation Support
+
+All streaming file operations that return `AsyncThrowingStream` (such as `compressFileProgressStream` and `decompressFileProgressStream`) now support robust, cooperative cancellation. If the consuming task is cancelled, the stream will terminate immediately and clean up any internal resources. This allows for responsive cancellation of long-running file operations in Swift concurrency contexts.
+
 This streaming documentation provides comprehensive coverage of streaming capabilities, configuration options, best practices, and real-world usage patterns.
