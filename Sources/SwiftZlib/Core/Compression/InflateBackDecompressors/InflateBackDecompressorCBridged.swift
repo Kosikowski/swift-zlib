@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// True InflateBack decompressor using C callback bridging
-public class InflateBackDecompressorCBridged: InflateBackDecompressor {
+public class InflateBackDecompressorCBridged: DecompressorType {
     // MARK: Properties
 
     private var stream = z_stream()

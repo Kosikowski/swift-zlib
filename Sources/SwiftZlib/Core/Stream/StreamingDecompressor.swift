@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// Advanced streaming decompression with callback support
-final class StreamingDecompressor {
+final class StreamingDecompressor: DecompressorType {
     // MARK: Properties
 
     private var stream = z_stream()
@@ -198,5 +198,20 @@ final class StreamingDecompressor {
             },
             outputHandler: chunkHandler
         )
+    }
+
+    /// Get stream information
+    /// - Returns: Stream information tuple
+    /// - Throws: ZLibError if operation fails
+    public func getStreamInfo() throws -> (totalIn: uLong, totalOut: uLong, isActive: Bool) {
+        guard isInitialized else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+
+        let totalIn = stream.total_in
+        let totalOut = stream.total_out
+        let isActive = isInitialized
+
+        return (totalIn, totalOut, isActive)
     }
 }

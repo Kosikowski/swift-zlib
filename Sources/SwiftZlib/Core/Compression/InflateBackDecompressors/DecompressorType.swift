@@ -1,5 +1,5 @@
 //
-//  InflateBackDecompressor.swift
+//  DecompressorType.swift
 //  SwiftZlib
 //
 //  Created by Mateusz Kosikowski on 16/07/2025.
@@ -8,12 +8,12 @@
 import CZLib
 import Foundation
 
-// MARK: - InflateBackDecompressor
+// MARK: - DecompressorType
 
 /// Common protocol for inflate back decompressors
 /// This protocol defines the standard interface that all inflate back decompressor
 /// implementations should follow, allowing for polymorphic usage and testing.
-public protocol InflateBackDecompressor {
+public protocol DecompressorType {
     /// Initialize the decompressor
     /// - Throws: ZLibError if initialization fails
     func initialize() throws
@@ -44,7 +44,7 @@ public protocol InflateBackDecompressor {
 
 // MARK: - Default Implementation
 
-public extension InflateBackDecompressor {
+public extension DecompressorType {
     /// Process data with default max output size
     /// - Parameter input: Input compressed data
     /// - Returns: Decompressed data
