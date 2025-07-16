@@ -5,7 +5,11 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
 // MARK: - GzipHeader
 
