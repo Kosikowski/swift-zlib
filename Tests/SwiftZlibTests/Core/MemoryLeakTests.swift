@@ -136,7 +136,7 @@ final class MemoryLeakTests: XCTestCase {
 
     /// Test InflateBackDecompressor lifecycle
     func testInflateBackDecompressorLifecycle() throws {
-        let decompressor = InflateBackDecompressor()
+        let decompressor = BaseInflateBackDecompressor()
         try decompressor.initialize()
 
         let testData = "Hello, World!".data(using: .utf8)!

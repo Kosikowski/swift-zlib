@@ -16,12 +16,16 @@ final class InflateBackTests: XCTestCase {
         ("testStreamingDecompressor", testStreamingDecompressor),
         ("testStreamingDecompressorWithCallbacks", testStreamingDecompressorWithCallbacks),
         ("testStreamingDecompressorChunkHandling", testStreamingDecompressorChunkHandling),
+        ("testEnhancedInflateBackDecompressor", testEnhancedInflateBackDecompressor),
+        ("testEnhancedInflateBackWithChunks", testEnhancedInflateBackWithChunks),
+        ("testEnhancedInflateBackStreamInfo", testEnhancedInflateBackStreamInfo),
+        ("testEnhancedInflateBackProcessData", testEnhancedInflateBackProcessData),
     ]
 
     // MARK: Functions
 
     func testInflateBackDecompressor() throws {
-        let inflateBack = InflateBackDecompressor()
+        let inflateBack = BaseInflateBackDecompressor()
         try inflateBack.initialize()
 
         let originalData = "Test data for InflateBack".data(using: .utf8)!
@@ -43,7 +47,7 @@ final class InflateBackTests: XCTestCase {
     }
 
     func testInflateBackWithChunks() throws {
-        let inflateBack = InflateBackDecompressor()
+        let inflateBack = BaseInflateBackDecompressor()
         try inflateBack.initialize()
 
         let originalData = "Test data for InflateBack with chunks".data(using: .utf8)!
@@ -76,7 +80,7 @@ final class InflateBackTests: XCTestCase {
     }
 
     func testInflateBackStreamInfo() throws {
-        let inflateBack = InflateBackDecompressor()
+        let inflateBack = BaseInflateBackDecompressor()
         try inflateBack.initialize()
 
         let info = try inflateBack.getStreamInfo()
@@ -146,5 +150,83 @@ final class InflateBackTests: XCTestCase {
 
         let combined = chunks.reduce(Data(), +)
         XCTAssertEqual(combined, originalData)
+    }
+
+    // MARK: Enhanced InflateBack Tests
+
+    func testEnhancedInflateBackDecompressor() throws {
+        let enhancedInflateBack = EnhancedInflateBackDecompressor()
+        try enhancedInflateBack.initialize()
+
+        let originalData = "Test data for Enhanced InflateBack".data(using: .utf8)!
+        let compressedData = try ZLib.compress(originalData)
+
+        var output = Data()
+
+        try enhancedInflateBack.processWithCallbacks(
+            inputProvider: {
+                compressedData
+            },
+            outputHandler: { data in
+                output.append(data)
+                return true
+            }
+        )
+
+        XCTAssertEqual(output, originalData)
+    }
+
+    func testEnhancedInflateBackWithChunks() throws {
+        let enhancedInflateBack = EnhancedInflateBackDecompressor()
+        try enhancedInflateBack.initialize()
+
+        let originalData = "Test data for Enhanced InflateBack with chunks".data(using: .utf8)!
+        let compressedData = try ZLib.compress(originalData)
+
+        var output = Data()
+        var inputIndex = 0
+        let chunkSize = 10
+
+        try enhancedInflateBack.processWithCallbacks(
+            inputProvider: {
+                guard inputIndex < compressedData.count else { return nil }
+                let endIndex = min(inputIndex + chunkSize, compressedData.count)
+                let chunk = compressedData[inputIndex ..< endIndex]
+                inputIndex = endIndex
+                return chunk
+            },
+            outputHandler: { data in
+                output.append(data)
+                return true
+            }
+        )
+
+        // Compare the actual data content, not the Data objects
+        let outputString = String(data: output, encoding: .utf8)
+        let originalString = String(data: originalData, encoding: .utf8)
+        XCTAssertNotNil(outputString)
+        XCTAssertNotNil(originalString)
+        XCTAssertEqual(outputString, originalString)
+    }
+
+    func testEnhancedInflateBackStreamInfo() throws {
+        let enhancedInflateBack = EnhancedInflateBackDecompressor()
+        try enhancedInflateBack.initialize()
+
+        let info = try enhancedInflateBack.getStreamInfo()
+        XCTAssertGreaterThanOrEqual(info.totalIn, 0)
+        XCTAssertGreaterThanOrEqual(info.totalOut, 0)
+        XCTAssertTrue(info.isActive)
+    }
+
+    func testEnhancedInflateBackProcessData() throws {
+        let enhancedInflateBack = EnhancedInflateBackDecompressor()
+        try enhancedInflateBack.initialize()
+
+        let originalData = "Test data for Enhanced InflateBack processData".data(using: .utf8)!
+        let compressedData = try ZLib.compress(originalData)
+
+        let result = try enhancedInflateBack.processData(compressedData)
+        XCTAssertEqual(result, originalData)
     }
 }
