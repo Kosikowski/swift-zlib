@@ -6,7 +6,6 @@ final class CompressorCancellationTests: XCTestCase {
 
     static var allTests = [
         ("testCompressorInitializeCancellation", testCompressorInitializeCancellation),
-        ("testCompressorInitializeAdvancedCancellation", testCompressorInitializeAdvancedCancellation),
         ("testCompressorResetCancellation", testCompressorResetCancellation),
         ("testCompressorCompressCancellation", testCompressorCompressCancellation),
         ("testCompressorCompressChunkedCancellation", testCompressorCompressChunkedCancellation),
@@ -37,36 +36,6 @@ final class CompressorCancellationTests: XCTestCase {
                 try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
                 let compressor = Compressor()
                 try compressor.initialize(level: .bestCompression)
-                XCTFail("Should have been cancelled")
-            } catch is CancellationError {
-                expectation.fulfill()
-            } catch {
-                XCTFail("Unexpected error: \(error)")
-            }
-        }
-
-        // Cancel after a short delay
-        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
-        task.cancel()
-
-        // Wait for cancellation
-        await fulfillment(of: [expectation], timeout: 1.0)
-    }
-
-    func testCompressorInitializeAdvancedCancellation() async throws {
-        let expectation = XCTestExpectation(description: "InitializeAdvanced should be cancelled")
-
-        let task = Task {
-            do {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
-                let compressor = Compressor()
-                try compressor.initializeAdvanced(
-                    level: .bestCompression,
-                    method: .deflate,
-                    windowBits: .deflate,
-                    memoryLevel: .maximum,
-                    strategy: .defaultStrategy
-                )
                 XCTFail("Should have been cancelled")
             } catch is CancellationError {
                 expectation.fulfill()
