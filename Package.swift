@@ -31,6 +31,10 @@ let package = Package(
         .target(
             name: "SwiftZlibCShims",
             path: "Sources/SwiftZlibCShims",
+            sources: [
+                "inflate_pending_shim.c",
+                "inflate_back_shim.c",
+            ],
             publicHeadersPath: "include",
             cSettings: [
                 .headerSearchPath("include"),

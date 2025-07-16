@@ -446,7 +446,7 @@ public enum ZLib {
         }
     }
 
-    /// Partially decompress data, returning how much input/output was consumed
+    /// Partially decompress data with limited output buffer
     /// - Parameters:
     ///   - data: The compressed data to decompress
     ///   - maxOutputSize: Maximum size of output buffer (default: 4096)
@@ -457,54 +457,46 @@ public enum ZLib {
             throw ZLibError.invalidData
         }
 
-        var destLen = uLong(maxOutputSize)
-        var sourceLen = uLong(data.count)
-        var decompressedData = Data(repeating: 0, count: maxOutputSize)
+        // Use Decompressor instead of uncompress2 to handle zlib headers properly
+        let decompressor = Decompressor()
+        try decompressor.initializeAdvanced(windowBits: .deflate)
 
-        let result = decompressedData.withUnsafeMutableBytes { destPtr in
-            data.withUnsafeBytes { sourcePtr in
-                zlib.uncompress2(
-                    destPtr.bindMemory(to: Bytef.self).baseAddress!,
-                    &destLen,
-                    sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
-                    &sourceLen
-                )
+        var output = Data()
+        var inputConsumed = 0
+        var outputWritten = 0
+
+        // Process data in chunks to limit output size
+        var inputIndex = 0
+        let chunkSize = min(1024, data.count)
+
+        while inputIndex < data.count, output.count < maxOutputSize {
+            let remainingInput = data.count - inputIndex
+            let currentChunkSize = min(chunkSize, remainingInput)
+            let chunk = data.subdata(in: inputIndex ..< (inputIndex + currentChunkSize))
+
+            let isLastChunk = (inputIndex + currentChunkSize) >= data.count
+            let flush: FlushMode = isLastChunk ? .finish : .noFlush
+
+            let decompressedChunk = try decompressor.decompress(chunk, flush: flush)
+
+            // Limit output to maxOutputSize
+            let spaceRemaining = maxOutputSize - output.count
+            if spaceRemaining > 0 {
+                let bytesToAdd = min(decompressedChunk.count, spaceRemaining)
+                output.append(decompressedChunk.prefix(bytesToAdd))
+                outputWritten += bytesToAdd
+            }
+
+            inputConsumed += currentChunkSize
+            inputIndex += currentChunkSize
+
+            // If we've reached the output limit, stop processing
+            if output.count >= maxOutputSize {
+                break
             }
         }
 
-        if result == Z_BUF_ERROR {
-            // Buffer too small, try with progressively larger buffers
-            zlibDebug("Partial decompression buffer too small, retrying with larger buffer")
-            var bufferMultiplier = 2
-            var retryResult = result
-
-            while retryResult == Z_BUF_ERROR, bufferMultiplier <= 16 {
-                destLen = uLong(maxOutputSize * bufferMultiplier)
-                decompressedData = Data(repeating: 0, count: Int(destLen))
-
-                retryResult = decompressedData.withUnsafeMutableBytes { destPtr in
-                    data.withUnsafeBytes { sourcePtr in
-                        zlib.uncompress2(
-                            destPtr.bindMemory(to: Bytef.self).baseAddress!,
-                            &destLen,
-                            sourcePtr.bindMemory(to: Bytef.self).baseAddress!,
-                            &sourceLen
-                        )
-                    }
-                }
-
-                bufferMultiplier *= 2
-            }
-
-            guard retryResult == Z_OK else {
-                throw ZLibError.decompressionFailed(retryResult)
-            }
-        } else if result != Z_OK {
-            throw ZLibError.decompressionFailed(result)
-        }
-
-        decompressedData.count = Int(destLen)
-        return (decompressedData, Int(sourceLen), Int(destLen))
+        return (output, inputConsumed, outputWritten)
     }
 
     // MARK: - Checksum Functions

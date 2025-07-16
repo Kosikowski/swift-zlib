@@ -1,0 +1,5 @@
+module SwiftZlibCShims [system] {
+    header "inflate_pending_shim.h"
+    header "inflate_back_shim.h"
+    export *
+}
