@@ -37,8 +37,11 @@ public final class Compressor {
 
     /// Initialize the compressor with basic settings
     /// - Parameter level: Compression level
-    /// - Throws: ZLibError if initialization fails
+    /// - Throws: ZLibError if initialization fails, CancellationError if cancelled
     public func initialize(level: CompressionLevel = .defaultCompression) throws {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
+
         zlibInfo("Initializing compressor with level: \(level)")
 
         // Use the exact same parameters as compress2: level, Z_DEFLATED, 15 (zlib format), 8 (default memory), Z_DEFAULT_STRATEGY
@@ -59,7 +62,7 @@ public final class Compressor {
     ///   - windowBits: Window bits for format (default: .deflate)
     ///   - memoryLevel: Memory level (default: .maximum)
     ///   - strategy: Compression strategy (default: .defaultStrategy)
-    /// - Throws: ZLibError if initialization fails
+    /// - Throws: ZLibError if initialization fails, CancellationError if cancelled
     public func initializeAdvanced(
         level: CompressionLevel = .defaultCompression,
         method: CompressionMethod = .deflate,
@@ -67,6 +70,9 @@ public final class Compressor {
         memoryLevel: MemoryLevel = .maximum,
         strategy: CompressionStrategy = .defaultStrategy
     ) throws {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
+
         let result = swift_deflateInit2(
             &stream,
             level.zlibLevel,
@@ -118,8 +124,11 @@ public final class Compressor {
     }
 
     /// Reset the compressor for reuse
-    /// - Throws: ZLibError if reset fails
+    /// - Throws: ZLibError if reset fails, CancellationError if cancelled
     public func reset() throws {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
+
         guard isInitialized else {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
@@ -298,8 +307,11 @@ public final class Compressor {
     ///   - input: Input data chunk
     ///   - flush: Flush mode
     /// - Returns: Compressed data chunk
-    /// - Throws: ZLibError if compression fails
+    /// - Throws: ZLibError if compression fails, CancellationError if cancelled
     public func compress(_ input: Data, flush: FlushMode = .noFlush) throws -> Data {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
+
         guard isInitialized else {
             zlibError("Compressor not initialized")
             throw ZLibError.streamError(Z_STREAM_ERROR)
@@ -328,6 +340,9 @@ public final class Compressor {
             var iteration = 0
             var totalProduced = 0
             repeat {
+                // Check for cancellation before each iteration
+                try Task.checkCancellation()
+
                 iteration += 1
                 if ZLibVerboseConfig.logProgress {
                     zlibDebug("Compression iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
@@ -380,8 +395,11 @@ public final class Compressor {
 
     /// Finish compression
     /// - Returns: Final compressed data
-    /// - Throws: ZLibError if compression fails
+    /// - Throws: ZLibError if compression fails, CancellationError if cancelled
     public func finish() throws -> Data {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
+
         guard isInitialized else {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
@@ -397,6 +415,9 @@ public final class Compressor {
         // Process until stream is finished
         var result: Int32 = Z_OK
         repeat {
+            // Check for cancellation before each iteration
+            try Task.checkCancellation()
+
             var bytesProcessed = 0
             try outputBuffer.withUnsafeMutableBufferPointer { buffer in
                 stream.next_out = buffer.baseAddress
