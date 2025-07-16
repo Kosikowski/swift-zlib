@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - GzipFile
 
 public final class GzipFile {
     // MARK: Properties

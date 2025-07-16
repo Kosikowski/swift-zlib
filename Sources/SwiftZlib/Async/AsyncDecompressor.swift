@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - AsyncDecompressor
 
 /// Async streaming decompressor for non-blocking decompression
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)

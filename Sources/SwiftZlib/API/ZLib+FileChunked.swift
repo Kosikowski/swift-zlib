@@ -6,7 +6,11 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
 public extension ZLib {
     /// True chunked streaming file compression (synchronous)

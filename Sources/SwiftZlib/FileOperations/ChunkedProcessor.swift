@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - ChunkedProcessor
 
 /// Chunked data processor for memory-efficient operations
 final class ChunkedProcessor {

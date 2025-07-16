@@ -5,10 +5,15 @@
 //
 
 import Foundation
-import zlib
 
 #if canImport(CoreFoundation)
     import CoreFoundation
+#endif
+
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
 #endif
 
 // MARK: - ZLibVerboseConfig

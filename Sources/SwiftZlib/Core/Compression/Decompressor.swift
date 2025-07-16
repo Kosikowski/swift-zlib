@@ -6,10 +6,14 @@
 //
 
 import Foundation
-import SwiftZlibCShims
-import zlib
+#if canImport(zlib)
+    import SwiftZlibCShims
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
-// MARK: - Gzip File API
+// MARK: - Decompressor
 
 /// Stream-based decompression for large data or streaming scenarios
 final class Decompressor {

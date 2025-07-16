@@ -6,7 +6,11 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
 extension ZLib {
     /// Create an async stream builder for fluent configuration

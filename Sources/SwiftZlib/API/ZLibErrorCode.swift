@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - ZLibErrorCode
 
 /// ZLib error codes and their meanings
 public enum ZLibErrorCode: Int32 {

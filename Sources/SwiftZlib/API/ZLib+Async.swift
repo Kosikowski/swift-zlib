@@ -6,7 +6,11 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
 /// Async compression and decompression support
 public extension ZLib {

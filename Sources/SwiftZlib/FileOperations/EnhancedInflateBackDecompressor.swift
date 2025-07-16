@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - EnhancedInflateBackDecompressor
 
 /// Enhanced InflateBack decompression with improved C callback support
 /// This provides better integration with the actual zlib inflateBack functions

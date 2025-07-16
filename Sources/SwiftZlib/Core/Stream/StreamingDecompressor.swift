@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - StreamingDecompressor
 
 /// Advanced streaming decompression with callback support
 final class StreamingDecompressor {

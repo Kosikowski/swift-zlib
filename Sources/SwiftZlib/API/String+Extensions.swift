@@ -6,7 +6,11 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
 public extension String {
     /// Compress this string's UTF-8 data

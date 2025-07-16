@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - FileDecompressor
 
 /// Memory-efficient file decompressor
 final class FileDecompressor {

@@ -6,8 +6,14 @@
 //
 
 import Foundation
-import SwiftZlibCShims
-import zlib
+#if canImport(zlib)
+    import SwiftZlibCShims
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - InflateBackDecompressorCBridged
 
 /// True InflateBack decompressor using C callback bridging
 public final class InflateBackDecompressorCBridged {

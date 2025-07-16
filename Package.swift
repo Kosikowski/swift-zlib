@@ -9,7 +9,6 @@ let package = Package(
         .tvOS(.v13),
         .watchOS(.v6),
         .visionOS(.v1),
-
     ],
     products: [
         .library(name: "SwiftZlib", targets: ["SwiftZlib"]),
@@ -20,6 +19,7 @@ let package = Package(
         .target(
             name: "SwiftZlib",
             dependencies: ["SwiftZlibCShims"],
+
             swiftSettings: [
                 .define("ZLIB_VERBOSE_DISABLED"),
             ],
@@ -40,6 +40,7 @@ let package = Package(
             publicHeadersPath: "include",
             cSettings: [
                 .headerSearchPath("include"),
+
                 // Windows-specific preprocessor definitions
                 .define("_CRT_SECURE_NO_WARNINGS"),
                 .define("_WIN32_WINNT", to: "0x0601"),

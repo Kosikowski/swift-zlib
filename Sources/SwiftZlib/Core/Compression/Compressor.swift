@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - Compressor
 
 /// Stream-based compression for large data or streaming scenarios
 public final class Compressor {

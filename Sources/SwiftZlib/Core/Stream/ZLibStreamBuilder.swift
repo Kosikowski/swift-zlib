@@ -6,9 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
-// MARK: - Stream Builder Pattern
+// MARK: - ZLibStreamBuilder
 
 /// Builder for creating ZLib streams with fluent API
 final class ZLibStreamBuilder {

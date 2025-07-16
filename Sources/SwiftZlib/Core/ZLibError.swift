@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import zlib
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - ZLibError
 
 /// Errors that can occur during ZLib operations
 public enum ZLibError: Error, LocalizedError {
