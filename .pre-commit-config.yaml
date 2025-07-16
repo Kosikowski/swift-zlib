@@ -67,3 +67,13 @@ repos:
               doc/|
               \.github/
           )$
+
+  # Custom hooks
+  - repo: local
+    hooks:
+      - id: check-alltests
+        name: Check allTests properties
+        entry: python3 scripts/check_alltests.py
+        language: system
+        files: Tests/SwiftZlibTests/.*\.swift$
+        pass_filenames: false

@@ -1,5 +1,5 @@
 //
-//  InflateBackDecompressor.swift
+//  BaseInflateBackDecompressor.swift
 //  SwiftZlib
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
@@ -11,7 +11,7 @@ import Foundation
 /// Advanced InflateBack decompression with true C callback support
 /// Note: This is a simplified implementation that provides InflateBack-like functionality
 /// using the regular inflate API with Swift-friendly callbacks.
-final class InflateBackDecompressor {
+final class BaseInflateBackDecompressor: DecompressorType {
     // MARK: Properties
 
     private var stream = z_stream()

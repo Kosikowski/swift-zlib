@@ -495,3 +495,7 @@ func validateStreamConfig(_ config: StreamingConfig) throws {
     }
 }
 ```
+
+### Cancellation
+
+If a streaming operation is cancelled (e.g., the consuming task is cancelled), a `CancellationError` will be thrown. This allows you to distinguish between user-initiated cancellation and other errors. All file chunked compressor and decompressor streams now propagate cancellation correctly.

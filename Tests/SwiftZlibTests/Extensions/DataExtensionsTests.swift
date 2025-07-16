@@ -9,8 +9,6 @@ import XCTest
 final class DataExtensionsTests: XCTestCase {
     // MARK: Static Properties
 
-    // MARK: - Test Discovery
-
     static var allTests = [
         ("testDataExtensions", testDataExtensions),
         ("testDataExtensionsAdvanced", testDataExtensionsAdvanced),
@@ -18,8 +16,6 @@ final class DataExtensionsTests: XCTestCase {
     ]
 
     // MARK: Functions
-
-    // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {

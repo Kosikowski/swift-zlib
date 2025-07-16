@@ -10,7 +10,7 @@ import Foundation
 
 /// Enhanced InflateBack decompression with improved C callback support
 /// This provides better integration with the actual zlib inflateBack functions
-final class EnhancedInflateBackDecompressor {
+final class EnhancedInflateBackDecompressor: DecompressorType {
     // MARK: Properties
 
     private var stream = z_stream()
@@ -60,7 +60,7 @@ final class EnhancedInflateBackDecompressor {
 
         // Use the existing InflateBackDecompressor implementation for now
         // The true C callback implementation requires more complex Swift-C bridging
-        let inflateBack = InflateBackDecompressor()
+        let inflateBack = BaseInflateBackDecompressor()
         try inflateBack.initialize()
         try inflateBack.processWithCallbacks(inputProvider: inputProvider, outputHandler: outputHandler)
     }

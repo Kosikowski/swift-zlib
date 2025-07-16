@@ -668,3 +668,18 @@ class CompressionViewModel: ObservableObject {
 ```
 
 This advanced features guide covers the most powerful capabilities of SwiftZlib, enabling you to build efficient, scalable compression solutions for your applications.
+
+#### Chunked File Operations and Cancellation
+
+Both `FileChunkedCompressor` and `FileChunkedDecompressor` now support cancellation when using their streaming APIs. If you cancel the consuming task of an `AsyncThrowingStream`, the operation will stop as soon as possible and release resources. This is ideal for user-driven cancellation in UI or server environments.
+
+```swift
+let stream = compressor.compressFileProgressStream(from: ..., to: ...)
+let task = Task {
+    for try await progress in stream {
+        // handle progress
+    }
+}
+// To cancel:
+task.cancel()
+```

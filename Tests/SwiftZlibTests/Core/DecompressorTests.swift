@@ -9,8 +9,6 @@ import XCTest
 final class DecompressorTests: XCTestCase {
     // MARK: Static Properties
 
-    // MARK: - Test Discovery
-
     static var allTests = [
         ("testDecompressorResetAndCopy", testDecompressorResetAndCopy),
         ("testDecompressorAdvancedFeatures", testDecompressorAdvancedFeatures),
@@ -28,8 +26,6 @@ final class DecompressorTests: XCTestCase {
     ]
 
     // MARK: Functions
-
-    // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {

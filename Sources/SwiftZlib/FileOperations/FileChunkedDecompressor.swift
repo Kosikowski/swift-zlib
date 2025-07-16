@@ -211,7 +211,7 @@ final class FileChunkedDecompressor {
                 if #available(iOS 13.4, macOS 10.15.4, tvOS 13.4, watchOS 6.2, *) {
                     try wrapFileError { try output.write(contentsOf: decompressed) }
                 } else {
-                    try wrapFileError { try output.write(decompressed) }
+                    try wrapFileError { output.write(decompressed) }
                 }
             }
             processedBytes += chunk.count
@@ -310,7 +310,7 @@ final class FileChunkedDecompressor {
                             if #available(iOS 13.4, macOS 10.15.4, tvOS 13.4, watchOS 6.2, *) {
                                 try output.write(contentsOf: decompressed)
                             } else {
-                                try output.write(decompressed)
+                                output.write(decompressed)
                             }
                         }
                         processedBytes += chunk.count

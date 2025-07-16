@@ -7,6 +7,35 @@ import XCTest
 @testable import SwiftZlib
 
 final class PrimeTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testDeflatePrimeBasic", testDeflatePrimeBasic),
+        ("testDeflatePrimeMultipleBits", testDeflatePrimeMultipleBits),
+        ("testDeflatePrimeLargeValue", testDeflatePrimeLargeValue),
+        ("testDeflatePrimeBeforeCompression", testDeflatePrimeBeforeCompression),
+        ("testDeflatePrimeAfterPartialCompression", testDeflatePrimeAfterPartialCompression),
+        ("testDeflatePrimeInvalidBits", testDeflatePrimeInvalidBits),
+        ("testDeflatePrimeBeforeInitialization", testDeflatePrimeBeforeInitialization),
+        ("testInflatePrimeBasic", testInflatePrimeBasic),
+        ("testInflatePrimeMultipleBits", testInflatePrimeMultipleBits),
+        ("testInflatePrimeLargeValue", testInflatePrimeLargeValue),
+        ("testInflatePrimeBeforeDecompression", testInflatePrimeBeforeDecompression),
+        ("testInflatePrimeAfterPartialDecompression", testInflatePrimeAfterPartialDecompression),
+        ("testInflatePrimeInvalidBits", testInflatePrimeInvalidBits),
+        ("testInflatePrimeBeforeInitialization", testInflatePrimeBeforeInitialization),
+        ("testPrimeRoundTrip", testPrimeRoundTrip),
+        ("testPrimeWithDifferentValues", testPrimeWithDifferentValues),
+        ("testPrimeAffectsCompressedOutput", testPrimeAffectsCompressedOutput),
+        ("testPrimeIsolation", testPrimeIsolation),
+        ("testPrimeWithZlibStreamFails", testPrimeWithZlibStreamFails),
+        ("testPrimeWithGzipStreamFails", testPrimeWithGzipStreamFails),
+        ("testPrimeZeroBits", testPrimeZeroBits),
+        ("testPrimeMaxBits", testPrimeMaxBits),
+    ]
+
+    // MARK: Functions
+
     func testDeflatePrimeBasic() throws {
         let compressor = Compressor()
         try compressor.initialize(level: .noCompression)

@@ -136,7 +136,7 @@ final class MemoryLeakTests: XCTestCase {
 
     /// Test InflateBackDecompressor lifecycle
     func testInflateBackDecompressorLifecycle() throws {
-        let decompressor = InflateBackDecompressor()
+        let decompressor = BaseInflateBackDecompressor()
         try decompressor.initialize()
 
         let testData = "Hello, World!".data(using: .utf8)!
@@ -307,6 +307,7 @@ final class MemoryLeakTests: XCTestCase {
             ("testInflateBackDecompressorLifecycle", testInflateBackDecompressorLifecycle),
             ("testInflateBackDecompressorCBridgedLifecycle", testInflateBackDecompressorCBridgedLifecycle),
             ("testStreamingLifecycle", testStreamingLifecycle),
+            ("testAsyncStreamLifecycle", testAsyncStreamLifecycle),
             // async test omitted for Linux unless using --enable-test-discovery
             ("testMemoryPressure", testMemoryPressure),
             ("testRapidCreateDestroy", testRapidCreateDestroy),

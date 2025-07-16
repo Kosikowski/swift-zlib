@@ -9,19 +9,21 @@ import CZLib
 import Foundation
 
 /// True InflateBack decompressor using C callback bridging
-public final class InflateBackDecompressorCBridged {
+public class InflateBackDecompressorCBridged: DecompressorType {
     // MARK: Properties
 
     private var stream = z_stream()
     private var isInitialized = false
     private var window: [UInt8]
     private let windowSize: Int
+    private let chunkSize: Int // Chunk size for input processing
 
     // MARK: Lifecycle
 
-    public init(windowBits: WindowBits = .deflate) {
+    public init(windowBits: WindowBits = .deflate, chunkSize: Int = 1024) {
         windowSize = 1 << windowBits.zlibWindowBits
         window = [UInt8](repeating: 0, count: windowSize)
+        self.chunkSize = chunkSize
     }
 
     deinit {
@@ -100,17 +102,18 @@ public final class InflateBackDecompressorCBridged {
     }
 
     /// Process all data from a Data source
-    public func processData(_ input: Data, chunkSize: Int = 1024) throws -> Data {
+    public func processData(_ input: Data, maxOutputSize: Int = 4096) throws -> Data {
         guard isInitialized else {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
         var output = Data()
         var inputIndex = 0
+        let cSize = chunkSize
         try processWithCallbacks(
             inputProvider: {
                 guard inputIndex < input.count else { return nil }
                 let remaining = input.count - inputIndex
-                let size = min(remaining, chunkSize)
+                let size = min(remaining, cSize)
                 let chunk = input.subdata(in: inputIndex ..< (inputIndex + size))
                 inputIndex += size
                 return chunk
@@ -121,5 +124,20 @@ public final class InflateBackDecompressorCBridged {
             }
         )
         return output
+    }
+
+    /// Get stream information
+    /// - Returns: Stream information tuple
+    /// - Throws: ZLibError if operation fails
+    public func getStreamInfo() throws -> (totalIn: uLong, totalOut: uLong, isActive: Bool) {
+        guard isInitialized else {
+            throw ZLibError.streamError(Z_STREAM_ERROR)
+        }
+
+        let totalIn = stream.total_in
+        let totalOut = stream.total_out
+        let isActive = isInitialized
+
+        return (totalIn, totalOut, isActive)
     }
 }

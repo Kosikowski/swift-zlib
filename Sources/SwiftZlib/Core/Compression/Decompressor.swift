@@ -35,6 +35,8 @@ final class Decompressor {
     /// Initialize the decompressor with basic settings
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
         zlibInfo("Initializing decompressor")
 
         let result = swift_inflateInit(&stream)
@@ -50,6 +52,8 @@ final class Decompressor {
     /// - Parameter windowBits: Window bits for format (default: .deflate)
     /// - Throws: ZLibError if initialization fails
     public func initializeAdvanced(windowBits: WindowBits = .deflate) throws {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
         let result = swift_inflateInit2(&stream, windowBits.zlibWindowBits)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
@@ -85,6 +89,8 @@ final class Decompressor {
     /// pressor for reuse
     /// - Throws: ZLibError if reset fails
     public func reset() throws {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
         guard isInitialized else {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
@@ -265,6 +271,8 @@ final class Decompressor {
     /// - Returns: Decompressed data chunk
     /// - Throws: ZLibError if decompression fails
     public func decompress(_ input: Data, flush: FlushMode = .noFlush, dictionary: Data? = nil) throws -> Data {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
         zlibDebug("[Decompressor.decompress] Called with input size: \(input.count), flush: \(flush), dictionary: \(dictionary?.count ?? 0)")
         guard isInitialized else {
             zlibError("[Decompressor.decompress] Not initialized!")
@@ -291,6 +299,8 @@ final class Decompressor {
             var result: Int32 = Z_OK
             var iteration = 0
             repeat {
+                // Check for cancellation before each iteration
+                try Task.checkCancellation()
                 iteration += 1
                 if ZLibVerboseConfig.logProgress {
                     zlibDebug("[Decompressor.decompress] Iteration \(iteration): avail_in=\(stream.avail_in), avail_out=\(stream.avail_out)")
@@ -352,6 +362,8 @@ final class Decompressor {
     /// - Returns: Final decompressed data
     /// - Throws: ZLibError if decompression fails
     public func finish() throws -> Data {
+        // Check for cancellation before starting work
+        try Task.checkCancellation()
         zlibDebug("[Decompressor.finish] Finishing decompression")
         guard isInitialized else {
             throw ZLibError.streamError(Z_STREAM_ERROR)
@@ -367,6 +379,8 @@ final class Decompressor {
         // Process until stream is finished
         var result: Int32 = Z_OK
         repeat {
+            // Check for cancellation before each iteration
+            try Task.checkCancellation()
             var bytesProcessed = 0
             let outputBufferCount = outputBuffer.count
             // We assign the result of withUnsafeMutableBytes to _ because

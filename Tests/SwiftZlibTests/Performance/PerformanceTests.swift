@@ -245,7 +245,7 @@ final class PerformanceTests: XCTestCase {
         let testData = "inflate back advanced test data".data(using: .utf8)!
         let compressed = try ZLib.compress(testData)
 
-        let inflateBack = InflateBackDecompressor()
+        let inflateBack = BaseInflateBackDecompressor()
         try inflateBack.initialize()
 
         var decompressedChunks: [Data] = []

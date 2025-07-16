@@ -410,46 +410,30 @@ func decompressFile(at path: String, to outputPath: String, progress: ((Int, Int
 #### FileChunkedCompressor
 
 ```swift
-class FileChunkedCompressor
+func compressFileProgressStream(
+    from sourcePath: String,
+    to destinationPath: String,
+    progressInterval: TimeInterval = 0.1,
+    progressQueue: DispatchQueue = .main
+) -> AsyncThrowingStream<ProgressInfo, Error>
 ```
 
-Compressor for processing large files in chunks with memory-efficient streaming.
-
-#### Initialization
-
-```swift
-init(level: CompressionLevel = .default, chunkSize: Int = 64 * 1024)
-init(level: CompressionLevel, strategy: CompressionStrategy, chunkSize: Int = 64 * 1024)
-init(level: CompressionLevel, strategy: CompressionStrategy, windowBits: WindowBits, chunkSize: Int = 64 * 1024)
-```
-
-#### Methods
-
-```swift
-func compressFile(at path: String, to outputPath: String) throws
-func compressFile(at path: String, to outputPath: String, progress: ((Int, Int) -> Void)?) throws
-```
+> **Cancellation:**
+> The returned stream is fully cancellable. If the consuming task is cancelled, the operation will terminate immediately and clean up resources.
 
 #### FileChunkedDecompressor
 
 ```swift
-class FileChunkedDecompressor
+func decompressFileProgressStream(
+    from sourcePath: String,
+    to destinationPath: String,
+    progressInterval: TimeInterval = 0.1,
+    progressQueue: DispatchQueue = .main
+) -> AsyncThrowingStream<ProgressInfo, Error>
 ```
 
-Decompressor for processing large compressed files in chunks with memory-efficient streaming.
-
-#### Initialization
-
-```swift
-init(windowBits: WindowBits = .default, chunkSize: Int = 64 * 1024)
-```
-
-#### Methods
-
-```swift
-func decompressFile(at path: String, to outputPath: String) throws
-func decompressFile(at path: String, to outputPath: String, progress: ((Int, Int) -> Void)?) throws
-```
+> **Cancellation:**
+> The returned stream is fully cancellable. If the consuming task is cancelled, the operation will terminate immediately and clean up resources.
 
 ### GzipFile
 
