@@ -26,9 +26,15 @@ let package = Package(
                 .linkedLibrary("z"),
             ]
         ),
+
+        // C shims for missing zlib functions
         .target(
             name: "SwiftZlibCShims",
+            path: "Sources/SwiftZlibCShims",
             publicHeadersPath: "include",
+            cSettings: [
+                .headerSearchPath("include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("z"),
             ]
