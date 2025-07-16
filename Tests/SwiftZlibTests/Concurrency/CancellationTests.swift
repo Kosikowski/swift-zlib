@@ -13,15 +13,8 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
     // MARK: Functions
 
     func makeCancellableStream() -> AsyncThrowingStream<Int, Error> {
-        var internalTask: Task<Void, Never>?
-
         let stream = AsyncThrowingStream<Int, Error> { continuation in
-            continuation.onTermination = { @Sendable reason in
-                print("Stream terminated: \(reason)")
-                internalTask?.cancel()
-            }
-
-            internalTask = Task {
+            let task = Task {
                 do {
                     for i in 1... {
                         try Task.checkCancellation()
@@ -33,6 +26,11 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
                     continuation.finish(throwing: error)
                 }
             }
+
+            continuation.onTermination = { @Sendable reason in
+                print("Stream terminated: \(reason)")
+                task.cancel()
+            }
         }
 
         return stream
@@ -42,15 +40,14 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Stream yields values and cancels")
         expectation.expectedFulfillmentCount = 1
 
-        var receivedValues: [Int] = []
-        var streamTerminated = false
+        let receivedValuesBox = ResultsBox<Int>()
 
         let stream = makeCancellableStream()
 
         let consumingTask = Task {
             do {
                 for try await value in stream {
-                    receivedValues.append(value)
+                    await receivedValuesBox.append(value)
                     print("Received: \(value)")
                 }
             } catch {
@@ -67,6 +64,8 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
         }
 
         await fulfillment(of: [expectation], timeout: 5.0)
+
+        let receivedValues = await receivedValuesBox.getAll()
 
         // Should have received approximately 3 values (1, 2, 3) before cancellation
         XCTAssertGreaterThanOrEqual(receivedValues.count, 2, "Should have received at least 2 values before cancellation")
@@ -91,7 +90,7 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
         }
 
         let compressor = FileChunkedCompressor(bufferSize: 1024)
-        var progressUpdates: [ProgressInfo] = []
+        let progressUpdatesBox = ResultsBox<ProgressInfo>()
 
         let stream = compressor.compressFileProgressStream(
             from: sourcePath,
@@ -102,7 +101,7 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
         let consumingTask = Task {
             do {
                 for try await progress in stream {
-                    progressUpdates.append(progress)
+                    await progressUpdatesBox.append(progress)
                     print("Compression progress: \(progress.percentage)%")
                 }
             } catch {
@@ -119,6 +118,8 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
 
         // Wait for completion or cancellation
         await consumingTask.value
+
+        let progressUpdates = await progressUpdatesBox.getAll()
 
         // Should have received some progress updates before cancellation
         XCTAssertGreaterThan(progressUpdates.count, 0, "Should have received progress updates before cancellation")
@@ -150,7 +151,7 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
         try await compressor.compressFile(from: sourcePath, to: compressedPath)
 
         let decompressor = FileChunkedDecompressor(bufferSize: 1024)
-        var progressUpdates: [ProgressInfo] = []
+        let progressUpdatesBox = ResultsBox<ProgressInfo>()
 
         let stream = decompressor.decompressFileProgressStream(
             from: compressedPath,
@@ -161,7 +162,7 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
         let consumingTask = Task {
             do {
                 for try await progress in stream {
-                    progressUpdates.append(progress)
+                    await progressUpdatesBox.append(progress)
                     print("Decompression progress: \(progress.percentage)%")
                 }
             } catch {
@@ -178,6 +179,8 @@ final class AsyncThrowingStreamCancellationTests: XCTestCase {
 
         // Wait for completion or cancellation
         await consumingTask.value
+
+        let progressUpdates = await progressUpdatesBox.getAll()
 
         // Should have received some progress updates before cancellation
         XCTAssertGreaterThan(progressUpdates.count, 0, "Should have received progress updates before cancellation")
