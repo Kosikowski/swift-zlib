@@ -5,8 +5,14 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - ZLibErrorCode
 
 /// ZLib error codes and their meanings
 public enum ZLibErrorCode: Int32 {
@@ -32,7 +38,7 @@ public enum ZLibErrorCode: Int32 {
     // MARK: Computed Properties
 
     /// Human-readable description of the error code
-    public var description: String { String(cString: swift_zError(rawValue)) }
+    public var description: String { String(cString: zError(rawValue)) }
 
     /// Whether this code represents an error condition
     public var isError: Bool { rawValue < 0 }

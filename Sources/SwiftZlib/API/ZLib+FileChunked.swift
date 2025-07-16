@@ -5,8 +5,12 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
 public extension ZLib {
     /// True chunked streaming file compression (synchronous)

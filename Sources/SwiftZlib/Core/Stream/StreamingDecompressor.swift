@@ -5,8 +5,14 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - StreamingDecompressor
 
 /// Advanced streaming decompression with callback support
 final class StreamingDecompressor {
@@ -28,7 +34,7 @@ final class StreamingDecompressor {
 
     deinit {
         if isInitialized {
-            swift_inflateEnd(&stream)
+            inflateEnd(&stream)
         }
     }
 
@@ -37,7 +43,7 @@ final class StreamingDecompressor {
     /// Initialize the streaming decompressor
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
-        let result = swift_inflateInit2(&stream, windowBits.zlibWindowBits)
+        let result = inflateInit2_(&stream, windowBits.zlibWindowBits, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -84,7 +90,7 @@ final class StreamingDecompressor {
                         stream.next_out = buffer.baseAddress
                         stream.avail_out = uInt(outputBufferCount)
 
-                        let inflateResult = swift_inflate(&stream, Z_NO_FLUSH)
+                        let inflateResult = inflate(&stream, Z_NO_FLUSH)
                         guard inflateResult != Z_STREAM_ERROR else {
                             return Z_STREAM_ERROR
                         }
@@ -116,7 +122,7 @@ final class StreamingDecompressor {
                     stream.next_out = buffer.baseAddress
                     stream.avail_out = uInt(outputBufferCount)
 
-                    let inflateResult = swift_inflate(&stream, Z_FINISH)
+                    let inflateResult = inflate(&stream, Z_FINISH)
                     guard inflateResult != Z_STREAM_ERROR else {
                         return Z_STREAM_ERROR
                     }

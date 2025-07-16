@@ -5,8 +5,14 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - FileProcessor
 
 /// Memory-efficient unified file processor
 final class FileProcessor {

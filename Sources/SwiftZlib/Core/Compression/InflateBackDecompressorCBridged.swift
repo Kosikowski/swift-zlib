@@ -5,8 +5,15 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+#if canImport(zlib)
+    import SwiftZlibCShims
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - InflateBackDecompressorCBridged
 
 /// True InflateBack decompressor using C callback bridging
 public final class InflateBackDecompressorCBridged {
@@ -58,7 +65,8 @@ public final class InflateBackDecompressorCBridged {
         class CallbackContext {
             let inputProvider: () -> Data?
             let outputHandler: (Data) -> Bool
-            var inputBuffer: Data?
+            var currentInputBuffer: Data?
+            var currentInputBytes: [UInt8]?
             init(inputProvider: @escaping () -> Data?, outputHandler: @escaping (Data) -> Bool) {
                 self.inputProvider = inputProvider
                 self.outputHandler = outputHandler
@@ -77,13 +85,22 @@ public final class InflateBackDecompressorCBridged {
                 availPtr?.pointee = 0
                 return 0
             }
-            ctx.inputBuffer = data // Hold reference so pointer stays valid
-            availPtr?.pointee = Int32(data.count)
+
+            // Keep both Data and bytes array alive
+            ctx.currentInputBuffer = data
+            let bytes = [UInt8](data)
+            ctx.currentInputBytes = bytes
+
+            availPtr?.pointee = Int32(bytes.count)
             if let bufPtr {
-                bufPtr.pointee = UnsafeMutablePointer<UInt8>(mutating: data.withUnsafeBytes { $0.bindMemory(to: UInt8.self).baseAddress! })
+                // Use withUnsafeBufferPointer to get a valid pointer
+                bytes.withUnsafeBufferPointer { buffer in
+                    bufPtr.pointee = UnsafeMutablePointer<UInt8>(mutating: buffer.baseAddress!)
+                }
             }
-            return Int32(data.count)
+            return Int32(bytes.count)
         }
+
         // C output callback
         let cOutput: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UInt8>?, Int32) -> Int32 = {
             ctxPtr, buf, len in
@@ -92,6 +109,7 @@ public final class InflateBackDecompressorCBridged {
             let data = Data(bytes: buf, count: Int(len))
             return ctx.outputHandler(data) ? Z_OK : Z_STREAM_ERROR
         }
+
         // Call C shim
         let result = swift_inflateBackWithCallbacks(&stream, cInput, contextPtr, cOutput, contextPtr)
         guard result == Z_STREAM_END || result == Z_OK else {

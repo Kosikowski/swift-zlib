@@ -4,8 +4,8 @@
 //
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
-import CZLib
 import Foundation
+import zlib
 
 /// File-based chunked decompressor for huge files (constant memory)
 final class FileChunkedDecompressor {

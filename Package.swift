@@ -15,30 +15,33 @@ let package = Package(
         .executable(name: "SwiftZlibCLI", targets: ["SwiftZlibCLI"]),
     ],
     targets: [
-        // ① thin shim so SwiftPM can find the headers
+        // Swift façade with direct zlib import
         .target(
-            name: "CZLib",
-            path: "Sources/CZLib",
-            sources: [
-                "zlib_shim.c",
-                "adler32.c",
-                "compress.c",
-                "crc32.c",
-                "deflate.c",
-                "gzclose.c",
-                "gzlib.c",
-                "gzread.c",
-                "gzwrite.c",
-                "infback.c",
-                "inffast.c",
-                "inflate.c",
-                "inftrees.c",
-                "trees.c",
-                "uncompr.c",
-                "zutil.c",
+            name: "SwiftZlib",
+            dependencies: ["SwiftZlibCShims"],
+
+            swiftSettings: [
+                .define("ZLIB_VERBOSE_DISABLED"),
             ],
+            linkerSettings: [
+                // Link system zlib on all platforms including Windows
+                .linkedLibrary("z"),
+            ]
+        ),
+
+        // C shims for missing zlib functions
+        .target(
+            name: "SwiftZlibCShims",
+            path: "Sources/SwiftZlibCShims",
+            sources: [
+                "inflate_pending_shim.c",
+                "inflate_back_shim.c",
+            ],
+            publicHeadersPath: "include",
             cSettings: [
                 .headerSearchPath("include"),
+
+                // Windows-specific preprocessor definitions
                 .define("_CRT_SECURE_NO_WARNINGS"),
                 .define("_WIN32_WINNT", to: "0x0601"),
                 .define("WIN32_LEAN_AND_MEAN"),
@@ -88,17 +91,7 @@ let package = Package(
                 .define("_NO_CRT_WCSRTOMBS_S_INLINE"),
             ],
             linkerSettings: [
-                // Only link zlib on non-Windows platforms since we use our own implementation on Windows
-                .linkedLibrary("z", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .linux])),
-            ]
-        ),
-
-        // ② your Swift façade with optional verbose logging
-        .target(
-            name: "SwiftZlib",
-            dependencies: ["CZLib"],
-            swiftSettings: [
-                .define("ZLIB_VERBOSE_DISABLED"),
+                .linkedLibrary("z"),
             ]
         ),
 

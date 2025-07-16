@@ -5,10 +5,15 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+#if canImport(zlib)
+    import SwiftZlibCShims
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
 
-// MARK: - Gzip File API
+// MARK: - Decompressor
 
 /// Stream-based decompression for large data or streaming scenarios
 final class Decompressor {
@@ -26,7 +31,7 @@ final class Decompressor {
 
     deinit {
         if isInitialized {
-            swift_inflateEnd(&stream)
+            inflateEnd(&stream)
         }
     }
 
@@ -37,9 +42,9 @@ final class Decompressor {
     public func initialize() throws {
         zlibInfo("Initializing decompressor")
 
-        let result = swift_inflateInit(&stream)
+        let result = inflateInit_(&stream, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
         if result != Z_OK {
-            zlibError("Decompressor initialization failed with code: \(result) - \(String(cString: swift_zError(result)))")
+            zlibError("Decompressor initialization failed with code: \(result) - \(String(cString: zError(result)))")
             throw ZLibError.decompressionFailed(result)
         }
         isInitialized = true
@@ -50,7 +55,7 @@ final class Decompressor {
     /// - Parameter windowBits: Window bits for format (default: .deflate)
     /// - Throws: ZLibError if initialization fails
     public func initializeAdvanced(windowBits: WindowBits = .deflate) throws {
-        let result = swift_inflateInit2(&stream, windowBits.zlibWindowBits)
+        let result = inflateInit2_(&stream, windowBits.zlibWindowBits, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -68,13 +73,13 @@ final class Decompressor {
         }
 
         let result = dictionary.withUnsafeBytes { dictPtr in
-            swift_inflateSetDictionary(
+            inflateSetDictionary(
                 &stream,
                 dictPtr.bindMemory(to: Bytef.self).baseAddress!,
                 uInt(dictionary.count)
             )
         }
-        zlibDebug("[Decompressor.setDictionary] swift_inflateSetDictionary returned: \(result)")
+        zlibDebug("[Decompressor.setDictionary] inflateSetDictionary returned: \(result)")
         guard result == Z_OK else {
             zlibError("[Decompressor.setDictionary] Throwing error: \(result)")
             throw ZLibError.decompressionFailed(result)
@@ -89,7 +94,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_inflateReset(&stream)
+        let result = inflateReset(&stream)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -103,7 +108,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_inflateCopy(&destination.stream, &stream)
+        let result = inflateCopy(&destination.stream, &stream)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -120,7 +125,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_inflatePrime(&stream, bits, value)
+        let result = inflatePrime(&stream, bits, value)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -133,7 +138,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_inflateSync(&stream)
+        let result = inflateSync(&stream)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -147,7 +152,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_inflateSyncPoint(&stream)
+        let result = inflateSyncPoint(&stream)
         return result == Z_OK
     }
 
@@ -159,7 +164,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let result = swift_inflateReset2(&stream, windowBits.zlibWindowBits)
+        let result = inflateReset2(&stream, windowBits.zlibWindowBits)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -174,7 +179,7 @@ final class Decompressor {
         }
 
         var dictLength: uInt = 0
-        let result = swift_inflateGetDictionary(&stream, nil, &dictLength)
+        let result = inflateGetDictionary(&stream, nil, &dictLength)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }
@@ -185,7 +190,7 @@ final class Decompressor {
 
         var dictionary = Data(count: Int(dictLength))
         let getResult = dictionary.withUnsafeMutableBytes { dictPtr in
-            swift_inflateGetDictionary(&stream, dictPtr.bindMemory(to: Bytef.self).baseAddress!, &dictLength)
+            inflateGetDictionary(&stream, dictPtr.bindMemory(to: Bytef.self).baseAddress!, &dictLength)
         }
 
         guard getResult == Z_OK else {
@@ -204,7 +209,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        let mark = swift_inflateMark(&stream)
+        let mark = inflateMark(&stream)
         guard mark >= 0 else {
             throw ZLibError.decompressionFailed(Int32(mark))
         }
@@ -220,7 +225,7 @@ final class Decompressor {
             throw ZLibError.streamError(Z_STREAM_ERROR)
         }
 
-        return UInt(swift_inflateCodesUsed(&stream))
+        return UInt(inflateCodesUsed(&stream))
     }
 
     /// Get stream information
@@ -300,8 +305,8 @@ final class Decompressor {
                 result = try outputBuffer.withUnsafeMutableBytes { outputPtr -> Int32 in
                     stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
                     stream.avail_out = uInt(outputBufferCount)
-                    let inflateResult = swift_inflate(&stream, flush.zlibFlush)
-                    zlibDebug("[Decompressor.decompress] swift_inflate returned: \(inflateResult)")
+                    let inflateResult = inflate(&stream, flush.zlibFlush)
+                    zlibDebug("[Decompressor.decompress] inflate returned: \(inflateResult)")
                     if inflateResult == Z_NEED_DICT {
                         if let dict = dictionary, !dictWasSet {
                             zlibInfo("[Decompressor.decompress] Z_NEED_DICT, setting dictionary...")
@@ -377,7 +382,7 @@ final class Decompressor {
                 stream.next_out = outputPtr.bindMemory(to: Bytef.self).baseAddress
                 stream.avail_out = uInt(outputBufferCount)
 
-                result = swift_inflate(&stream, FlushMode.finish.zlibFlush)
+                result = inflate(&stream, FlushMode.finish.zlibFlush)
                 guard result != Z_STREAM_ERROR else {
                     throw ZLibError.streamError(result)
                 }
@@ -400,7 +405,7 @@ final class Decompressor {
     /// Get the gzip header from the stream (must be called after initializeAdvanced)
     public func getGzipHeader() throws -> GzipHeader {
         var cHeader = gz_header()
-        let result = swift_inflateGetHeader(&stream, &cHeader)
+        let result = inflateGetHeader(&stream, &cHeader)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }

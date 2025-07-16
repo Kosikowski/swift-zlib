@@ -5,8 +5,14 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - EnhancedInflateBackDecompressor
 
 /// Enhanced InflateBack decompression with improved C callback support
 /// This provides better integration with the actual zlib inflateBack functions
@@ -29,7 +35,7 @@ final class EnhancedInflateBackDecompressor {
 
     deinit {
         if isInitialized {
-            swift_inflateBackEnd(&stream)
+            inflateBackEnd(&stream)
         }
     }
 
@@ -38,7 +44,7 @@ final class EnhancedInflateBackDecompressor {
     /// Initialize the enhanced InflateBack decompressor
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
-        let result = swift_inflateBackInit(&stream, windowBits.zlibWindowBits, &window)
+        let result = inflateBackInit_(&stream, windowBits.zlibWindowBits, &window, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)
         }

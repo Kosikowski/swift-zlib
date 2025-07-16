@@ -5,8 +5,14 @@
 //  Created by Mateusz Kosikowski on 13/07/2025.
 //
 
-import CZLib
 import Foundation
+#if canImport(zlib)
+    import zlib
+#else
+    import SwiftZlibCShims
+#endif
+
+// MARK: - ZLibError
 
 /// Errors that can occur during ZLib operations
 public enum ZLibError: Error, LocalizedError {
@@ -37,15 +43,15 @@ public enum ZLibError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
             case let .compressionFailed(code):
-                "Compression failed with code: \(code) - \(String(cString: swift_zError(code)))"
+                "Compression failed with code: \(code) - \(String(cString: zError(code)))"
             case let .decompressionFailed(code):
-                "Decompression failed with code: \(code) - \(String(cString: swift_zError(code)))"
+                "Decompression failed with code: \(code) - \(String(cString: zError(code)))"
             case .invalidData:
                 "Invalid data provided"
             case .memoryError:
                 "Memory allocation error"
             case let .streamError(code):
-                "Stream operation failed with code: \(code) - \(String(cString: swift_zError(code)))"
+                "Stream operation failed with code: \(code) - \(String(cString: zError(code)))"
             case .versionMismatch:
                 "ZLib version mismatch"
             case .needDictionary:
