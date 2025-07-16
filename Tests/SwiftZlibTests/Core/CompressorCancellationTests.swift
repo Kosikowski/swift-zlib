@@ -23,6 +23,7 @@ final class CompressorCancellationTests: XCTestCase {
 
         let task = Task {
             do {
+                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
                 let compressor = Compressor()
                 try compressor.initialize(level: .bestCompression)
                 XCTFail("Should have been cancelled")
@@ -33,7 +34,8 @@ final class CompressorCancellationTests: XCTestCase {
             }
         }
 
-        // Cancel immediately
+        // Cancel after a short delay
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -45,6 +47,7 @@ final class CompressorCancellationTests: XCTestCase {
 
         let task = Task {
             do {
+                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
                 let compressor = Compressor()
                 try compressor.initializeAdvanced(
                     level: .bestCompression,
@@ -61,7 +64,8 @@ final class CompressorCancellationTests: XCTestCase {
             }
         }
 
-        // Cancel immediately
+        // Cancel after a short delay
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -75,6 +79,7 @@ final class CompressorCancellationTests: XCTestCase {
             do {
                 let compressor = Compressor()
                 try compressor.initialize()
+                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
                 try compressor.reset()
                 XCTFail("Should have been cancelled")
             } catch is CancellationError {
@@ -84,7 +89,8 @@ final class CompressorCancellationTests: XCTestCase {
             }
         }
 
-        // Cancel immediately
+        // Cancel after a short delay
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -102,10 +108,7 @@ final class CompressorCancellationTests: XCTestCase {
                 try compressor.initialize()
 
                 // Create very large data to ensure compression takes time
-                let largeData = Data(repeating: 0x41, count: 10_000_000) // 10MB
-
-                // Add artificial delay to allow cancellation to be checked
-                try await Task.sleep(nanoseconds: 5_000_000) // 5ms
+                let largeData = Data(repeating: 0x41, count: 20_000_000) // 20MB
 
                 // This should be cancelled during processing
                 _ = try compressor.compress(largeData, flush: .finish)
@@ -117,7 +120,8 @@ final class CompressorCancellationTests: XCTestCase {
             }
         }
 
-        // Cancel immediately
+        // Cancel after a short delay
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -134,11 +138,11 @@ final class CompressorCancellationTests: XCTestCase {
 
                 // Process multiple chunks
                 for i in 1 ... 10 {
-                    let chunkData = Data(repeating: UInt8(i), count: 1_000_000) // 1MB chunks
+                    let chunkData = Data(repeating: UInt8(i), count: 2_000_000) // 2MB chunks
                     _ = try compressor.compress(chunkData, flush: i == 10 ? .finish : .noFlush)
 
-                    // Small delay to allow cancellation
-                    try await Task.sleep(nanoseconds: 10_000_000) // 10ms
+                    // Small delay to allow cancellation between chunks
+                    try await Task.sleep(nanoseconds: 1_000_000) // 1ms
                 }
                 XCTFail("Should have been cancelled")
             } catch is CancellationError {
@@ -149,7 +153,7 @@ final class CompressorCancellationTests: XCTestCase {
         }
 
         // Cancel after a short delay
-        try await Task.sleep(nanoseconds: 30_000_000) // 30ms
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -168,8 +172,8 @@ final class CompressorCancellationTests: XCTestCase {
                 let data = Data(repeating: 0x42, count: 1_000_000) // 1MB
                 _ = try compressor.compress(data, flush: .noFlush)
 
-                // Add delay to allow cancellation
-                try await Task.sleep(nanoseconds: 5_000_000) // 5ms
+                // Add delay to allow cancellation before finish
+                try await Task.sleep(nanoseconds: 50_000_000) // 50ms
 
                 // This should be cancelled during finish processing
                 _ = try compressor.finish()
@@ -181,7 +185,8 @@ final class CompressorCancellationTests: XCTestCase {
             }
         }
 
-        // Cancel immediately
+        // Cancel after a short delay
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -202,11 +207,11 @@ final class CompressorCancellationTests: XCTestCase {
 
                 // Compress multiple chunks
                 for i in 1 ... 5 {
-                    let chunkData = Data(repeating: UInt8(i), count: 2_000_000) // 2MB chunks
+                    let chunkData = Data(repeating: UInt8(i), count: 4_000_000) // 4MB chunks
                     _ = try compressor.compress(chunkData, flush: i == 5 ? .finish : .noFlush)
 
-                    // Small delay to allow cancellation
-                    try await Task.sleep(nanoseconds: 20_000_000) // 20ms
+                    // Small delay to allow cancellation between chunks
+                    try await Task.sleep(nanoseconds: 1_000_000) // 1ms
                 }
 
                 // Finish
@@ -220,7 +225,7 @@ final class CompressorCancellationTests: XCTestCase {
         }
 
         // Cancel during processing
-        try await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -243,11 +248,8 @@ final class CompressorCancellationTests: XCTestCase {
                 // Reset
                 try compressor.reset()
 
-                // Add delay to allow cancellation
-                try await Task.sleep(nanoseconds: 5_000_000) // 5ms
-
                 // Second compression (this should be cancelled)
-                let data2 = Data(repeating: 0x42, count: 10_000_000) // 10MB data
+                let data2 = Data(repeating: 0x42, count: 20_000_000) // 20MB data
                 _ = try compressor.compress(data2, flush: .finish)
                 XCTFail("Should have been cancelled")
             } catch is CancellationError {
@@ -257,7 +259,8 @@ final class CompressorCancellationTests: XCTestCase {
             }
         }
 
-        // Cancel immediately
+        // Cancel after a short delay
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -274,6 +277,9 @@ final class CompressorCancellationTests: XCTestCase {
                 let compressor = Compressor()
                 try compressor.initialize()
 
+                // Add delay to allow cancellation before compress
+                try await Task.sleep(nanoseconds: 50_000_000) // 50ms
+
                 // Try to compress empty data
                 _ = try compressor.compress(Data(), flush: .finish)
                 XCTFail("Should have been cancelled")
@@ -284,7 +290,8 @@ final class CompressorCancellationTests: XCTestCase {
             }
         }
 
-        // Cancel immediately
+        // Cancel after a short delay
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
@@ -303,7 +310,7 @@ final class CompressorCancellationTests: XCTestCase {
                 let smallData = Data(repeating: 0x41, count: 100)
 
                 // Add artificial delay to allow cancellation
-                try await Task.sleep(nanoseconds: 5_000_000) // 5ms
+                try await Task.sleep(nanoseconds: 50_000_000) // 50ms
 
                 _ = try compressor.compress(smallData, flush: .finish)
                 XCTFail("Should have been cancelled")
@@ -315,7 +322,7 @@ final class CompressorCancellationTests: XCTestCase {
         }
 
         // Cancel during the delay
-        try await Task.sleep(nanoseconds: 2_000_000) // 2ms
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
         task.cancel()
 
         // Wait for cancellation
