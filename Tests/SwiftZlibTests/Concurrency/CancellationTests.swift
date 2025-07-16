@@ -2,6 +2,16 @@ import XCTest
 @testable import SwiftZlib
 
 final class AsyncThrowingStreamCancellationTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testAsyncThrowingStreamCancellation", testAsyncThrowingStreamCancellation),
+        ("testFileChunkedCompressorCancellation", testFileChunkedCompressorCancellation),
+        ("testFileChunkedDecompressorCancellation", testFileChunkedDecompressorCancellation),
+    ]
+
+    // MARK: Functions
+
     func makeCancellableStream() -> AsyncThrowingStream<Int, Error> {
         var internalTask: Task<Void, Never>?
 

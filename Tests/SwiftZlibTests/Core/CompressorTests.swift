@@ -9,8 +9,6 @@ import XCTest
 final class CompressorTests: XCTestCase {
     // MARK: Static Properties
 
-    // MARK: - Test Discovery
-
     static var allTests = [
         ("testAdvancedCompressorInitialization", testAdvancedCompressorInitialization),
         ("testCompressorResetAndCopy", testCompressorResetAndCopy),
@@ -29,8 +27,6 @@ final class CompressorTests: XCTestCase {
     ]
 
     // MARK: Functions
-
-    // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {

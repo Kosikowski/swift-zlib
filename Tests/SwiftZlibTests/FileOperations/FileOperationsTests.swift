@@ -16,7 +16,7 @@ final class FileOperationsTests: XCTestCase {
     // MARK: Static Properties
 
     #if canImport(Combine)
-        static let allTests: [(String, (FileOperationsTests) -> () throws -> Void)] = [
+        static var allTests = [
             ("testGzipFileAPI", testGzipFileAPI),
             ("testGzipFileFlushModes", testGzipFileFlushModes),
             ("testFileCompression", testFileCompression),
@@ -38,7 +38,7 @@ final class FileOperationsTests: XCTestCase {
             ("testCombineFileDecompressionError", testCombineFileDecompressionError),
         ]
     #else
-        static let allTests: [(String, (FileOperationsTests) -> () throws -> Void)] = [
+        static var allTests = [
             ("testGzipFileAPI", testGzipFileAPI),
             ("testGzipFileFlushModes", testGzipFileFlushModes),
             ("testFileCompression", testFileCompression),
@@ -63,8 +63,6 @@ final class FileOperationsTests: XCTestCase {
     #endif
 
     // MARK: Overridden Functions
-
-    // MARK: Setup and Teardown
 
     override func setUp() {
         super.setUp()

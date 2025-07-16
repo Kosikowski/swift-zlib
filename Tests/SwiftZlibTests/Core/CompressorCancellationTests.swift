@@ -2,9 +2,22 @@ import XCTest
 @testable import SwiftZlib
 
 final class CompressorCancellationTests: XCTestCase {
-    // MARK: Overridden Functions
+    // MARK: Static Properties
 
-    // MARK: - Setup and Teardown
+    static var allTests = [
+        ("testCompressorInitializeCancellation", testCompressorInitializeCancellation),
+        ("testCompressorInitializeAdvancedCancellation", testCompressorInitializeAdvancedCancellation),
+        ("testCompressorResetCancellation", testCompressorResetCancellation),
+        ("testCompressorCompressCancellation", testCompressorCompressCancellation),
+        ("testCompressorCompressChunkedCancellation", testCompressorCompressChunkedCancellation),
+        ("testCompressorFinishCancellation", testCompressorFinishCancellation),
+        ("testCompressorFullWorkflowCancellation", testCompressorFullWorkflowCancellation),
+        ("testCompressorResetAndReuseCancellation", testCompressorResetAndReuseCancellation),
+        ("testCompressorCancellationWithEmptyData", testCompressorCancellationWithEmptyData),
+        ("testCompressorCancellationWithSmallData", testCompressorCancellationWithSmallData),
+    ]
+
+    // MARK: Overridden Functions
 
     override func setUp() {
         super.setUp()
@@ -15,8 +28,6 @@ final class CompressorCancellationTests: XCTestCase {
     }
 
     // MARK: Functions
-
-    // MARK: - Initialization Cancellation Tests
 
     func testCompressorInitializeCancellation() async throws {
         let expectation = XCTestExpectation(description: "Initialize should be cancelled")

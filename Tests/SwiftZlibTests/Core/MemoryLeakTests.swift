@@ -307,6 +307,7 @@ final class MemoryLeakTests: XCTestCase {
             ("testInflateBackDecompressorLifecycle", testInflateBackDecompressorLifecycle),
             ("testInflateBackDecompressorCBridgedLifecycle", testInflateBackDecompressorCBridgedLifecycle),
             ("testStreamingLifecycle", testStreamingLifecycle),
+            ("testAsyncStreamLifecycle", testAsyncStreamLifecycle),
             // async test omitted for Linux unless using --enable-test-discovery
             ("testMemoryPressure", testMemoryPressure),
             ("testRapidCreateDestroy", testRapidCreateDestroy),

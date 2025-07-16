@@ -2,6 +2,20 @@ import XCTest
 @testable import SwiftZlib
 
 final class DecompressorCancellationTests: XCTestCase {
+    // MARK: Static Properties
+
+    static var allTests = [
+        ("testDecompressorInitializeCancellation", testDecompressorInitializeCancellation),
+        ("testDecompressorInitializeAdvancedCancellation", testDecompressorInitializeAdvancedCancellation),
+        ("testDecompressorResetCancellation", testDecompressorResetCancellation),
+        ("testDecompressorDecompressCancellation", testDecompressorDecompressCancellation),
+        ("testDecompressorDecompressChunkedCancellation", testDecompressorDecompressChunkedCancellation),
+        ("testDecompressorFinishCancellation", testDecompressorFinishCancellation),
+        ("testDecompressorFullWorkflowCancellation", testDecompressorFullWorkflowCancellation),
+    ]
+
+    // MARK: Functions
+
     func testDecompressorInitializeCancellation() async throws {
         let expectation = XCTestExpectation(description: "Should cancel initialization")
 

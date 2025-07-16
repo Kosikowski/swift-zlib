@@ -9,8 +9,6 @@ import XCTest
 final class FileChunkedCompressorTests: XCTestCase {
     // MARK: Static Properties
 
-    // MARK: - Test Discovery
-
     static var allTests = [
         ("testFileChunkedCompressor", testFileChunkedCompressor),
         ("testFileChunkedCompressorWithLargeData", testFileChunkedCompressorWithLargeData),
@@ -20,8 +18,6 @@ final class FileChunkedCompressorTests: XCTestCase {
     ]
 
     // MARK: Overridden Functions
-
-    // MARK: Setup and Teardown
 
     override func setUp() {
         super.setUp()
@@ -36,8 +32,6 @@ final class FileChunkedCompressorTests: XCTestCase {
     }
 
     // MARK: Functions
-
-    // MARK: - Helper Functions
 
     func assertNoDoubleWrappedZLibError(_ error: Error) {
         if let zlibError = error as? ZLibError {
