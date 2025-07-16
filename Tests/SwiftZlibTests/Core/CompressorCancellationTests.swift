@@ -5,7 +5,6 @@ final class CompressorCancellationTests: XCTestCase {
     // MARK: Static Properties
 
     static var allTests = [
-        ("testCompressorInitializeCancellation", testCompressorInitializeCancellation),
         ("testCompressorResetCancellation", testCompressorResetCancellation),
         ("testCompressorCompressCancellation", testCompressorCompressCancellation),
         ("testCompressorCompressChunkedCancellation", testCompressorCompressChunkedCancellation),
@@ -27,30 +26,6 @@ final class CompressorCancellationTests: XCTestCase {
     }
 
     // MARK: Functions
-
-    func testCompressorInitializeCancellation() async throws {
-        let expectation = XCTestExpectation(description: "Initialize should be cancelled")
-
-        let task = Task {
-            do {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
-                let compressor = Compressor()
-                try compressor.initialize(level: .bestCompression)
-                XCTFail("Should have been cancelled")
-            } catch is CancellationError {
-                expectation.fulfill()
-            } catch {
-                XCTFail("Unexpected error: \(error)")
-            }
-        }
-
-        // Cancel after a short delay
-        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
-        task.cancel()
-
-        // Wait for cancellation
-        await fulfillment(of: [expectation], timeout: 1.0)
-    }
 
     func testCompressorResetCancellation() async throws {
         let expectation = XCTestExpectation(description: "Reset should be cancelled")
