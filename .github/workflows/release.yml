@@ -46,7 +46,7 @@ jobs:
 
           # Generate release notes
           cat << EOF > release_notes.md
-          # SwiftZlib v$VERSION
+          # SwiftZlib ${VERSION}
 
           ## What's Changed
 

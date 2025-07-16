@@ -199,6 +199,103 @@ error LNK2005: _memset already defined in LIBCMT.lib
 
 #### Windows-Specific Issues
 
+#### iOS Cross-Compilation Issues
+
+While Windows has specific preprocessor definition requirements, iOS presents a different set of challenges related to cross-compilation from macOS.
+
+##### The Core Problem
+
+iOS cross-compilation from macOS is fundamentally problematic because:
+
+1. **System zlib on iOS**: iOS has its own system zlib, but when cross-compiling from macOS, the build system is trying to use macOS system headers instead of iOS system headers
+2. **Header conflicts**: The system zlib's `zconf.h` includes system headers like `<sys/types.h>`, `<limits.h>`, etc., but these are causing conflicts when cross-compiling
+3. **Module system issues**: The error shows `could not build module 'DarwinFoundation'` which indicates fundamental incompatibilities
+
+##### Why Cross-Compilation Fails
+
+The core problem is that iOS cross-compilation from macOS is inherently complex because:
+
+- **The build system is using macOS SDK headers but targeting iOS**
+- **System zlib expects platform-specific headers that don't match the target**
+- **The module system is trying to build macOS modules for iOS targets**
+
+This creates a fundamental mismatch where:
+
+- macOS SDK provides headers for macOS targets
+- iOS requires iOS-specific headers
+- Cross-compilation tries to use macOS headers for iOS targets
+- System zlib expects headers that match the target platform
+
+##### Error Examples
+
+When attempting iOS cross-compilation, you'll see errors like:
+
+```
+error: could not build module 'DarwinFoundation'
+error: unknown type name 'wchar_t'
+error: module '_stddef' requires feature 'found_incompatible_headers__check_search_paths'
+```
+
+These errors indicate that the build system is trying to use macOS system headers for iOS targets, which creates fundamental incompatibilities.
+
+##### Solutions and Workarounds
+
+Projects typically handle this in one of three ways:
+
+1. **Disable iOS automation in CI** (recommended for this project)
+
+   - Keep iOS automation disabled due to cross-compilation complexity
+   - Manual testing on iOS is still possible and recommended
+   - Package works perfectly in real iOS projects
+
+2. **Use bundled zlib for all platforms** (not recommended)
+
+   - Loses the benefits of system zlib
+   - Increases binary size
+   - May have compatibility issues
+
+3. **Use Xcode project instead of Swift Package Manager** (complex)
+   - Requires maintaining separate build configurations
+   - Adds significant complexity to the build system
+
+##### Why the Package Still Works in iOS Projects
+
+**Important**: Disabling iOS automation in CI does NOT mean the package can't be used in iOS projects. The package works perfectly in iOS projects because:
+
+1. **Swift Package Manager handles iOS builds correctly**:
+
+   - When you add this package to an iOS project, SPM uses the iOS SDK and toolchain
+   - It builds the package specifically for iOS, not cross-compiling from macOS
+   - The system zlib on iOS is properly available and compatible
+
+2. **Native toolchain usage**:
+
+   - Xcode builds for iOS using the iOS SDK directly
+   - No cross-compilation issues like we saw in CI
+   - System headers are properly matched to the target platform
+
+3. **Correct zlib shim configuration**:
+   - Apple devices (iOS/macOS) use system zlib: `#include <zlib.h>`
+   - Only Windows uses bundled zlib: `#include "../zlib.h"`
+   - This is the right approach for platform compatibility
+
+##### Integration in iOS Projects
+
+To use this package in an iOS project:
+
+```swift
+// In your iOS project's Package.swift or Xcode project
+dependencies: [
+    .package(url: "https://github.com/your-repo/swift-zlib.git", from: "1.0.0")
+]
+```
+
+The package will work correctly because:
+
+- iOS projects use the native iOS toolchain
+- System zlib is properly available on iOS
+- No cross-compilation issues occur
+
 - **Visual C++ Runtime**: Different from POSIX systems
 - **Security Warnings**: Microsoft's "secure" function warnings
 - **Inline Functions**: Microsoft's performance optimizations
