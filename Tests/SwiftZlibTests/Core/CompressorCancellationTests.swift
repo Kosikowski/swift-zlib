@@ -186,8 +186,8 @@ final class CompressorCancellationTests: XCTestCase {
                 let compressor = Compressor()
                 try compressor.initialize()
 
-                // Add some data first
-                let data = Data(repeating: 0x42, count: 1_000_000) // 1MB
+                // Add large amount of data to make finish operation take longer
+                let data = Data(repeating: 0x42, count: 10_000_000) // 10MB
                 _ = try compressor.compress(data, flush: .noFlush)
 
                 // Add delay to allow cancellation before finish
