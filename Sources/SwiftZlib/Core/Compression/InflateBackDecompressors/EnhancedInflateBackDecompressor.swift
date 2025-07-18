@@ -10,7 +10,7 @@ import Foundation
 
 /// Enhanced InflateBack decompression with improved C callback support
 /// This provides better integration with the actual zlib inflateBack functions
-final class EnhancedInflateBackDecompressor: DecompressorType {
+public final class EnhancedInflateBackDecompressor: DecompressorType {
     // MARK: Properties
 
     private var stream = z_stream()

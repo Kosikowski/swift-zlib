@@ -22,11 +22,11 @@ public struct GzipHeader: Sendable {
     /// Operating system (0 = FAT, 3 = Unix, etc.)
     public var os: Int32 = 255
     /// Extra field data
-    public var extra: Data? = nil
+    public var extra: Data?
     /// Original filename
-    public var name: String? = nil
+    public var name: String?
     /// File comment
-    public var comment: String? = nil
+    public var comment: String?
     /// Header CRC flag
     public var hcrc: Int32 = 0
     /// Header completion flag

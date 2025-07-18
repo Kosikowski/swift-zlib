@@ -132,7 +132,7 @@ final class DictionaryTests: XCTestCase {
         let decompressed = try decompressor.decompress(compressed, dictionary: dictionary)
         XCTAssertEqual(decompressed, originalData)
         // Optionally, check getDictionary (may be empty or not match original)
-        let _ = try decompressor.getDictionary()
+        _ = try decompressor.getDictionary()
     }
 
     func testDictionaryCompressionDecompression_EmptyDictionary() throws {

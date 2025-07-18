@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// Unified streaming interface for compression and decompression
-final class ZLibStream {
+public final class ZLibStream {
     // MARK: Nested Types
 
     /// Stream operation mode

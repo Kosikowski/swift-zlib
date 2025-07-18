@@ -215,11 +215,11 @@ final class MemoryLeakTests: XCTestCase {
         let compressed = try ZLib.compress(testData)
 
         for compressor in compressors {
-            let _ = try compressor.compress(testData, flush: .finish)
+            _ = try compressor.compress(testData, flush: .finish)
         }
 
         for decompressor in decompressors {
-            let _ = try decompressor.decompress(compressed)
+            _ = try decompressor.decompress(compressed)
         }
 
         // All objects will be deallocated here
@@ -232,7 +232,7 @@ final class MemoryLeakTests: XCTestCase {
             try compressor.initialize(level: .defaultCompression)
 
             let testData = "Quick test".data(using: .utf8)!
-            let _ = try compressor.compress(testData, flush: .finish)
+            _ = try compressor.compress(testData, flush: .finish)
 
             // Compressor deallocated immediately
         }
@@ -279,7 +279,7 @@ final class MemoryLeakTests: XCTestCase {
             let compressor = Compressor()
             try compressor.initialize(level: .defaultCompression)
             let testData = "leak test".data(using: .utf8)!
-            let _ = try compressor.compress(testData, flush: .finish)
+            _ = try compressor.compress(testData, flush: .finish)
             // Compressor deallocated at end of scope
         }
         // Allocate and deallocate Decompressor
@@ -288,7 +288,7 @@ final class MemoryLeakTests: XCTestCase {
             try decompressor.initialize()
             let testData = "leak test".data(using: .utf8)!
             let compressed = try ZLib.compress(testData)
-            let _ = try decompressor.decompress(compressed)
+            _ = try decompressor.decompress(compressed)
             // Decompressor deallocated at end of scope
         }
     }
@@ -392,7 +392,7 @@ final class MemoryLeakTests: XCTestCase {
         do {
             let compressor = Compressor()
             // Don't initialize - this should throw an error
-            let _ = try compressor.compress(testData)
+            _ = try compressor.compress(testData)
             XCTFail("Expected error for uninitialized compressor")
         } catch {
             // Expected error - verify no memory leaks
@@ -403,7 +403,7 @@ final class MemoryLeakTests: XCTestCase {
         do {
             let decompressor = Decompressor()
             // Don't initialize - this should throw an error
-            let _ = try decompressor.decompress(testData)
+            _ = try decompressor.decompress(testData)
             XCTFail("Expected error for uninitialized decompressor")
         } catch {
             // Expected error - verify no memory leaks
@@ -414,7 +414,7 @@ final class MemoryLeakTests: XCTestCase {
         do {
             let decompressor = Decompressor()
             try decompressor.initialize()
-            let _ = try decompressor.decompress(Data(repeating: 0xFF, count: 100))
+            _ = try decompressor.decompress(Data(repeating: 0xFF, count: 100))
             XCTFail("Expected error for invalid compressed data")
         } catch {
             // Expected error - verify no memory leaks
@@ -512,7 +512,7 @@ final class MemoryLeakTests: XCTestCase {
         for _ in 0 ..< 100 {
             let compressor = Compressor()
             try compressor.initialize(level: .defaultCompression)
-            let _ = try compressor.compress("test".data(using: .utf8)!, flush: .finish)
+            _ = try compressor.compress("test".data(using: .utf8)!, flush: .finish)
             // Compressor deallocated here
         }
     }

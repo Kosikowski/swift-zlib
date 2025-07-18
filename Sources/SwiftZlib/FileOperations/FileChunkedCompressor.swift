@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// File-based chunked compressor for huge files (constant memory)
-final class FileChunkedCompressor {
+public final class FileChunkedCompressor {
     // MARK: Properties
 
     public let bufferSize: Int

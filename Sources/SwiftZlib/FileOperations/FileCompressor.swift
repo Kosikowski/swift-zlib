@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// Memory-efficient file compressor
-final class FileCompressor {
+public final class FileCompressor {
     // MARK: Properties
 
     private let config: StreamingConfig

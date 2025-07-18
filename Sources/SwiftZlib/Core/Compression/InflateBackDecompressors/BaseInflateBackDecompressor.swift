@@ -11,7 +11,7 @@ import Foundation
 /// Advanced InflateBack decompression with true C callback support
 /// Note: This is a simplified implementation that provides InflateBack-like functionality
 /// using the regular inflate API with Swift-friendly callbacks.
-final class BaseInflateBackDecompressor: DecompressorType {
+public final class BaseInflateBackDecompressor: DecompressorType {
     // MARK: Properties
 
     private var stream = z_stream()
