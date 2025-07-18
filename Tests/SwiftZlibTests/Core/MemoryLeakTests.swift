@@ -215,11 +215,11 @@ final class MemoryLeakTests: XCTestCase {
         let compressed = try ZLib.compress(testData)
 
         for compressor in compressors {
-            let _ = try compressor.compress(testData, flush: .finish)
+            _ = try compressor.compress(testData, flush: .finish)
         }
 
         for decompressor in decompressors {
-            let _ = try decompressor.decompress(compressed)
+            _ = try decompressor.decompress(compressed)
         }
 
         // All objects will be deallocated here
@@ -232,7 +232,7 @@ final class MemoryLeakTests: XCTestCase {
             try compressor.initialize(level: .defaultCompression)
 
             let testData = "Quick test".data(using: .utf8)!
-            let _ = try compressor.compress(testData, flush: .finish)
+            _ = try compressor.compress(testData, flush: .finish)
 
             // Compressor deallocated immediately
         }
@@ -279,7 +279,7 @@ final class MemoryLeakTests: XCTestCase {
             let compressor = Compressor()
             try compressor.initialize(level: .defaultCompression)
             let testData = "leak test".data(using: .utf8)!
-            let _ = try compressor.compress(testData, flush: .finish)
+            _ = try compressor.compress(testData, flush: .finish)
             // Compressor deallocated at end of scope
         }
         // Allocate and deallocate Decompressor
@@ -288,8 +288,232 @@ final class MemoryLeakTests: XCTestCase {
             try decompressor.initialize()
             let testData = "leak test".data(using: .utf8)!
             let compressed = try ZLib.compress(testData)
-            let _ = try decompressor.decompress(compressed)
+            _ = try decompressor.decompress(compressed)
             // Decompressor deallocated at end of scope
+        }
+    }
+
+    /// Test memory stress with large data and multiple iterations
+    func testMemoryStressTest() throws {
+        let iterations = 100
+        let largeDataSize = 1024 * 1024 // 1MB
+
+        // Generate large test data
+        let largeData = Data(repeating: 0xAA, count: largeDataSize)
+
+        for i in 0 ..< iterations {
+            // Test compression
+            do {
+                let compressor = Compressor()
+                try compressor.initialize(level: .bestCompression)
+                let compressed = try compressor.compress(largeData, flush: .finish)
+
+                // Test decompression
+                let decompressor = Decompressor()
+                try decompressor.initialize()
+                let decompressed = try decompressor.decompress(compressed)
+
+                // Verify data integrity
+                XCTAssertEqual(largeData, decompressed, "Data integrity failed at iteration \(i)")
+
+                // Test with gzip header
+                let compressorWithHeader = Compressor()
+                try compressorWithHeader.initializeAdvanced(level: .bestCompression, method: .deflate, windowBits: .gzip)
+
+                var header = GzipHeader()
+                header.name = "test_file.txt"
+                header.comment = "Test file for memory stress testing"
+                try compressorWithHeader.setGzipHeader(header)
+
+                let compressedWithHeader = try compressorWithHeader.compress(largeData, flush: .finish)
+
+                let decompressorWithHeader = Decompressor()
+                try decompressorWithHeader.initializeAdvanced(windowBits: .gzip)
+                let decompressedWithHeader = try decompressorWithHeader.decompress(compressedWithHeader)
+
+                XCTAssertEqual(largeData, decompressedWithHeader, "Data integrity with header failed at iteration \(i)")
+
+            } catch {
+                XCTFail("Memory stress test failed at iteration \(i): \(error)")
+            }
+
+            // Force garbage collection if available (macOS only)
+            if i % 10 == 0 {
+                #if os(macOS)
+                    autoreleasepool {
+                        // Create some temporary objects to trigger cleanup
+                        _ = Data(repeating: 0xFF, count: 1000)
+                    }
+                #endif
+            }
+        }
+    }
+
+    /// Test memory safety with concurrent operations
+    func testConcurrentMemorySafety() throws {
+        let iterations = 50
+        let dataSize = 100 * 1024 // 100KB
+        let testData = Data(repeating: 0xBB, count: dataSize)
+
+        let group = DispatchGroup()
+        let queue = DispatchQueue(label: "memory.test", attributes: .concurrent)
+
+        for i in 0 ..< iterations {
+            group.enter()
+            queue.async {
+                do {
+                    // Test compression
+                    let compressor = Compressor()
+                    try compressor.initialize(level: .defaultCompression)
+                    let compressed = try compressor.compress(testData, flush: .finish)
+
+                    // Test decompression
+                    let decompressor = Decompressor()
+                    try decompressor.initialize()
+                    let decompressed = try decompressor.decompress(compressed)
+
+                    XCTAssertEqual(testData, decompressed, "Concurrent test failed at iteration \(i)")
+
+                } catch {
+                    XCTFail("Concurrent memory test failed at iteration \(i): \(error)")
+                }
+                group.leave()
+            }
+        }
+
+        group.wait()
+    }
+
+    /// Test memory cleanup on error conditions
+    func testMemoryCleanupOnError() throws {
+        let testData = "test data".data(using: .utf8)!
+
+        // Test with uninitialized compressor
+        do {
+            let compressor = Compressor()
+            // Don't initialize - this should throw an error
+            _ = try compressor.compress(testData)
+            XCTFail("Expected error for uninitialized compressor")
+        } catch {
+            // Expected error - verify no memory leaks
+            XCTAssertTrue(error is ZLibError)
+        }
+
+        // Test with uninitialized decompressor
+        do {
+            let decompressor = Decompressor()
+            // Don't initialize - this should throw an error
+            _ = try decompressor.decompress(testData)
+            XCTFail("Expected error for uninitialized decompressor")
+        } catch {
+            // Expected error - verify no memory leaks
+            XCTAssertTrue(error is ZLibError)
+        }
+
+        // Test with invalid data
+        do {
+            let decompressor = Decompressor()
+            try decompressor.initialize()
+            _ = try decompressor.decompress(Data(repeating: 0xFF, count: 100))
+            XCTFail("Expected error for invalid compressed data")
+        } catch {
+            // Expected error - verify no memory leaks
+            XCTAssertTrue(error is ZLibError)
+        }
+    }
+
+    /// Test memory safety with streaming operations
+    func testStreamingMemorySafety() throws {
+        let chunkSize = 4096
+        let totalSize = 1024 * 1024 // 1MB
+        let testData = Data(repeating: 0xCC, count: totalSize)
+
+        // Test streaming compression
+        let compressor = Compressor()
+        try compressor.initialize(level: .defaultCompression)
+
+        var compressedData = Data()
+        var offset = 0
+
+        while offset < testData.count {
+            let chunkEnd = min(offset + chunkSize, testData.count)
+            let chunk = testData[offset ..< chunkEnd]
+            let flush: FlushMode = chunkEnd == testData.count ? .finish : .noFlush
+
+            let compressed = try compressor.compress(Data(chunk), flush: flush)
+            compressedData.append(compressed)
+
+            offset = chunkEnd
+        }
+
+        // Test streaming decompression
+        let decompressor = Decompressor()
+        try decompressor.initialize()
+
+        var decompressedData = Data()
+        offset = 0
+
+        while offset < compressedData.count {
+            let chunkEnd = min(offset + chunkSize, compressedData.count)
+            let chunk = compressedData[offset ..< chunkEnd]
+            let flush: FlushMode = chunkEnd == compressedData.count ? .finish : .noFlush
+
+            let decompressed = try decompressor.decompress(Data(chunk), flush: flush)
+            decompressedData.append(decompressed)
+
+            offset = chunkEnd
+        }
+
+        XCTAssertEqual(testData, decompressedData, "Streaming memory test failed")
+    }
+
+    /// Test memory safety with edge cases and validation
+    func testMemorySafetyEdgeCases() throws {
+        // Test with very large data to stress memory management
+        let largeData = Data(repeating: 0xAA, count: 1024 * 1024) // 1MB
+
+        // Test compression with large data
+        do {
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .bestCompression, windowBits: .gzip)
+
+            // Test with gzip header containing reasonable fields
+            var header = GzipHeader()
+            header.name = "test_file.txt" // Reasonable name
+            header.comment = "Test file for memory safety testing" // Reasonable comment
+            header.extra = Data(repeating: 0xCC, count: 100) // Reasonable extra field
+
+            try compressor.setGzipHeader(header)
+
+            let compressed = try compressor.compress(largeData, flush: .finish)
+            XCTAssertGreaterThan(compressed.count, 0)
+
+            // Compressor deallocated here
+        }
+
+        // Test decompression with large data
+        do {
+            let decompressor = Decompressor()
+            try decompressor.initializeAdvanced(windowBits: .gzip)
+
+            // Use the same gzip compression for consistency
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+            let compressed = try compressor.compress(largeData, flush: .finish)
+
+            let decompressed = try decompressor.decompress(compressed)
+
+            XCTAssertEqual(decompressed, largeData)
+
+            // Decompressor deallocated here
+        }
+
+        // Test rapid creation and destruction
+        for _ in 0 ..< 100 {
+            let compressor = Compressor()
+            try compressor.initialize(level: .defaultCompression)
+            _ = try compressor.compress("test".data(using: .utf8)!, flush: .finish)
+            // Compressor deallocated here
         }
     }
 }
@@ -314,6 +538,11 @@ final class MemoryLeakTests: XCTestCase {
             ("testDifferentCompressionLevels", testDifferentCompressionLevels),
             ("testDifferentWindowBits", testDifferentWindowBits),
             ("testIsolatedAllocationDeallocation", testIsolatedAllocationDeallocation),
+            ("testMemoryStressTest", testMemoryStressTest),
+            ("testConcurrentMemorySafety", testConcurrentMemorySafety),
+            ("testMemoryCleanupOnError", testMemoryCleanupOnError),
+            ("testStreamingMemorySafety", testStreamingMemorySafety),
+            ("testMemorySafetyEdgeCases", testMemorySafetyEdgeCases),
         ]
     }
 #endif

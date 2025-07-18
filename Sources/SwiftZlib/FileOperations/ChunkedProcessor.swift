@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// Chunked data processor for memory-efficient operations
-final class ChunkedProcessor {
+public final class ChunkedProcessor {
     // MARK: Properties
 
     private let config: StreamingConfig

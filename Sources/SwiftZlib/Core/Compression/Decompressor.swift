@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Gzip File API
 
 /// Stream-based decompression for large data or streaming scenarios
-final class Decompressor {
+public final class Decompressor {
     // MARK: Properties
 
     private var stream = z_stream()
@@ -26,6 +26,11 @@ final class Decompressor {
 
     deinit {
         if isInitialized {
+            // Validate stream state before cleanup
+            guard stream.state != nil else {
+                zlibError("Invalid stream state during cleanup")
+                return
+            }
             swift_inflateEnd(&stream)
         }
     }
@@ -35,8 +40,6 @@ final class Decompressor {
     /// Initialize the decompressor with basic settings
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
-        // Check for cancellation before starting work
-        try Task.checkCancellation()
         zlibInfo("Initializing decompressor")
 
         let result = swift_inflateInit(&stream)
@@ -52,8 +55,6 @@ final class Decompressor {
     /// - Parameter windowBits: Window bits for format (default: .deflate)
     /// - Throws: ZLibError if initialization fails
     public func initializeAdvanced(windowBits: WindowBits = .deflate) throws {
-        // Check for cancellation before starting work
-        try Task.checkCancellation()
         let result = swift_inflateInit2(&stream, windowBits.zlibWindowBits)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)

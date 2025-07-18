@@ -325,6 +325,15 @@ __attribute__((used)) int swift_inflateBackWithCallbacks(z_streamp strm, swift_i
     fflush(stdout);
 #endif
 
+    // Validate input parameters
+    if (!strm || !in_func || !out_func) {
+#if ZLIB_DEBUG
+        printf("[C] swift_inflateBackWithCallbacks: invalid parameters\n");
+        fflush(stdout);
+#endif
+        return Z_STREAM_ERROR;
+    }
+
     // Allocate context structure
     swift_inflateback_context_t* context = malloc(sizeof(swift_inflateback_context_t));
     if (!context) {
@@ -335,7 +344,7 @@ __attribute__((used)) int swift_inflateBackWithCallbacks(z_streamp strm, swift_i
         return Z_MEM_ERROR;
     }
 
-    // Initialize context
+    // Initialize context with validation
     context->swift_in_func = in_func;
     context->swift_out_func = out_func;
     context->swift_context = in_desc; // Use in_desc as context
@@ -350,8 +359,10 @@ __attribute__((used)) int swift_inflateBackWithCallbacks(z_streamp strm, swift_i
     }
 #endif
 
-    // Clean up context
-    free(context);
+    // Clean up context with validation
+    if (context) {
+        free(context);
+    }
 
     return result;
 }

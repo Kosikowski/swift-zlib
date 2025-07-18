@@ -10,7 +10,7 @@ import Foundation
 
 /// Builder for creating async ZLib streams with fluent API
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-final class AsyncZLibStreamBuilder: @unchecked Sendable {
+public final class AsyncZLibStreamBuilder: @unchecked Sendable {
     // MARK: Properties
 
     private var mode: ZLibStream.StreamMode = .compress

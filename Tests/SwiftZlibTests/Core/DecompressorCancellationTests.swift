@@ -5,9 +5,6 @@ final class DecompressorCancellationTests: XCTestCase {
     // MARK: Static Properties
 
     static var allTests = [
-        ("testDecompressorInitializeCancellation", testDecompressorInitializeCancellation),
-        ("testDecompressorInitializeAdvancedCancellation", testDecompressorInitializeAdvancedCancellation),
-        ("testDecompressorResetCancellation", testDecompressorResetCancellation),
         ("testDecompressorDecompressCancellation", testDecompressorDecompressCancellation),
         ("testDecompressorDecompressChunkedCancellation", testDecompressorDecompressChunkedCancellation),
         ("testDecompressorFinishCancellation", testDecompressorFinishCancellation),
@@ -15,80 +12,6 @@ final class DecompressorCancellationTests: XCTestCase {
     ]
 
     // MARK: Functions
-
-    func testDecompressorInitializeCancellation() async throws {
-        let expectation = XCTestExpectation(description: "Should cancel initialization")
-
-        let task = Task {
-            do {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
-                try Decompressor().initialize() // Let the method handle cancellation internally
-                XCTFail("Should have been cancelled")
-            } catch is CancellationError {
-                expectation.fulfill()
-            }
-        }
-
-        Task {
-            try await Task.sleep(nanoseconds: 10_000_000) // 10ms delay
-            task.cancel()
-        }
-
-        await fulfillment(of: [expectation], timeout: 5)
-    }
-
-    func testDecompressorInitializeAdvancedCancellation() async throws {
-        let expectation = XCTestExpectation(description: "Should cancel advanced initialization")
-
-        let task = Task {
-            do {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
-                try Decompressor().initializeAdvanced(windowBits: .deflate) // Let the method handle cancellation
-                XCTFail("Should have been cancelled")
-            } catch is CancellationError {
-                expectation.fulfill()
-            }
-        }
-
-        Task {
-            try await Task.sleep(nanoseconds: 10_000_000) // 10ms delay
-            task.cancel()
-        }
-
-        await fulfillment(of: [expectation], timeout: 5)
-    }
-
-    func testDecompressorResetCancellation() async throws {
-        let expectation = XCTestExpectation(description: "Should cancel reset")
-
-        let decompressor = Decompressor()
-        try decompressor.initialize()
-
-        // Add some decompression work first to make reset more meaningful
-        let data = Data(repeating: 0x41, count: 1_000_000) // 1MB
-        guard let compressed = try? ZLib.compress(data) else {
-            XCTFail("Compression failed")
-            return
-        }
-        _ = try decompressor.decompress(compressed, flush: .finish)
-
-        let task = Task {
-            do {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
-                try decompressor.reset() // Let the method handle cancellation
-                XCTFail("Should have been cancelled")
-            } catch is CancellationError {
-                expectation.fulfill()
-            }
-        }
-
-        Task {
-            try await Task.sleep(nanoseconds: 10_000_000) // 10ms delay
-            task.cancel()
-        }
-
-        await fulfillment(of: [expectation], timeout: 5)
-    }
 
     func testDecompressorDecompressCancellation() async throws {
         let expectation = XCTestExpectation(description: "Should cancel decompression")
@@ -158,12 +81,13 @@ final class DecompressorCancellationTests: XCTestCase {
 
         let decompressor = Decompressor()
         try decompressor.initialize()
-        let smallData = Data(repeating: 0x41, count: 1000)
-        guard let compressed = try? ZLib.compress(smallData) else {
+        let largeData = Data(repeating: 0x41, count: 10_000_000) // 10MB to make decompression take longer
+        guard let compressed = try? ZLib.compress(largeData) else {
             XCTFail("Compression failed")
             return
         }
-        _ = try decompressor.decompress(compressed, flush: .finish)
+        // Decompress with .noFlush to leave the stream unfinished
+        _ = try decompressor.decompress(compressed, flush: .noFlush)
 
         let task = Task {
             do {

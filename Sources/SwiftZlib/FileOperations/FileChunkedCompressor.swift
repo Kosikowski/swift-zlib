@@ -9,7 +9,7 @@ import CZLib
 import Foundation
 
 /// File-based chunked compressor for huge files (constant memory)
-final class FileChunkedCompressor {
+public final class FileChunkedCompressor {
     // MARK: Properties
 
     public let bufferSize: Int
@@ -230,8 +230,13 @@ final class FileChunkedCompressor {
     )
         -> AsyncThrowingStream<ProgressInfo, Error>
     {
-        AsyncThrowingStream { continuation in
-            Task {
+        final class TaskHolder {
+            var task: Task<Void, Never>?
+        }
+        let holder = TaskHolder()
+
+        return AsyncThrowingStream<ProgressInfo, Error> { continuation in
+            holder.task = Task {
                 do {
                     let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
                     defer { try? input.close() }
@@ -253,7 +258,6 @@ final class FileChunkedCompressor {
                     var processedBytes = 0
                     var lastReport = Date()
                     let startTime = Date()
-                    let shouldContinue = true
                     var phase: CompressionPhase = .reading
                     var isFinished = false
                     var firstIteration = true
@@ -276,7 +280,9 @@ final class FileChunkedCompressor {
                         continuation.yield(info)
                     }
 
-                    while !isFinished, shouldContinue {
+                    while !isFinished {
+                        try Task.checkCancellation()
+
                         phase = .reading
                         let now = Date()
                         if firstIteration || now.timeIntervalSince(lastReport) >= progressInterval {
@@ -306,6 +312,10 @@ final class FileChunkedCompressor {
                     let zlibError = (error is ZLibError) ? error : ZLibError.fileError(error)
                     continuation.finish(throwing: zlibError)
                 }
+            }
+
+            continuation.onTermination = { _ in
+                holder.task?.cancel()
             }
         }
     }
