@@ -239,8 +239,14 @@ final class FileChunkedDecompressor {
     )
         -> AsyncThrowingStream<ProgressInfo, Error>
     {
-        AsyncThrowingStream { continuation in
-            Task {
+        var internalTask: Task<Void, Never>?
+
+        let stream = AsyncThrowingStream<ProgressInfo, Error> { continuation in
+            continuation.onTermination = { @Sendable reason in
+                internalTask?.cancel()
+            }
+
+            internalTask = Task {
                 do {
                     let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
                     defer { try? input.close() }
@@ -269,7 +275,6 @@ final class FileChunkedDecompressor {
                     var processedBytes = 0
                     var lastReport = Date()
                     let startTime = Date()
-                    let shouldContinue = true
                     var phase: CompressionPhase = .reading
                     var isFinished = false
                     var firstIteration = true
@@ -292,7 +297,9 @@ final class FileChunkedDecompressor {
                         continuation.yield(info)
                     }
 
-                    while !isFinished, shouldContinue {
+                    while !isFinished {
+                        try Task.checkCancellation()
+
                         phase = .reading
                         let now = Date()
                         if firstIteration || now.timeIntervalSince(lastReport) >= progressInterval {
@@ -328,6 +335,8 @@ final class FileChunkedDecompressor {
                 }
             }
         }
+
+        return stream
     }
 
     @discardableResult

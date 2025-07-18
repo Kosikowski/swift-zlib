@@ -29,6 +29,11 @@ public final class Compressor {
     deinit {
         // gzipHeaderStorage will be deallocated automatically
         if isInitialized {
+            // Validate stream state before cleanup
+            guard stream.state != nil else {
+                zlibError("Invalid stream state during cleanup")
+                return
+            }
             swift_deflateEnd(&stream)
         }
     }

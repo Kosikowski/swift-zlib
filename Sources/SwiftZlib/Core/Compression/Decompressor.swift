@@ -26,6 +26,11 @@ final class Decompressor {
 
     deinit {
         if isInitialized {
+            // Validate stream state before cleanup
+            guard stream.state != nil else {
+                zlibError("Invalid stream state during cleanup")
+                return
+            }
             swift_inflateEnd(&stream)
         }
     }

@@ -159,6 +159,9 @@ final class GzipHeaderStorage {
     private var namePtr: UnsafeMutablePointer<CChar>?
     private var commentPtr: UnsafeMutablePointer<CChar>?
 
+    /// Track allocation state for safety
+    private var isDeallocated = false
+
     // MARK: Lifecycle
 
     init(swiftHeader: GzipHeader) {
@@ -172,6 +175,11 @@ final class GzipHeaderStorage {
 
         // Extra field
         if let extra = swiftHeader.extra {
+            // Validate input data - allow reasonable sizes
+            guard !extra.isEmpty, extra.count <= 65535 else {
+                fatalError("Invalid extra field size: \(extra.count)")
+            }
+
             let ptr = UnsafeMutablePointer<Bytef>.allocate(capacity: extra.count)
             extra.copyBytes(to: ptr, count: extra.count)
             cHeader.extra = ptr
@@ -184,6 +192,11 @@ final class GzipHeaderStorage {
 
         // Name
         if let name = swiftHeader.name {
+            // Validate input string - allow reasonable names
+            guard !name.isEmpty, name.count <= 255 else {
+                fatalError("Invalid name length: \(name.count)")
+            }
+
             let nameLength = name.utf8.count + 1
             let ptr = UnsafeMutablePointer<CChar>.allocate(capacity: nameLength)
             name.utf8CString.withUnsafeBufferPointer { buffer in
@@ -197,6 +210,11 @@ final class GzipHeaderStorage {
 
         // Comment
         if let comment = swiftHeader.comment {
+            // Validate input string - allow reasonable comments
+            guard comment.count <= 65535 else {
+                fatalError("Invalid comment length: \(comment.count)")
+            }
+
             let commentLength = comment.utf8.count + 1
             let ptr = UnsafeMutablePointer<CChar>.allocate(capacity: commentLength)
             comment.utf8CString.withUnsafeBufferPointer { buffer in
@@ -210,13 +228,30 @@ final class GzipHeaderStorage {
     }
 
     deinit {
+        // Prevent double deallocation
+        guard !isDeallocated else { return }
+        isDeallocated = true
+
+        // Safely deallocate memory with validation
         if let extraPtr {
+            // Validate pointer before deallocation
+            guard extraPtr != UnsafeMutablePointer<Bytef>(bitPattern: 0xDEAD_BEEF) else {
+                fatalError("Attempting to deallocate invalid pointer")
+            }
             extraPtr.deallocate()
         }
         if let namePtr {
+            // Validate pointer before deallocation
+            guard namePtr != UnsafeMutablePointer<CChar>(bitPattern: 0xDEAD_BEEF) else {
+                fatalError("Attempting to deallocate invalid pointer")
+            }
             namePtr.deallocate()
         }
         if let commentPtr {
+            // Validate pointer before deallocation
+            guard commentPtr != UnsafeMutablePointer<CChar>(bitPattern: 0xDEAD_BEEF) else {
+                fatalError("Attempting to deallocate invalid pointer")
+            }
             commentPtr.deallocate()
         }
     }

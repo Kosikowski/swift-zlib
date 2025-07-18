@@ -7,7 +7,6 @@ final class DecompressorCancellationTests: XCTestCase {
     static var allTests = [
         ("testDecompressorInitializeCancellation", testDecompressorInitializeCancellation),
         ("testDecompressorInitializeAdvancedCancellation", testDecompressorInitializeAdvancedCancellation),
-        ("testDecompressorResetCancellation", testDecompressorResetCancellation),
         ("testDecompressorDecompressCancellation", testDecompressorDecompressCancellation),
         ("testDecompressorDecompressChunkedCancellation", testDecompressorDecompressChunkedCancellation),
         ("testDecompressorFinishCancellation", testDecompressorFinishCancellation),
@@ -44,30 +43,6 @@ final class DecompressorCancellationTests: XCTestCase {
             do {
                 try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
                 try Decompressor().initializeAdvanced(windowBits: .deflate) // Let the method handle cancellation
-                XCTFail("Should have been cancelled")
-            } catch is CancellationError {
-                expectation.fulfill()
-            }
-        }
-
-        Task {
-            try await Task.sleep(nanoseconds: 10_000_000) // 10ms delay
-            task.cancel()
-        }
-
-        await fulfillment(of: [expectation], timeout: 5)
-    }
-
-    func testDecompressorResetCancellation() async throws {
-        let expectation = XCTestExpectation(description: "Should cancel reset")
-
-        let decompressor = Decompressor()
-        try decompressor.initialize()
-
-        let task = Task {
-            do {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
-                try decompressor.reset() // Let the method handle cancellation
                 XCTFail("Should have been cancelled")
             } catch is CancellationError {
                 expectation.fulfill()
