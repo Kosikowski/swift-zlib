@@ -7,6 +7,7 @@ A comprehensive Swift library for zlib compression and decompression, providing 
 - **Simple APIs**: Easy-to-use compression and decompression for Data and String
 - **Streaming Support**: Process large data efficiently with streaming APIs
 - **File Operations**: Direct file compression and decompression with progress reporting
+- **Simple File Operations**: High-performance, non-cancellable file operations using GzipFile
 - **Chunked Processing**: Memory-efficient chunked file operations for large files
 - **Fluent Builder Pattern**: Chainable configuration for advanced use cases
 - **Enhanced Decompressors**: Specialized decompressors with custom callbacks
@@ -34,6 +35,8 @@ let decompressed = try compressed.decompressed()
 
 ### File Operations
 
+#### Chunked File Operations (Cancellable)
+
 ```swift
 // Compress a file with progress
 let compressor = FileChunkedCompressor()
@@ -52,6 +55,25 @@ try decompressor.decompressFile(
     at: "output.gz",
     to: "decompressed.txt"
 )
+```
+
+#### Simple File Operations (Non-Cancellable, High Performance)
+
+```swift
+// Simple compression using GzipFile for optimal performance
+try ZLib.compressFileSimple(from: "input.txt", to: "output.gz")
+
+// Simple decompression
+try ZLib.decompressFileSimple(from: "output.gz", to: "decompressed.txt")
+
+// With progress tracking
+try ZLib.compressFileSimple(from: "input.txt", to: "output.gz") { processed, total in
+    print("Progress: \(processed)/\(total)")
+}
+
+// Async versions
+try await ZLib.compressFileSimpleAsync(from: "input.txt", to: "output.gz")
+try await ZLib.decompressFileSimpleAsync(from: "output.gz", to: "decompressed.txt")
 ```
 
 ### Fluent Builder Pattern
@@ -150,6 +172,7 @@ For detailed information about iOS compatibility and why CI automation is disabl
 
 - **Fluent Builder APIs**: Chainable configuration for streams and compressors
 - **Chunked File Operations**: Memory-efficient processing of large files
+- **Simple File Operations**: High-performance, non-cancellable file operations
 - **Enhanced Decompressors**: Specialized decompressors with custom callbacks
 - **Progress Stream APIs**: Real-time progress reporting for all operations
 - **Async/Await Integration**: Full modern Swift concurrency support

@@ -42,11 +42,12 @@ Welcome to the SwiftZlib documentation! This guide will help you navigate throug
 
 ### Core Features
 
-| Document                                  | Description                             |
-| ----------------------------------------- | --------------------------------------- |
-| [Streaming Operations](STREAMING.md)      | Memory-efficient large file processing  |
-| [Advanced Features](ADVANCED_FEATURES.md) | Advanced usage patterns and techniques  |
-| [API Coverage](API_COVERAGE.md)           | Complete overview of all available APIs |
+| Document                                            | Description                                       |
+| --------------------------------------------------- | ------------------------------------------------- |
+| [Streaming Operations](STREAMING.md)                | Memory-efficient large file processing            |
+| [Simple File Operations](SIMPLE_FILE_OPERATIONS.md) | High-performance, non-cancellable file operations |
+| [Advanced Features](ADVANCED_FEATURES.md)           | Advanced usage patterns and techniques            |
+| [API Coverage](API_COVERAGE.md)                     | Complete overview of all available APIs           |
 
 ### Advanced Topics
 
@@ -85,6 +86,7 @@ Welcome to the SwiftZlib documentation! This guide will help you navigate throug
 
 - **Compress data quickly**: See [Main README](../README.md#quick-start)
 - **Handle large files**: See [Streaming Operations](STREAMING.md)
+- **Use simple file operations**: See [Simple File Operations](SIMPLE_FILE_OPERATIONS.md)
 - **Use async/await**: See [Main README](../README.md#async-operations)
 - **Handle errors properly**: See [Error Handling](ERROR_HANDLING.md)
 - **Use gzip format**: See [Gzip Support](GZIP_SUPPORT.md)
@@ -100,6 +102,7 @@ Welcome to the SwiftZlib documentation! This guide will help you navigate throug
 
 - Basic compression: [Main README](../README.md#basic-compression)
 - File compression: [Main README](../README.md#file-operations)
+- Simple file operations: [Simple File Operations](SIMPLE_FILE_OPERATIONS.md)
 - Streaming compression: [Streaming Operations](STREAMING.md)
 - Dictionary compression: [Dictionary Compression](DICTIONARY_COMPRESSION.md)
 
