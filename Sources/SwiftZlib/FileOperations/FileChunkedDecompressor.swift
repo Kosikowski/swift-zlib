@@ -239,14 +239,17 @@ final class FileChunkedDecompressor {
     )
         -> AsyncThrowingStream<ProgressInfo, Error>
     {
-        var internalTask: Task<Void, Never>?
+        final class TaskHolder {
+            var task: Task<Void, Never>?
+        }
+        let holder = TaskHolder()
 
         let stream = AsyncThrowingStream<ProgressInfo, Error> { continuation in
             continuation.onTermination = { @Sendable reason in
-                internalTask?.cancel()
+                holder.task?.cancel()
             }
 
-            internalTask = Task {
+            holder.task = Task {
                 do {
                     let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: sourcePath))
                     defer { try? input.close() }
