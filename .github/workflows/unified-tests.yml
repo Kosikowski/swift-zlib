@@ -50,6 +50,17 @@ jobs:
         shell: bash
         run: swift test -c debug --verbose
 
+      - name: Run specific test groups
+        shell: bash
+        run: |
+          swift test --filter CoreTests
+          swift test --filter ExtensionsTests
+          swift test --filter FileOperationsTests
+          swift test --filter PerformanceTests
+          swift test --filter ErrorHandlingTests
+          swift test --filter StreamingTests
+          swift test --filter ConcurrencyTests
+
   # CLI Tool Tests
   test-cli:
     name: CLI Tool Tests (${{ matrix.platform }}, Swift ${{ matrix.swift-version }})
@@ -154,14 +165,14 @@ jobs:
           Remove-Item -Force $env:TEMP\test.txt.gz -ErrorAction SilentlyContinue
           Remove-Item -Force $env:TEMP\test_decompressed.txt -ErrorAction SilentlyContinue
 
-  # Performance Tests (only latest Swift version)
+  # Performance Tests (all Swift versions for comprehensive coverage)
   performance:
     name: Performance Tests (${{ matrix.platform }}, Swift ${{ matrix.swift-version }})
     runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
     strategy:
       matrix:
         platform: [macos, linux, windows]
-        swift-version: [6.1.2] # Only test latest for performance
+        swift-version: [5.9, 6.1.2] # Test both versions for comprehensive coverage
 
     steps:
       - name: Checkout
@@ -220,6 +231,12 @@ jobs:
         with:
           swift-version: ${{ matrix.swift-version }}
 
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Install zlib development headers
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
       - name: Run Memory Leak Tests
         run: swift test --filter MemoryLeakTests --verbose
 
@@ -277,3 +294,88 @@ jobs:
         run: |
           swift package show-dependencies
           swift package resolve
+
+  # Build verification - macOS
+  build-verification-macos:
+    name: Build Verification (macOS, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
+    strategy:
+      matrix:
+        configuration: [debug, release]
+        swift-version: [5.9, 6.1.2]
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup environment (macOS)
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+
+      - name: Install Swift ${{ matrix.swift-version }}
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift-version }}
+
+      - name: Install zlib (macOS)
+        run: brew install zlib
+
+      - name: Build package
+        run: swift build -c ${{ matrix.configuration }}
+
+      - name: Test package
+        run: swift test -c ${{ matrix.configuration }}
+
+      - name: Build CLI tool
+        run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+
+  # Build verification - Linux
+  build-verification-linux:
+    name: Build Verification (Linux, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
+    strategy:
+      matrix:
+        configuration: [debug, release]
+        swift-version: [5.9, 6.1.2]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift-version }}
+
+      - name: Install zlib (Linux)
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Build package
+        run: swift build -c ${{ matrix.configuration }}
+
+      - name: Test package
+        run: swift test -c ${{ matrix.configuration }}
+
+      - name: Build CLI tool
+        run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+
+  # Build verification - Windows
+  build-verification-windows:
+    name: Build Verification (Windows, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
+    strategy:
+      matrix:
+        configuration: [debug, release]
+        swift-version: [5.9, 6.1.2]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift-version }}
+
+      - name: Build and test package
+        run: |
+          swift build -c ${{ matrix.configuration }}
+          swift test -c ${{ matrix.configuration }}
+          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+        shell: pwsh
