@@ -457,6 +457,118 @@ func read(_ length: Int) throws -> Data
 func close() throws
 ```
 
+### Simple File Operations
+
+Simple file operations using `GzipFile` for optimal performance. These operations are **non-cancellable** but provide excellent performance for basic use cases.
+
+#### SimpleFileCompressor
+
+```swift
+class SimpleFileCompressor
+```
+
+Simple file compressor using `GzipFile` for optimal performance.
+
+> **Note:** This operation cannot be cancelled.
+
+#### Initialization
+
+```swift
+init(bufferSize: Int = 64 * 1024, compressionLevel: CompressionLevel = .defaultCompression)
+```
+
+#### Methods
+
+```swift
+func compressFile(from sourcePath: String, to destinationPath: String) throws
+func compressFile(from sourcePath: String, to destinationPath: String, progress: @escaping (Int, Int) -> Void) throws
+func compressFile(from sourcePath: String, to destinationPath: String) async throws
+func compressFile(from sourcePath: String, to destinationPath: String, progress: @escaping (Int, Int) -> Void) async throws
+```
+
+**Parameters:**
+
+- `sourcePath`: Path to input file
+- `destinationPath`: Path to output file
+- `progress`: Optional progress callback
+- `bufferSize`: Buffer size for processing (default: 64KB)
+- `compressionLevel`: Compression level (default: .defaultCompression)
+
+**Throws:** `ZLibError` if compression fails
+
+#### SimpleFileDecompressor
+
+```swift
+class SimpleFileDecompressor
+```
+
+Simple file decompressor using `GzipFile` for optimal performance.
+
+> **Note:** This operation cannot be cancelled.
+
+#### Initialization
+
+```swift
+init(bufferSize: Int = 64 * 1024)
+```
+
+#### Methods
+
+```swift
+func decompressFile(from sourcePath: String, to destinationPath: String) throws
+func decompressFile(from sourcePath: String, to destinationPath: String, progress: @escaping (Int, Int) -> Void) throws
+func decompressFile(from sourcePath: String, to destinationPath: String) async throws
+func decompressFile(from sourcePath: String, to destinationPath: String, progress: @escaping (Int, Int) -> Void) async throws
+```
+
+**Parameters:**
+
+- `sourcePath`: Path to input file
+- `destinationPath`: Path to output file
+- `progress`: Optional progress callback
+- `bufferSize`: Buffer size for processing (default: 64KB)
+
+**Throws:** `ZLibError` if decompression fails
+
+#### Convenience Methods
+
+```swift
+// Simple compression
+static func compressFileSimple(from sourcePath: String, to destinationPath: String) throws
+static func compressFileSimple(from sourcePath: String, to destinationPath: String, bufferSize: Int, compressionLevel: CompressionLevel) throws
+
+// Simple decompression
+static func decompressFileSimple(from sourcePath: String, to destinationPath: String) throws
+static func decompressFileSimple(from sourcePath: String, to destinationPath: String, bufferSize: Int) throws
+
+// With progress tracking
+static func compressFileSimple(from sourcePath: String, to destinationPath: String, progress: @escaping (Int, Int) -> Void) throws
+static func decompressFileSimple(from sourcePath: String, to destinationPath: String, progress: @escaping (Int, Int) -> Void) throws
+
+// Async versions
+static func compressFileSimpleAsync(from sourcePath: String, to destinationPath: String) async throws
+static func decompressFileSimpleAsync(from sourcePath: String, to destinationPath: String) async throws
+```
+
+**Example:**
+
+```swift
+// Simple compression
+try ZLib.compressFileSimple(from: "input.txt", to: "output.gz")
+
+// Simple decompression
+try ZLib.decompressFileSimple(from: "output.gz", to: "decompressed.txt")
+
+// With progress tracking
+try ZLib.compressFileSimple(from: "input.txt", to: "output.gz") { processed, total in
+    print("Progress: \(processed)/\(total)")
+}
+
+// Async versions
+try await ZLib.compressFileSimpleAsync(from: "input.txt", to: "output.gz")
+try await ZLib.decompressFileSimpleAsync(from: "output.gz", to: "decompressed.txt")
+```
+
 ## Async APIs
 
 ### AsyncCompressor
