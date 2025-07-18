@@ -337,12 +337,14 @@ final class MemoryLeakTests: XCTestCase {
                 XCTFail("Memory stress test failed at iteration \(i): \(error)")
             }
 
-            // Force garbage collection if available
+            // Force garbage collection if available (macOS only)
             if i % 10 == 0 {
-                autoreleasepool {
-                    // Create some temporary objects to trigger cleanup
-                    let _ = Data(repeating: 0xFF, count: 1000)
-                }
+                #if os(macOS)
+                    autoreleasepool {
+                        // Create some temporary objects to trigger cleanup
+                        _ = Data(repeating: 0xFF, count: 1000)
+                    }
+                #endif
             }
         }
     }
