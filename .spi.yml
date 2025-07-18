@@ -1,0 +1,21 @@
+version: 1
+builder:
+  configs:
+    - platform: ios
+      spmTarget: SwiftZlib
+    - platform: macos
+      spmTarget: SwiftZlib
+    - platform: macosSpm
+      spmTarget: SwiftZlib
+    - platform: macosXcodeBuild
+      spmTarget: SwiftZlib
+    - platform: tvOS
+      spmTarget: SwiftZlib
+    - platform: linux
+      spmTarget: SwiftZlib
+    - platform: windows
+      spmTarget: SwiftZlib
+
+documentation:
+  targets:
+    - SwiftZlib
