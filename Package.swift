@@ -5,9 +5,8 @@ let package = Package(
     name: "SwiftZlib",
     platforms: [
         .macOS(.v12),
-        .iOS(.v13),
-        .tvOS(.v13),
-        .watchOS(.v6),
+        .iOS(.v14),
+        .tvOS(.v14),
         .visionOS(.v1),
     ],
     products: [
