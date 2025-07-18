@@ -125,12 +125,13 @@ final class DecompressorCancellationTests: XCTestCase {
 
         let decompressor = Decompressor()
         try decompressor.initialize()
-        let smallData = Data(repeating: 0x41, count: 1000)
-        guard let compressed = try? ZLib.compress(smallData) else {
+        let largeData = Data(repeating: 0x41, count: 10_000_000) // 10MB to make decompression take longer
+        guard let compressed = try? ZLib.compress(largeData) else {
             XCTFail("Compression failed")
             return
         }
-        _ = try decompressor.decompress(compressed, flush: .finish)
+        // Decompress with .noFlush to leave the stream unfinished
+        _ = try decompressor.decompress(compressed, flush: .noFlush)
 
         let task = Task {
             do {
