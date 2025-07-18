@@ -69,8 +69,8 @@ final class CompressorCancellationTests: XCTestCase {
                 let compressor = Compressor()
                 try compressor.initialize()
 
-                // Create very large data to ensure compression takes time
-                let largeData = Data(repeating: 0x41, count: 20_000_000) // 20MB
+                // Create much larger data to ensure compression takes time on all runners
+                let largeData = Data(repeating: 0x41, count: 100_000_000) // 100MB
 
                 // This should be cancelled during processing
                 _ = try compressor.compress(largeData, flush: .finish)
@@ -82,8 +82,8 @@ final class CompressorCancellationTests: XCTestCase {
             }
         }
 
-        // Cancel after a short delay
-        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        // Cancel after a very short delay to catch it early in the process
+        try await Task.sleep(nanoseconds: 5_000_000) // 5ms
         task.cancel()
 
         // Wait for cancellation
@@ -213,8 +213,8 @@ final class CompressorCancellationTests: XCTestCase {
                 // Add delay to allow cancellation before second compression
                 try await Task.sleep(nanoseconds: 50_000_000) // 50ms
 
-                // Second compression (this should be cancelled)
-                let data2 = Data(repeating: 0x42, count: 20_000_000) // 20MB data
+                // Second compression (this should be cancelled) - use much larger data
+                let data2 = Data(repeating: 0x42, count: 100_000_000) // 100MB data
                 _ = try compressor.compress(data2, flush: .finish)
                 XCTFail("Should have been cancelled")
             } catch is CancellationError {

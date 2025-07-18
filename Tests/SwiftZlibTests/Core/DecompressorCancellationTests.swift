@@ -18,7 +18,7 @@ final class DecompressorCancellationTests: XCTestCase {
 
         let decompressor = Decompressor()
         try decompressor.initialize()
-        let largeData = Data(repeating: 0x41, count: 20_000_000) // 20MB
+        let largeData = Data(repeating: 0x41, count: 100_000_000) // 100MB
         guard let compressed = try? ZLib.compress(largeData) else {
             XCTFail("Compression failed")
             return
@@ -35,7 +35,7 @@ final class DecompressorCancellationTests: XCTestCase {
         }
 
         Task {
-            try await Task.sleep(nanoseconds: 10_000_000)
+            try await Task.sleep(nanoseconds: 5_000_000) // 5ms
             task.cancel()
         }
 
@@ -47,7 +47,7 @@ final class DecompressorCancellationTests: XCTestCase {
 
         let decompressor = Decompressor()
         try decompressor.initialize()
-        let largeData = Data(repeating: 0x41, count: 20_000_000) // 20MB
+        let largeData = Data(repeating: 0x41, count: 100_000_000) // 100MB
         guard let compressed = try? ZLib.compress(largeData) else {
             XCTFail("Compression failed")
             return
@@ -69,7 +69,7 @@ final class DecompressorCancellationTests: XCTestCase {
         }
 
         Task {
-            try await Task.sleep(nanoseconds: 10_000_000)
+            try await Task.sleep(nanoseconds: 5_000_000) // 5ms
             task.cancel()
         }
 
@@ -81,7 +81,7 @@ final class DecompressorCancellationTests: XCTestCase {
 
         let decompressor = Decompressor()
         try decompressor.initialize()
-        let largeData = Data(repeating: 0x41, count: 10_000_000) // 10MB to make decompression take longer
+        let largeData = Data(repeating: 0x41, count: 50_000_000) // 50MB to make decompression take longer
         guard let compressed = try? ZLib.compress(largeData) else {
             XCTFail("Compression failed")
             return
@@ -100,7 +100,7 @@ final class DecompressorCancellationTests: XCTestCase {
         }
 
         Task {
-            try await Task.sleep(nanoseconds: 10_000_000)
+            try await Task.sleep(nanoseconds: 5_000_000) // 5ms
             task.cancel()
         }
 
@@ -112,7 +112,7 @@ final class DecompressorCancellationTests: XCTestCase {
 
         let decompressor = Decompressor()
         try decompressor.initialize()
-        let largeData = Data(repeating: 0x41, count: 20_000_000) // 20MB
+        let largeData = Data(repeating: 0x41, count: 100_000_000) // 100MB
         guard let compressed = try? ZLib.compress(largeData) else {
             XCTFail("Compression failed")
             return
@@ -135,7 +135,7 @@ final class DecompressorCancellationTests: XCTestCase {
         }
 
         Task {
-            try await Task.sleep(nanoseconds: 10_000_000)
+            try await Task.sleep(nanoseconds: 5_000_000) // 5ms
             task.cancel()
         }
 
