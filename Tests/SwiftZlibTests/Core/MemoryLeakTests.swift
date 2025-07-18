@@ -475,7 +475,7 @@ final class MemoryLeakTests: XCTestCase {
         // Test compression with large data
         do {
             let compressor = Compressor()
-            try compressor.initialize(level: .bestCompression)
+            try compressor.initializeAdvanced(level: .bestCompression, windowBits: .gzip)
 
             // Test with gzip header containing reasonable fields
             var header = GzipHeader()
@@ -496,7 +496,11 @@ final class MemoryLeakTests: XCTestCase {
             let decompressor = Decompressor()
             try decompressor.initializeAdvanced(windowBits: .gzip)
 
-            let compressed = try ZLib.compress(largeData)
+            // Use the same gzip compression for consistency
+            let compressor = Compressor()
+            try compressor.initializeAdvanced(level: .defaultCompression, windowBits: .gzip)
+            let compressed = try compressor.compress(largeData, flush: .finish)
+
             let decompressed = try decompressor.decompress(compressed)
 
             XCTAssertEqual(decompressed, largeData)
