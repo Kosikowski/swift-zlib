@@ -5,8 +5,6 @@ final class DecompressorCancellationTests: XCTestCase {
     // MARK: Static Properties
 
     static var allTests = [
-        ("testDecompressorInitializeCancellation", testDecompressorInitializeCancellation),
-        ("testDecompressorInitializeAdvancedCancellation", testDecompressorInitializeAdvancedCancellation),
         ("testDecompressorDecompressCancellation", testDecompressorDecompressCancellation),
         ("testDecompressorDecompressChunkedCancellation", testDecompressorDecompressChunkedCancellation),
         ("testDecompressorFinishCancellation", testDecompressorFinishCancellation),
@@ -14,48 +12,6 @@ final class DecompressorCancellationTests: XCTestCase {
     ]
 
     // MARK: Functions
-
-    func testDecompressorInitializeCancellation() async throws {
-        let expectation = XCTestExpectation(description: "Should cancel initialization")
-
-        let task = Task {
-            do {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
-                try Decompressor().initialize() // Let the method handle cancellation internally
-                XCTFail("Should have been cancelled")
-            } catch is CancellationError {
-                expectation.fulfill()
-            }
-        }
-
-        Task {
-            try await Task.sleep(nanoseconds: 10_000_000) // 10ms delay
-            task.cancel()
-        }
-
-        await fulfillment(of: [expectation], timeout: 5)
-    }
-
-    func testDecompressorInitializeAdvancedCancellation() async throws {
-        let expectation = XCTestExpectation(description: "Should cancel advanced initialization")
-
-        let task = Task {
-            do {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay to allow cancellation
-                try Decompressor().initializeAdvanced(windowBits: .deflate) // Let the method handle cancellation
-                XCTFail("Should have been cancelled")
-            } catch is CancellationError {
-                expectation.fulfill()
-            }
-        }
-
-        Task {
-            try await Task.sleep(nanoseconds: 10_000_000) // 10ms delay
-            task.cancel()
-        }
-
-        await fulfillment(of: [expectation], timeout: 5)
-    }
 
     func testDecompressorDecompressCancellation() async throws {
         let expectation = XCTestExpectation(description: "Should cancel decompression")

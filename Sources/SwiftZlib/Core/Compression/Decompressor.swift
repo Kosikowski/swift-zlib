@@ -40,8 +40,6 @@ public final class Decompressor {
     /// Initialize the decompressor with basic settings
     /// - Throws: ZLibError if initialization fails
     public func initialize() throws {
-        // Check for cancellation before starting work
-        try Task.checkCancellation()
         zlibInfo("Initializing decompressor")
 
         let result = swift_inflateInit(&stream)
@@ -57,8 +55,6 @@ public final class Decompressor {
     /// - Parameter windowBits: Window bits for format (default: .deflate)
     /// - Throws: ZLibError if initialization fails
     public func initializeAdvanced(windowBits: WindowBits = .deflate) throws {
-        // Check for cancellation before starting work
-        try Task.checkCancellation()
         let result = swift_inflateInit2(&stream, windowBits.zlibWindowBits)
         guard result == Z_OK else {
             throw ZLibError.decompressionFailed(result)

@@ -42,11 +42,8 @@ public final class Compressor {
 
     /// Initialize the compressor with basic settings
     /// - Parameter level: Compression level
-    /// - Throws: ZLibError if initialization fails, CancellationError if cancelled
+    /// - Throws: ZLibError if initialization fails
     public func initialize(level: CompressionLevel = .defaultCompression) throws {
-        // Check for cancellation before starting work
-        try Task.checkCancellation()
-
         zlibInfo("Initializing compressor with level: \(level)")
 
         // Use the exact same parameters as compress2: level, Z_DEFLATED, 15 (zlib format), 8 (default memory), Z_DEFAULT_STRATEGY
@@ -67,7 +64,7 @@ public final class Compressor {
     ///   - windowBits: Window bits for format (default: .deflate)
     ///   - memoryLevel: Memory level (default: .maximum)
     ///   - strategy: Compression strategy (default: .defaultStrategy)
-    /// - Throws: ZLibError if initialization fails, CancellationError if cancelled
+    /// - Throws: ZLibError if initialization fails
     public func initializeAdvanced(
         level: CompressionLevel = .defaultCompression,
         method: CompressionMethod = .deflate,
@@ -75,9 +72,6 @@ public final class Compressor {
         memoryLevel: MemoryLevel = .maximum,
         strategy: CompressionStrategy = .defaultStrategy
     ) throws {
-        // Check for cancellation before starting work
-        try Task.checkCancellation()
-
         let result = swift_deflateInit2(
             &stream,
             level.zlibLevel,
