@@ -28,6 +28,7 @@ jobs:
         uses: SwiftyLab/setup-swift@v1
         with:
           swift-version: ${{ matrix.swift-version }}
+          prefer-oss-toolchain: ${{ matrix.platform == 'windows' && 'true' || 'false' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -41,6 +42,26 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Setup Windows Dependencies
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          # Fix Windows SDK path issues by using the available SDK version
+          $env:WindowsSDKVersion = "10.0.26100.0"
+          $env:WindowsSDKLibVersion = "10.0.26100.0\"
+          $env:WindowsSdkVerBinPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\"
+          $env:WindowsSdkDir = "C:\Program Files (x86)\Windows Kits\10\"
+          $env:WindowsSDK_ExecutablePath_x64 = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\"
+          $env:WindowsSDK_ExecutablePath_x86 = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\"
+
+          # Update INCLUDE and LIB paths to use the correct SDK version
+          $env:INCLUDE = $env:INCLUDE -replace "10.0.20348.0", "10.0.26100.0"
+          $env:LIB = $env:LIB -replace "10.0.20348.0", "10.0.26100.0"
+
+          Write-Host "Updated Windows SDK environment variables"
+          Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
+          Write-Host "INCLUDE: $env:INCLUDE"
 
       - name: Build package
         shell: bash
@@ -81,6 +102,7 @@ jobs:
         uses: SwiftyLab/setup-swift@v1
         with:
           swift-version: ${{ matrix.swift-version }}
+          prefer-oss-toolchain: ${{ matrix.platform == 'windows' && 'true' || 'false' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -94,6 +116,26 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - name: Setup Windows Dependencies
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          # Fix Windows SDK path issues by using the available SDK version
+          $env:WindowsSDKVersion = "10.0.26100.0"
+          $env:WindowsSDKLibVersion = "10.0.26100.0\"
+          $env:WindowsSdkVerBinPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\"
+          $env:WindowsSdkDir = "C:\Program Files (x86)\Windows Kits\10\"
+          $env:WindowsSDK_ExecutablePath_x64 = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\"
+          $env:WindowsSDK_ExecutablePath_x86 = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\"
+
+          # Update INCLUDE and LIB paths to use the correct SDK version
+          $env:INCLUDE = $env:INCLUDE -replace "10.0.20348.0", "10.0.26100.0"
+          $env:LIB = $env:LIB -replace "10.0.20348.0", "10.0.26100.0"
+
+          Write-Host "Updated Windows SDK environment variables"
+          Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
+          Write-Host "INCLUDE: $env:INCLUDE"
 
       - name: Build CLI tool (Unix)
         if: matrix.platform != 'windows'
@@ -182,6 +224,7 @@ jobs:
         uses: SwiftyLab/setup-swift@v1
         with:
           swift-version: ${{ matrix.swift-version }}
+          prefer-oss-toolchain: ${{ matrix.platform == 'windows' && 'true' || 'false' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -230,6 +273,7 @@ jobs:
         uses: SwiftyLab/setup-swift@v1
         with:
           swift-version: ${{ matrix.swift-version }}
+          prefer-oss-toolchain: ${{ matrix.platform == 'windows' && 'true' || 'false' }}
 
       - name: Show Swift version
         run: swift --version
