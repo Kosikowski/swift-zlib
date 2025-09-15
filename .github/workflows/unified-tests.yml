@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         platform: [macos, linux, windows]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.1.3]
         exclude:
           # Exclude Windows with Swift 5.9 if there are known issues
           - platform: windows
@@ -68,7 +68,7 @@ jobs:
     strategy:
       matrix:
         platform: [macos, linux, windows]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.1.3]
         exclude:
           - platform: windows
             swift-version: 5.9
@@ -172,7 +172,7 @@ jobs:
     strategy:
       matrix:
         platform: [macos, linux, windows]
-        swift-version: [5.9, 6.1.2] # Test both versions for comprehensive coverage
+        swift-version: [5.9, 6.1.3] # Test both versions for comprehensive coverage
 
     steps:
       - name: Checkout
@@ -220,7 +220,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.1.3]
 
     steps:
       - name: Checkout
@@ -301,7 +301,7 @@ jobs:
     strategy:
       matrix:
         configuration: [debug, release]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.1.3]
     runs-on: macos-14
     steps:
       - name: Checkout
@@ -333,7 +333,7 @@ jobs:
     strategy:
       matrix:
         configuration: [debug, release]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.1.3]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -362,7 +362,7 @@ jobs:
     strategy:
       matrix:
         configuration: [debug, release]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.1.3]
     runs-on: windows-2022
     steps:
       - name: Checkout
