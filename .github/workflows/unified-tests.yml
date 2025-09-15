@@ -47,24 +47,27 @@ jobs:
         shell: pwsh
         run: |
           # Fix Windows SDK version mismatch after Swift setup
-          $env:WindowsSDKVersion = "10.0.26100.0"
-          $env:WindowsSDKLibVersion = "10.0.26100.0\"
-          $env:WindowsSdkVerBinPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\"
-          $env:WindowsSdkDir = "C:\Program Files (x86)\Windows Kits\10\"
-          $env:WindowsSDK_ExecutablePath_x64 = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\"
-          $env:WindowsSDK_ExecutablePath_x86 = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\"
-
           # Update INCLUDE and LIB paths to use the correct SDK version
-          $env:INCLUDE = $env:INCLUDE -replace "10.0.20348.0", "10.0.26100.0"
-          $env:LIB = $env:LIB -replace "10.0.20348.0", "10.0.26100.0"
+          $newInclude = $env:INCLUDE -replace "10.0.20348.0", "10.0.26100.0"
+          $newLib = $env:LIB -replace "10.0.20348.0", "10.0.26100.0"
 
-          # Update VSCMD arguments to use correct SDK
-          $env:VSCMD_ARG_winsdk = "10.0.26100.0"
-          $env:__winsdk_stripped_winsdkversion = "10.0.26100.0"
+          # Set environment variables for subsequent steps
+          echo "WindowsSDKVersion=10.0.26100.0" >> $env:GITHUB_ENV
+          echo "WindowsSDKLibVersion=10.0.26100.0\" >> $env:GITHUB_ENV
+          echo "WindowsSdkVerBinPath=C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\" >> $env:GITHUB_ENV
+          echo "WindowsSdkDir=C:\Program Files (x86)\Windows Kits\10\" >> $env:GITHUB_ENV
+          echo "WindowsSDK_ExecutablePath_x64=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\" >> $env:GITHUB_ENV
+          echo "WindowsSDK_ExecutablePath_x86=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\" >> $env:GITHUB_ENV
+          echo "INCLUDE=$newInclude" >> $env:GITHUB_ENV
+          echo "LIB=$newLib" >> $env:GITHUB_ENV
+          echo "VSCMD_ARG_winsdk=10.0.26100.0" >> $env:GITHUB_ENV
+          echo "__winsdk_stripped_winsdkversion=10.0.26100.0" >> $env:GITHUB_ENV
 
           Write-Host "Fixed Windows SDK environment variables"
-          Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
-          Write-Host "VSCMD_ARG_winsdk: $env:VSCMD_ARG_winsdk"
+          Write-Host "WindowsSDKVersion: 10.0.26100.0"
+          Write-Host "VSCMD_ARG_winsdk: 10.0.26100.0"
+          Write-Host "Updated INCLUDE: $newInclude"
+          Write-Host "Updated LIB: $newLib"
 
       - name: Build package
         shell: bash
@@ -124,24 +127,27 @@ jobs:
         shell: pwsh
         run: |
           # Fix Windows SDK version mismatch after Swift setup
-          $env:WindowsSDKVersion = "10.0.26100.0"
-          $env:WindowsSDKLibVersion = "10.0.26100.0\"
-          $env:WindowsSdkVerBinPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\"
-          $env:WindowsSdkDir = "C:\Program Files (x86)\Windows Kits\10\"
-          $env:WindowsSDK_ExecutablePath_x64 = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\"
-          $env:WindowsSDK_ExecutablePath_x86 = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\"
-
           # Update INCLUDE and LIB paths to use the correct SDK version
-          $env:INCLUDE = $env:INCLUDE -replace "10.0.20348.0", "10.0.26100.0"
-          $env:LIB = $env:LIB -replace "10.0.20348.0", "10.0.26100.0"
+          $newInclude = $env:INCLUDE -replace "10.0.20348.0", "10.0.26100.0"
+          $newLib = $env:LIB -replace "10.0.20348.0", "10.0.26100.0"
 
-          # Update VSCMD arguments to use correct SDK
-          $env:VSCMD_ARG_winsdk = "10.0.26100.0"
-          $env:__winsdk_stripped_winsdkversion = "10.0.26100.0"
+          # Set environment variables for subsequent steps
+          echo "WindowsSDKVersion=10.0.26100.0" >> $env:GITHUB_ENV
+          echo "WindowsSDKLibVersion=10.0.26100.0\" >> $env:GITHUB_ENV
+          echo "WindowsSdkVerBinPath=C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\" >> $env:GITHUB_ENV
+          echo "WindowsSdkDir=C:\Program Files (x86)\Windows Kits\10\" >> $env:GITHUB_ENV
+          echo "WindowsSDK_ExecutablePath_x64=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\" >> $env:GITHUB_ENV
+          echo "WindowsSDK_ExecutablePath_x86=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\" >> $env:GITHUB_ENV
+          echo "INCLUDE=$newInclude" >> $env:GITHUB_ENV
+          echo "LIB=$newLib" >> $env:GITHUB_ENV
+          echo "VSCMD_ARG_winsdk=10.0.26100.0" >> $env:GITHUB_ENV
+          echo "__winsdk_stripped_winsdkversion=10.0.26100.0" >> $env:GITHUB_ENV
 
           Write-Host "Fixed Windows SDK environment variables"
-          Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
-          Write-Host "VSCMD_ARG_winsdk: $env:VSCMD_ARG_winsdk"
+          Write-Host "WindowsSDKVersion: 10.0.26100.0"
+          Write-Host "VSCMD_ARG_winsdk: 10.0.26100.0"
+          Write-Host "Updated INCLUDE: $newInclude"
+          Write-Host "Updated LIB: $newLib"
 
       - name: Build CLI tool (Unix)
         if: matrix.platform != 'windows'
