@@ -28,18 +28,30 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          # Download and install Windows 10 SDK 10.0.20348.0
-          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
-          $installerPath = "$env:TEMP\winsdk.exe"
+          # Try winget first, then fallback to manual download
+          Write-Host "Attempting to install Windows 10 SDK 10.0.20348.0 using winget..."
+          try {
+            winget install Microsoft.WindowsSDK.10.0.20348 --accept-package-agreements --accept-source-agreements --silent
+            Write-Host "Windows 10 SDK 10.0.20348.0 installed successfully via winget"
+          } catch {
+            Write-Host "winget installation failed, trying manual download..."
 
-          Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
-          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath
+            # Set TLS 1.2 for secure connections
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-          Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
-          Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+            # Download and install Windows 10 SDK 10.0.20348.0
+            $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+            $installerPath = "$env:TEMP\winsdk.exe"
 
-          Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
-          Remove-Item $installerPath -Force
+            Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
+            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing
+
+            Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
+            Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+
+            Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
+            Remove-Item $installerPath -Force
+          }
 
       - name: Setup Swift Environment
         uses: SwiftyLab/setup-swift@latest
@@ -100,18 +112,30 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          # Download and install Windows 10 SDK 10.0.20348.0
-          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
-          $installerPath = "$env:TEMP\winsdk.exe"
+          # Try winget first, then fallback to manual download
+          Write-Host "Attempting to install Windows 10 SDK 10.0.20348.0 using winget..."
+          try {
+            winget install Microsoft.WindowsSDK.10.0.20348 --accept-package-agreements --accept-source-agreements --silent
+            Write-Host "Windows 10 SDK 10.0.20348.0 installed successfully via winget"
+          } catch {
+            Write-Host "winget installation failed, trying manual download..."
 
-          Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
-          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath
+            # Set TLS 1.2 for secure connections
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-          Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
-          Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+            # Download and install Windows 10 SDK 10.0.20348.0
+            $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+            $installerPath = "$env:TEMP\winsdk.exe"
 
-          Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
-          Remove-Item $installerPath -Force
+            Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
+            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing
+
+            Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
+            Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+
+            Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
+            Remove-Item $installerPath -Force
+          }
 
       - name: Setup Swift Environment
         uses: SwiftyLab/setup-swift@latest
@@ -220,18 +244,30 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          # Download and install Windows 10 SDK 10.0.20348.0
-          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
-          $installerPath = "$env:TEMP\winsdk.exe"
+          # Try winget first, then fallback to manual download
+          Write-Host "Attempting to install Windows 10 SDK 10.0.20348.0 using winget..."
+          try {
+            winget install Microsoft.WindowsSDK.10.0.20348 --accept-package-agreements --accept-source-agreements --silent
+            Write-Host "Windows 10 SDK 10.0.20348.0 installed successfully via winget"
+          } catch {
+            Write-Host "winget installation failed, trying manual download..."
 
-          Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
-          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath
+            # Set TLS 1.2 for secure connections
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-          Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
-          Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+            # Download and install Windows 10 SDK 10.0.20348.0
+            $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+            $installerPath = "$env:TEMP\winsdk.exe"
 
-          Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
-          Remove-Item $installerPath -Force
+            Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
+            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing
+
+            Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
+            Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+
+            Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
+            Remove-Item $installerPath -Force
+          }
 
       - name: Setup Swift Environment
         uses: SwiftyLab/setup-swift@latest
@@ -430,18 +466,30 @@ jobs:
       - name: Install Windows 10 SDK 10.0.20348.0
         shell: pwsh
         run: |
-          # Download and install Windows 10 SDK 10.0.20348.0
-          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
-          $installerPath = "$env:TEMP\winsdk.exe"
+          # Try winget first, then fallback to manual download
+          Write-Host "Attempting to install Windows 10 SDK 10.0.20348.0 using winget..."
+          try {
+            winget install Microsoft.WindowsSDK.10.0.20348 --accept-package-agreements --accept-source-agreements --silent
+            Write-Host "Windows 10 SDK 10.0.20348.0 installed successfully via winget"
+          } catch {
+            Write-Host "winget installation failed, trying manual download..."
 
-          Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
-          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath
+            # Set TLS 1.2 for secure connections
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-          Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
-          Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+            # Download and install Windows 10 SDK 10.0.20348.0
+            $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+            $installerPath = "$env:TEMP\winsdk.exe"
 
-          Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
-          Remove-Item $installerPath -Force
+            Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
+            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing
+
+            Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
+            Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+
+            Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
+            Remove-Item $installerPath -Force
+          }
 
       - name: Install Swift
         uses: SwiftyLab/setup-swift@latest
