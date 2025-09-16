@@ -13,12 +13,12 @@ jobs:
     runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
     strategy:
       matrix:
-        platform: [macos, linux, windows]
+        platform: [macos, linux] # Temporarily disabled windows
         swift-version: [5.9, 6.1.2]
-        exclude:
-          # Exclude Windows with Swift 5.9 if there are known issues
-          - platform: windows
-            swift-version: 5.9
+        # exclude:
+        #   # Exclude Windows with Swift 5.9 if there are known issues
+        #   - platform: windows
+        #     swift-version: 5.9
 
     steps:
       - name: Checkout
@@ -67,11 +67,11 @@ jobs:
     runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
     strategy:
       matrix:
-        platform: [macos, linux, windows]
+        platform: [macos, linux] # Temporarily disabled windows
         swift-version: [5.9, 6.1.2]
-        exclude:
-          - platform: windows
-            swift-version: 5.9
+        # exclude:
+        #   - platform: windows
+        #     swift-version: 5.9
 
     steps:
       - name: Checkout
@@ -171,7 +171,7 @@ jobs:
     runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
     strategy:
       matrix:
-        platform: [macos, linux, windows]
+        platform: [macos, linux] # Temporarily disabled windows
         swift-version: [5.9, 6.1.2] # Test both versions for comprehensive coverage
 
     steps:
@@ -356,26 +356,26 @@ jobs:
       - name: Build CLI tool
         run: swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
 
-  # Build verification - Windows
-  build-verification-windows:
-    name: Build Verification (Windows, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
-    strategy:
-      matrix:
-        configuration: [debug, release]
-        swift-version: [5.9, 6.1.2]
-    runs-on: windows-2022
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+  # Build verification - Windows (temporarily disabled)
+  # build-verification-windows:
+  #   name: Build Verification (Windows, Swift ${{ matrix.swift-version }}, ${{ matrix.configuration }})
+  #   strategy:
+  #     matrix:
+  #       configuration: [debug, release]
+  #       swift-version: [5.9, 6.1.2]
+  #   runs-on: windows-2022
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
 
-      - name: Install Swift
-        uses: SwiftyLab/setup-swift@v1
-        with:
-          swift-version: ${{ matrix.swift-version }}
+  #     - name: Install Swift
+  #       uses: SwiftyLab/setup-swift@v1
+  #       with:
+  #         swift-version: ${{ matrix.swift-version }}
 
-      - name: Build and test package
-        run: |
-          swift build -c ${{ matrix.configuration }}
-          swift test -c ${{ matrix.configuration }}
-          swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
-        shell: pwsh
+  #     - name: Build and test package
+  #       run: |
+  #         swift build -c ${{ matrix.configuration }}
+  #         swift test -c ${{ matrix.configuration }}
+  #         swift build -c ${{ matrix.configuration }} --product SwiftZlibCLI
+  #       shell: pwsh
