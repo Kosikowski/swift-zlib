@@ -28,29 +28,34 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          # Try winget first, then fallback to manual download
-          Write-Host "Attempting to install Windows 10 SDK 10.0.20348.0 using winget..."
+          # Set TLS 1.2 for secure connections
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+          # Download and install Windows 10 SDK 10.0.20348.0
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+          $installerPath = "$env:TEMP\winsdk.exe"
+
+          Write-Host "Downloading Windows 10 SDK 10.0.20348.0 from: $sdkUrl"
           try {
-            winget install Microsoft.WindowsSDK.10.0.20348 --accept-package-agreements --accept-source-agreements --silent
-            Write-Host "Windows 10 SDK 10.0.20348.0 installed successfully via winget"
-          } catch {
-            Write-Host "winget installation failed, trying manual download..."
-
-            # Set TLS 1.2 for secure connections
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-            # Download and install Windows 10 SDK 10.0.20348.0
-            $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
-            $installerPath = "$env:TEMP\winsdk.exe"
-
-            Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
-            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing
+            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing -MaximumRedirection 5
+            Write-Host "Download completed successfully"
 
             Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
-            Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+            $process = Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait -PassThru
 
-            Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
-            Remove-Item $installerPath -Force
+            if ($process.ExitCode -eq 0) {
+              Write-Host "Windows 10 SDK 10.0.20348.0 installation completed successfully"
+            } else {
+              Write-Host "Installation failed with exit code: $($process.ExitCode)"
+              exit $process.ExitCode
+            }
+          } catch {
+            Write-Host "Download failed: $($_.Exception.Message)"
+            exit 1
+          } finally {
+            if (Test-Path $installerPath) {
+              Remove-Item $installerPath -Force
+            }
           }
 
       - name: Setup Swift Environment
@@ -112,29 +117,34 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          # Try winget first, then fallback to manual download
-          Write-Host "Attempting to install Windows 10 SDK 10.0.20348.0 using winget..."
+          # Set TLS 1.2 for secure connections
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+          # Download and install Windows 10 SDK 10.0.20348.0
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+          $installerPath = "$env:TEMP\winsdk.exe"
+
+          Write-Host "Downloading Windows 10 SDK 10.0.20348.0 from: $sdkUrl"
           try {
-            winget install Microsoft.WindowsSDK.10.0.20348 --accept-package-agreements --accept-source-agreements --silent
-            Write-Host "Windows 10 SDK 10.0.20348.0 installed successfully via winget"
-          } catch {
-            Write-Host "winget installation failed, trying manual download..."
-
-            # Set TLS 1.2 for secure connections
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-            # Download and install Windows 10 SDK 10.0.20348.0
-            $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
-            $installerPath = "$env:TEMP\winsdk.exe"
-
-            Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
-            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing
+            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing -MaximumRedirection 5
+            Write-Host "Download completed successfully"
 
             Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
-            Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+            $process = Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait -PassThru
 
-            Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
-            Remove-Item $installerPath -Force
+            if ($process.ExitCode -eq 0) {
+              Write-Host "Windows 10 SDK 10.0.20348.0 installation completed successfully"
+            } else {
+              Write-Host "Installation failed with exit code: $($process.ExitCode)"
+              exit $process.ExitCode
+            }
+          } catch {
+            Write-Host "Download failed: $($_.Exception.Message)"
+            exit 1
+          } finally {
+            if (Test-Path $installerPath) {
+              Remove-Item $installerPath -Force
+            }
           }
 
       - name: Setup Swift Environment
@@ -244,29 +254,34 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          # Try winget first, then fallback to manual download
-          Write-Host "Attempting to install Windows 10 SDK 10.0.20348.0 using winget..."
+          # Set TLS 1.2 for secure connections
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+          # Download and install Windows 10 SDK 10.0.20348.0
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+          $installerPath = "$env:TEMP\winsdk.exe"
+
+          Write-Host "Downloading Windows 10 SDK 10.0.20348.0 from: $sdkUrl"
           try {
-            winget install Microsoft.WindowsSDK.10.0.20348 --accept-package-agreements --accept-source-agreements --silent
-            Write-Host "Windows 10 SDK 10.0.20348.0 installed successfully via winget"
-          } catch {
-            Write-Host "winget installation failed, trying manual download..."
-
-            # Set TLS 1.2 for secure connections
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-            # Download and install Windows 10 SDK 10.0.20348.0
-            $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
-            $installerPath = "$env:TEMP\winsdk.exe"
-
-            Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
-            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing
+            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing -MaximumRedirection 5
+            Write-Host "Download completed successfully"
 
             Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
-            Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+            $process = Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait -PassThru
 
-            Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
-            Remove-Item $installerPath -Force
+            if ($process.ExitCode -eq 0) {
+              Write-Host "Windows 10 SDK 10.0.20348.0 installation completed successfully"
+            } else {
+              Write-Host "Installation failed with exit code: $($process.ExitCode)"
+              exit $process.ExitCode
+            }
+          } catch {
+            Write-Host "Download failed: $($_.Exception.Message)"
+            exit 1
+          } finally {
+            if (Test-Path $installerPath) {
+              Remove-Item $installerPath -Force
+            }
           }
 
       - name: Setup Swift Environment
@@ -466,29 +481,34 @@ jobs:
       - name: Install Windows 10 SDK 10.0.20348.0
         shell: pwsh
         run: |
-          # Try winget first, then fallback to manual download
-          Write-Host "Attempting to install Windows 10 SDK 10.0.20348.0 using winget..."
+          # Set TLS 1.2 for secure connections
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+          # Download and install Windows 10 SDK 10.0.20348.0
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+          $installerPath = "$env:TEMP\winsdk.exe"
+
+          Write-Host "Downloading Windows 10 SDK 10.0.20348.0 from: $sdkUrl"
           try {
-            winget install Microsoft.WindowsSDK.10.0.20348 --accept-package-agreements --accept-source-agreements --silent
-            Write-Host "Windows 10 SDK 10.0.20348.0 installed successfully via winget"
-          } catch {
-            Write-Host "winget installation failed, trying manual download..."
-
-            # Set TLS 1.2 for secure connections
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-            # Download and install Windows 10 SDK 10.0.20348.0
-            $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
-            $installerPath = "$env:TEMP\winsdk.exe"
-
-            Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
-            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing
+            Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UseBasicParsing -MaximumRedirection 5
+            Write-Host "Download completed successfully"
 
             Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
-            Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+            $process = Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait -PassThru
 
-            Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
-            Remove-Item $installerPath -Force
+            if ($process.ExitCode -eq 0) {
+              Write-Host "Windows 10 SDK 10.0.20348.0 installation completed successfully"
+            } else {
+              Write-Host "Installation failed with exit code: $($process.ExitCode)"
+              exit $process.ExitCode
+            }
+          } catch {
+            Write-Host "Download failed: $($_.Exception.Message)"
+            exit 1
+          } finally {
+            if (Test-Path $installerPath) {
+              Remove-Item $installerPath -Force
+            }
           }
 
       - name: Install Swift
