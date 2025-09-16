@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         platform: [macos, linux, windows]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.0]
         exclude:
           # Exclude Windows with Swift 5.9 if there are known issues
           - platform: windows
@@ -24,10 +24,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Install Windows 10 SDK 10.0.20348.0
+        if: matrix.platform == 'windows'
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2.2
+        with:
+          sdk-version: 20348
+
       - name: Setup Swift Environment
-        uses: SwiftyLab/setup-swift@v1
+        if: matrix.platform != 'windows'
+        uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ matrix.swift-version }}
+          prefer-oss-toolchain: false
+          development: false
+
+      - name: Setup Swift Environment (Windows)
+        if: matrix.platform == 'windows'
+        uses: compnerd/gha-setup-swift@main
+        with:
+          swift-version: ${{ matrix.swift-version == '6.0' && 'swift-6.0-release' || 'swift-5.9-release' }}
+          swift-build: ${{ matrix.swift-version == '6.0' && '6.0-RELEASE' || '5.9-RELEASE' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -68,7 +84,7 @@ jobs:
     strategy:
       matrix:
         platform: [macos, linux, windows]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.0]
         exclude:
           - platform: windows
             swift-version: 5.9
@@ -77,10 +93,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Install Windows 10 SDK 10.0.20348.0
+        if: matrix.platform == 'windows'
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2.2
+        with:
+          sdk-version: 20348
+
       - name: Setup Swift Environment
-        uses: SwiftyLab/setup-swift@v1
+        if: matrix.platform != 'windows'
+        uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ matrix.swift-version }}
+          prefer-oss-toolchain: false
+          development: false
+
+      - name: Setup Swift Environment (Windows)
+        if: matrix.platform == 'windows'
+        uses: compnerd/gha-setup-swift@main
+        with:
+          swift-version: ${{ matrix.swift-version == '6.0' && 'swift-6.0-release' || 'swift-5.9-release' }}
+          swift-build: ${{ matrix.swift-version == '6.0' && '6.0-RELEASE' || '5.9-RELEASE' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -172,16 +204,32 @@ jobs:
     strategy:
       matrix:
         platform: [macos, linux, windows]
-        swift-version: [5.9, 6.1.2] # Test both versions for comprehensive coverage
+        swift-version: [5.9, 6.0] # Test both versions for comprehensive coverage
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Install Windows 10 SDK 10.0.20348.0
+        if: matrix.platform == 'windows'
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2.2
+        with:
+          sdk-version: 20348
+
       - name: Setup Swift Environment
-        uses: SwiftyLab/setup-swift@v1
+        if: matrix.platform != 'windows'
+        uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ matrix.swift-version }}
+          prefer-oss-toolchain: false
+          development: false
+
+      - name: Setup Swift Environment (Windows)
+        if: matrix.platform == 'windows'
+        uses: compnerd/gha-setup-swift@main
+        with:
+          swift-version: ${{ matrix.swift-version == '6.0' && 'swift-6.0-release' || 'swift-5.9-release' }}
+          swift-build: ${{ matrix.swift-version == '6.0' && '6.0-RELEASE' || '5.9-RELEASE' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -220,16 +268,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.0]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
       - name: Setup Swift Environment
-        uses: SwiftyLab/setup-swift@v1
+        uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ matrix.swift-version }}
+          prefer-oss-toolchain: false
+          development: false
 
       - name: Show Swift version
         run: swift --version
@@ -301,7 +351,7 @@ jobs:
     strategy:
       matrix:
         configuration: [debug, release]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.0]
     runs-on: macos-14
     steps:
       - name: Checkout
@@ -311,7 +361,7 @@ jobs:
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
       - name: Install Swift ${{ matrix.swift-version }}
-        uses: SwiftyLab/setup-swift@v1
+        uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ matrix.swift-version }}
 
@@ -333,14 +383,14 @@ jobs:
     strategy:
       matrix:
         configuration: [debug, release]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.0]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
       - name: Install Swift
-        uses: SwiftyLab/setup-swift@v1
+        uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ matrix.swift-version }}
 
@@ -362,16 +412,22 @@ jobs:
     strategy:
       matrix:
         configuration: [debug, release]
-        swift-version: [5.9, 6.1.2]
+        swift-version: [5.9, 6.0]
     runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install Swift
-        uses: SwiftyLab/setup-swift@v1
+      - name: Install Windows 10 SDK 10.0.20348.0
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2.2
         with:
-          swift-version: ${{ matrix.swift-version }}
+          sdk-version: 20348
+
+      - name: Install Swift
+        uses: compnerd/gha-setup-swift@main
+        with:
+          swift-version: ${{ matrix.swift-version == '6.0' && 'swift-6.0-release' || 'swift-5.9-release' }}
+          swift-build: ${{ matrix.swift-version == '6.0' && '6.0-RELEASE' || '5.9-RELEASE' }}
 
       - name: Build and test package
         run: |
