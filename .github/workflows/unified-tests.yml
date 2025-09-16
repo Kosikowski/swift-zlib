@@ -42,7 +42,7 @@ jobs:
         if: matrix.platform == 'windows'
         uses: swift-actions/setup-swift@v1
         with:
-          swift-version: ${{ matrix.swift-version }}
+          swift-version: ${{ matrix.swift-version == '6.0' && '6.0' || '5.9' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -110,7 +110,7 @@ jobs:
         if: matrix.platform == 'windows'
         uses: swift-actions/setup-swift@v1
         with:
-          swift-version: ${{ matrix.swift-version }}
+          swift-version: ${{ matrix.swift-version == '6.0' && '6.0' || '5.9' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -226,7 +226,7 @@ jobs:
         if: matrix.platform == 'windows'
         uses: swift-actions/setup-swift@v1
         with:
-          swift-version: ${{ matrix.swift-version }}
+          swift-version: ${{ matrix.swift-version == '6.0' && '6.0' || '5.9' }}
 
       - name: Setup macOS Dependencies
         if: matrix.platform == 'macos'
@@ -423,7 +423,7 @@ jobs:
       - name: Install Swift
         uses: swift-actions/setup-swift@v1
         with:
-          swift-version: ${{ matrix.swift-version }}
+          swift-version: ${{ matrix.swift-version == '6.0' && '6.0' || '5.9' }}
 
       - name: Build and test package
         run: |
