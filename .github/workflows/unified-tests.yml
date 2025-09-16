@@ -10,7 +10,7 @@ jobs:
   # Unified test job with platform and Swift version matrix
   test:
     name: Tests (${{ matrix.platform }}, Swift ${{ matrix.swift-version }})
-    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-latest' }}
+    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
     strategy:
       matrix:
         platform: [macos, linux, windows]
@@ -23,6 +23,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Install Windows 10 SDK 10.0.20348.0
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          # Download and install Windows 10 SDK 10.0.20348.0
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+          $installerPath = "$env:TEMP\winsdk.exe"
+
+          Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath
+
+          Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
+          Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+
+          Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
+          Remove-Item $installerPath -Force
 
       - name: Setup Swift Environment
         uses: SwiftyLab/setup-swift@latest
@@ -43,33 +60,6 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update && sudo apt-get install -y zlib1g-dev
-
-      - name: Fix Windows SDK Environment
-        if: matrix.platform == 'windows'
-        shell: pwsh
-        run: |
-          # Fix Windows SDK version mismatch after Swift setup
-          # Update INCLUDE and LIB paths to use the correct SDK version
-          $newInclude = $env:INCLUDE -replace "10.0.20348.0", "10.0.26100.0"
-          $newLib = $env:LIB -replace "10.0.20348.0", "10.0.26100.0"
-
-          # Set environment variables for subsequent steps
-          echo "WindowsSDKVersion=10.0.26100.0" >> $env:GITHUB_ENV
-          echo "WindowsSDKLibVersion=10.0.26100.0\" >> $env:GITHUB_ENV
-          echo "WindowsSdkVerBinPath=C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\" >> $env:GITHUB_ENV
-          echo "WindowsSdkDir=C:\Program Files (x86)\Windows Kits\10\" >> $env:GITHUB_ENV
-          echo "WindowsSDK_ExecutablePath_x64=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\" >> $env:GITHUB_ENV
-          echo "WindowsSDK_ExecutablePath_x86=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\" >> $env:GITHUB_ENV
-          echo "INCLUDE=$newInclude" >> $env:GITHUB_ENV
-          echo "LIB=$newLib" >> $env:GITHUB_ENV
-          echo "VSCMD_ARG_winsdk=10.0.26100.0" >> $env:GITHUB_ENV
-          echo "__winsdk_stripped_winsdkversion=10.0.26100.0" >> $env:GITHUB_ENV
-
-          Write-Host "Fixed Windows SDK environment variables"
-          Write-Host "WindowsSDKVersion: 10.0.26100.0"
-          Write-Host "VSCMD_ARG_winsdk: 10.0.26100.0"
-          Write-Host "Updated INCLUDE: $newInclude"
-          Write-Host "Updated LIB: $newLib"
 
       - name: Build package
         shell: bash
@@ -93,7 +83,7 @@ jobs:
   # CLI Tool Tests
   test-cli:
     name: CLI Tool Tests (${{ matrix.platform }}, Swift ${{ matrix.swift-version }})
-    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-latest' }}
+    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
     strategy:
       matrix:
         platform: [macos, linux, windows]
@@ -105,6 +95,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Install Windows 10 SDK 10.0.20348.0
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          # Download and install Windows 10 SDK 10.0.20348.0
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+          $installerPath = "$env:TEMP\winsdk.exe"
+
+          Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath
+
+          Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
+          Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+
+          Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
+          Remove-Item $installerPath -Force
 
       - name: Setup Swift Environment
         uses: SwiftyLab/setup-swift@latest
@@ -125,33 +132,6 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update && sudo apt-get install -y zlib1g-dev
-
-      - name: Fix Windows SDK Environment
-        if: matrix.platform == 'windows'
-        shell: pwsh
-        run: |
-          # Fix Windows SDK version mismatch after Swift setup
-          # Update INCLUDE and LIB paths to use the correct SDK version
-          $newInclude = $env:INCLUDE -replace "10.0.20348.0", "10.0.26100.0"
-          $newLib = $env:LIB -replace "10.0.20348.0", "10.0.26100.0"
-
-          # Set environment variables for subsequent steps
-          echo "WindowsSDKVersion=10.0.26100.0" >> $env:GITHUB_ENV
-          echo "WindowsSDKLibVersion=10.0.26100.0\" >> $env:GITHUB_ENV
-          echo "WindowsSdkVerBinPath=C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\" >> $env:GITHUB_ENV
-          echo "WindowsSdkDir=C:\Program Files (x86)\Windows Kits\10\" >> $env:GITHUB_ENV
-          echo "WindowsSDK_ExecutablePath_x64=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\" >> $env:GITHUB_ENV
-          echo "WindowsSDK_ExecutablePath_x86=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\" >> $env:GITHUB_ENV
-          echo "INCLUDE=$newInclude" >> $env:GITHUB_ENV
-          echo "LIB=$newLib" >> $env:GITHUB_ENV
-          echo "VSCMD_ARG_winsdk=10.0.26100.0" >> $env:GITHUB_ENV
-          echo "__winsdk_stripped_winsdkversion=10.0.26100.0" >> $env:GITHUB_ENV
-
-          Write-Host "Fixed Windows SDK environment variables"
-          Write-Host "WindowsSDKVersion: 10.0.26100.0"
-          Write-Host "VSCMD_ARG_winsdk: 10.0.26100.0"
-          Write-Host "Updated INCLUDE: $newInclude"
-          Write-Host "Updated LIB: $newLib"
 
       - name: Build CLI tool (Unix)
         if: matrix.platform != 'windows'
@@ -226,7 +206,7 @@ jobs:
   # Performance Tests (all Swift versions for comprehensive coverage)
   performance:
     name: Performance Tests (${{ matrix.platform }}, Swift ${{ matrix.swift-version }})
-    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-latest' }}
+    runs-on: ${{ matrix.platform == 'macos' && 'macos-14' || matrix.platform == 'linux' && 'ubuntu-latest' || 'windows-2022' }}
     strategy:
       matrix:
         platform: [macos, linux, windows]
@@ -235,6 +215,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Install Windows 10 SDK 10.0.20348.0
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          # Download and install Windows 10 SDK 10.0.20348.0
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+          $installerPath = "$env:TEMP\winsdk.exe"
+
+          Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath
+
+          Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
+          Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+
+          Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
+          Remove-Item $installerPath -Force
 
       - name: Setup Swift Environment
         uses: SwiftyLab/setup-swift@latest
@@ -290,7 +287,7 @@ jobs:
         uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ matrix.swift-version }}
-          prefer-oss-toolchain: ${{ matrix.platform == 'windows' && 'true' || 'false' }}
+          prefer-oss-toolchain: false
           development: false
 
       - name: Show Swift version
@@ -429,6 +426,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Install Windows 10 SDK 10.0.20348.0
+        shell: pwsh
+        run: |
+          # Download and install Windows 10 SDK 10.0.20348.0
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2196247"
+          $installerPath = "$env:TEMP\winsdk.exe"
+
+          Write-Host "Downloading Windows 10 SDK 10.0.20348.0..."
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath
+
+          Write-Host "Installing Windows 10 SDK 10.0.20348.0..."
+          Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait
+
+          Write-Host "Windows 10 SDK 10.0.20348.0 installation completed"
+          Remove-Item $installerPath -Force
 
       - name: Install Swift
         uses: SwiftyLab/setup-swift@latest
